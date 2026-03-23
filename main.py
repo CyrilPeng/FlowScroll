@@ -1,4 +1,4 @@
-# FlowMouse - 适用于全平台的平滑滚动工具
+# FlowScroll - 适用于全平台的平滑滚动工具
 # 版本 v1.0.0
 # 版权所有 (C) 2026 某不科学的高数
 #
@@ -10,10 +10,10 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
-from FlowMouse.platform import system_platform, OS_NAME
-from FlowMouse.core.config import cfg
-from FlowMouse.services.logging_service import logger, log_crash
-from FlowMouse.ui.settings_window import MainWindow
+from FlowScroll.platform import system_platform, OS_NAME
+from FlowScroll.core.config import cfg
+from FlowScroll.services.logging_service import logger, log_crash
+from FlowScroll.ui.settings_window import MainWindow
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
         app = QApplication(sys.argv)
 
         if OS_NAME == "Windows":
-            myappid = "cyrilpeng.FlowMouse.app.v1.0.0"
+            myappid = "cyrilpeng.FlowScroll.app.v1.0.0"
             try:
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except Exception:
@@ -50,7 +50,7 @@ def main():
                     ctypes.windll.user32.MessageBoxW(
                         0,
                         f"程序遇到致命错误，日志已保存至:\\n{log_path}",
-                        "FlowMouse 崩溃",
+                        "FlowScroll 崩溃",
                         16,
                     )
             except Exception:

@@ -1,8 +1,9 @@
 import ctypes
 import winreg
 from ctypes import wintypes
-from FlowMouse.platform.base import PlatformInterface
-from FlowMouse.services.logging_service import logger
+from FlowScroll.platform.base import PlatformInterface
+from FlowScroll.services.logging_service import logger
+
 
 class WindowsPlatform(PlatformInterface):
     def __init__(self):
@@ -11,6 +12,7 @@ class WindowsPlatform(PlatformInterface):
         # 获取主屏幕分辨率 (粗略)
         try:
             from PySide6.QtWidgets import QApplication
+
             if QApplication.instance():
                 screen_geom = QApplication.primaryScreen().geometry()
                 self.screen_width = screen_geom.width()
@@ -28,24 +30,28 @@ class WindowsPlatform(PlatformInterface):
             hwnd = user32.GetForegroundWindow()
             if not hwnd:
                 return ("", "", False)
-                
+
             length = user32.GetWindowTextLengthW(hwnd)
             buf = ctypes.create_unicode_buffer(length + 1)
             user32.GetWindowTextW(hwnd, buf, length + 1)
             window_name = buf.value
-            
+
             class_buf = ctypes.create_unicode_buffer(256)
             user32.GetClassNameW(hwnd, class_buf, 256)
             window_class = class_buf.value
-            
+
             rect = wintypes.RECT()
             user32.GetWindowRect(hwnd, ctypes.byref(rect))
             w = rect.right - rect.left
             h = rect.bottom - rect.top
-            
+
             # 待办: 如果是多显示器，改进健壮的屏幕检测
-            is_fullscreen = (w >= self.screen_width and h >= self.screen_height) if self.screen_width else False
-            
+            is_fullscreen = (
+                (w >= self.screen_width and h >= self.screen_height)
+                if self.screen_width
+                else False
+            )
+
             return (window_name, window_class, is_fullscreen)
         except Exception as e:
             logger.debug(f"获取 Windows 前台窗口失败: {e}")
@@ -54,7 +60,9 @@ class WindowsPlatform(PlatformInterface):
     def set_autostart(self, app_name, app_path, enable):
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS)
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS
+            )
             if enable:
                 winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, app_path)
             else:
@@ -83,6 +91,6 @@ class WindowsPlatform(PlatformInterface):
 
     def get_font_name(self):
         return "Segoe UI"
-        
+
     def get_icon_name(self):
         return "logo.ico"

@@ -47,16 +47,16 @@ from PySide6.QtGui import (
     QKeySequence,
 )
 
-from FlowMouse.platform import system_platform, OS_NAME
-from FlowMouse.core.config import cfg, CONFIG_FILE
-from FlowMouse.services.logging_service import logger, log_crash
-from FlowMouse.core.engine import ScrollEngine
-from FlowMouse.input.listeners import GlobalInputListener
-from FlowMouse.services.autostart import AutoStartManager
+from FlowScroll.platform import system_platform, OS_NAME
+from FlowScroll.core.config import cfg, CONFIG_FILE
+from FlowScroll.services.logging_service import logger, log_crash
+from FlowScroll.core.engine import ScrollEngine
+from FlowScroll.input.listeners import GlobalInputListener
+from FlowScroll.services.autostart import AutoStartManager
 
-from FlowMouse.ui.overlay import ResizableOverlay
-from FlowMouse.ui.webdav_dialog import WebDAVSyncDialog
-from FlowMouse.ui.components import HotkeyEdit
+from FlowScroll.ui.overlay import ResizableOverlay
+from FlowScroll.ui.webdav_dialog import WebDAVSyncDialog
+from FlowScroll.ui.components import HotkeyEdit
 
 
 # --- 资源定位 ---
@@ -111,7 +111,7 @@ class MainWindow(QMainWindow):
         if os.path.exists(resource_path(icon_name)):
             self.setWindowIcon(QIcon(resource_path(icon_name)))
 
-        self.setWindowTitle("FlowMouse")
+        self.setWindowTitle("FlowScroll")
         self.setMinimumSize(420, 680)
         self.resize(650, 720)
 
@@ -124,6 +124,11 @@ class MainWindow(QMainWindow):
         self.current_preset_name = "默认"
 
         self.load_presets_from_file()
+
+        # 确保窗口图标已经设置好再初始化系统托盘
+        if self.windowIcon().isNull() and os.path.exists(resource_path(icon_name)):
+            self.setWindowIcon(QIcon(resource_path(icon_name)))
+
         self.init_system_tray(icon_name)
 
         self.bridge.show_overlay.connect(self.on_show_overlay)
@@ -160,34 +165,25 @@ class MainWindow(QMainWindow):
     def init_system_tray(self, icon_name):
         self.tray_icon = QSystemTrayIcon(self)
 
-        # 优先尝试使用 SVG 图标，更适合系统托盘显示
-        svg_icon_path = resource_path(
-            os.path.join("FlowMouse", "resources", "FlowMouse.svg")
-        )
-        if os.path.exists(svg_icon_path):
-            from PySide6.QtGui import QPixmap
-
-            svg_icon = QIcon(svg_icon_path)
-            # 确保图标有合适的尺寸用于系统托盘
-            if not svg_icon.isNull():
-                self.tray_icon.setIcon(svg_icon)
-            else:
-                # 如果 SVG 加载失败，尝试 ICO
-                icon_path = resource_path(icon_name)
-                if os.path.exists(icon_path):
-                    self.tray_icon.setIcon(QIcon(icon_path))
+        # 先尝试直接加载窗口图标，因为窗口图标已经设置好了
+        if not self.windowIcon().isNull():
+            self.tray_icon.setIcon(self.windowIcon())
+        else:
+            # 如果窗口图标没有，尝试加载 ICO 文件
+            icon_path = resource_path(icon_name)
+            if os.path.exists(icon_path):
+                tray_icon = QIcon(icon_path)
+                if not tray_icon.isNull():
+                    self.tray_icon.setIcon(tray_icon)
                 else:
+                    # 最后使用默认图标
                     from PySide6.QtWidgets import QStyle
 
                     self.tray_icon.setIcon(
                         self.style().standardIcon(QStyle.SP_MessageBoxInformation)
                     )
-        else:
-            # 如果没有 SVG，使用 ICO
-            icon_path = resource_path(icon_name)
-            if os.path.exists(icon_path):
-                self.tray_icon.setIcon(QIcon(icon_path))
             else:
+                # 使用默认图标
                 from PySide6.QtWidgets import QStyle
 
                 self.tray_icon.setIcon(
@@ -316,7 +312,7 @@ class MainWindow(QMainWindow):
 
         logo_label = QLabel()
         logo_path = resource_path(
-            os.path.join("FlowMouse", "resources", "FlowMouse.svg")
+            os.path.join("FlowScroll", "resources", "FlowScroll.svg")
         )
         if os.path.exists(logo_path):
             logo_pixmap = QIcon(logo_path).pixmap(QSize(56, 56))
@@ -325,7 +321,7 @@ class MainWindow(QMainWindow):
         title_layout = QVBoxLayout()
         title_layout.setSpacing(2)
 
-        header_title = QLabel("FlowMouse")
+        header_title = QLabel("FlowScroll")
         header_title.setObjectName("HeaderTitle")
 
         header_subtitle = QLabel("全局平滑滚动引擎")
@@ -539,7 +535,7 @@ class MainWindow(QMainWindow):
 
         # Load and set GitHub SVG Icon
         gh_path = resource_path(
-            os.path.join("FlowMouse", "resources", "github_icon.svg")
+            os.path.join("FlowScroll", "resources", "github_icon.svg")
         )
         if os.path.exists(gh_path):
             btn_github.setIcon(QIcon(gh_path))
@@ -547,7 +543,7 @@ class MainWindow(QMainWindow):
 
         btn_github.setText(" GitHub · 某不科学的高数")
         btn_github.clicked.connect(
-            lambda: system_platform.open_url("https://github.com/CyrilPeng/FlowMouse")
+            lambda: system_platform.open_url("https://github.com/CyrilPeng/FlowScroll")
         )
 
         author_layout.addWidget(btn_github)
@@ -800,7 +796,7 @@ class MainWindow(QMainWindow):
             "<b>🎯 中心死区缓冲</b><br>"
             "按下中键后，鼠标需要移动多少像素才会触发滚动。建议保留极小值以防止误触和手抖。<br><br>"
             "<b>🔄 横向穿梭模式</b><br>"
-            "这与 Windows 原生的中键死板滚动完全不同。FlowMouse 提供的是<b>带有物理阻尼感、像触控板一样丝滑的 360° 全向滚动</b>。开启后，按下中键不仅能上下滑动，向左/向右移动鼠标也能让页面左右平滑滚动。<br>"
+            "这与 Windows 原生的中键死板滚动完全不同。FlowScroll 提供的是<b>带有物理阻尼感、像触控板一样丝滑的 360° 全向滚动</b>。开启后，按下中键不仅能上下滑动，向左/向右移动鼠标也能让页面左右平滑滚动。<br>"
             "💡 <i>建议使用方式：</i>在输入框设置一个快捷键（如 <code>Shift</code>），平时默认关闭横向滚动以保证垂直阅读的纯净度。需要看宽表格或视频时间轴时，只要按下 <code>Shift</code> 即可瞬间切换为横向模式，松开则恢复，非常适合工作流！<br><br>"
         )
         msg.setText(help_text)

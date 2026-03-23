@@ -1,10 +1,12 @@
 import time
 import threading
-from FlowMouse.core.config import cfg
-from FlowMouse.platform import system_platform
+from FlowScroll.core.config import cfg
+from FlowScroll.platform import system_platform
+
 
 class WindowMonitor(threading.Thread):
     """窗口状态监控，定期检测当前前台窗口信息"""
+
     def __init__(self):
         super().__init__(daemon=True)
 
@@ -13,10 +15,12 @@ class WindowMonitor(threading.Thread):
         time.sleep(2)
         while True:
             try:
-                name, cls_name, is_fullscreen = system_platform.get_frontmost_window_info()
+                name, cls_name, is_fullscreen = (
+                    system_platform.get_frontmost_window_info()
+                )
                 cfg.current_window_name = name
                 cfg.current_window_class = cls_name
                 cfg.is_fullscreen = is_fullscreen
-            except Exception: 
+            except Exception:
                 pass
             time.sleep(0.5)

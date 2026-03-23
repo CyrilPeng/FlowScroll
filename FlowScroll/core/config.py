@@ -1,6 +1,6 @@
 import os
 
-CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".FlowMouse_config.json")
+CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".FlowScroll_config.json")
 
 
 class GlobalConfig:

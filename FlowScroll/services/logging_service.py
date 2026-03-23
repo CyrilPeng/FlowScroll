@@ -8,9 +8,9 @@ import platform
 
 
 def get_log_dir():
-    # Save logs to temp/flowmouse directory
+    # Save logs to temp/flowscroll directory
     temp_dir = tempfile.gettempdir()
-    log_dir = os.path.join(temp_dir, "flowmouse")
+    log_dir = os.path.join(temp_dir, "flowscroll")
     os.makedirs(log_dir, exist_ok=True)
     return log_dir
 
@@ -19,7 +19,7 @@ LOG_FILE = os.path.join(get_log_dir(), "app.log")
 
 
 def setup_logging():
-    logger = logging.getLogger("FlowMouse")
+    logger = logging.getLogger("FlowScroll")
     logger.setLevel(logging.DEBUG)
 
     # 避免重复添加handler
@@ -52,7 +52,7 @@ logger = setup_logging()
 
 def log_crash(exception):
     crash_log_path = os.path.join(
-        os.path.expanduser("~"), "Documents", "FlowMouse_Crash_Log.txt"
+        os.path.expanduser("~"), "Documents", "FlowScroll_Crash_Log.txt"
     )
     try:
         with open(crash_log_path, "w", encoding="utf-8") as f:

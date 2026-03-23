@@ -1,11 +1,11 @@
 [project]
-name = "FlowMouse"
+name = "FlowScroll"
 version = "1.0.0"
 description = "在 Windows 和 macOS 上体验如 iOS 般丝滑的全局中键惯性滚动"
 authors = [
     { name = "某不科学的高数" }
 ]
-urls = { Repository = "https://github.com/CyrilPeng/FlowMouse" }
+urls = { Repository = "https://github.com/CyrilPeng/FlowScroll" }
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["FlowMouse"]
+packages = ["FlowScroll"]
 
 [build-system]
 requires = ["setuptools>=61.0"]

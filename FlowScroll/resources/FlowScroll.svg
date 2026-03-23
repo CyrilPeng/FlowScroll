@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-  <title>FlowMouse minimal icon</title>
-  <desc>Minimal centered icon for FlowMouse with aligned mouse and directional arrows.</desc>
+  <title>FlowScroll minimal icon</title>
+  <desc>Minimal centered icon for FlowScroll with aligned mouse and directional arrows.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">

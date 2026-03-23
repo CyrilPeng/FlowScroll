@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from FlowMouse.core.config import cfg, CONFIG_FILE
+from FlowScroll.core.config import cfg, CONFIG_FILE
 
 
 class WebDAVSyncDialog(QDialog):
@@ -104,7 +104,7 @@ class WebDAVSyncDialog(QDialog):
         url = self.edit_url.text().strip()
         if not url.endswith("/"):
             url += "/"
-        return url + "FlowMouse_config.json"
+        return url + "FlowScroll_config.json"
 
     def get_auth_header(self):
         user = self.edit_user.text().strip()

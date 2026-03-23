@@ -1,24 +1,24 @@
 <div align="center">
 
-# <img src="FlowMouse/resources/FlowMouse.svg" width="40" align="center" alt="Logo" /> FlowMouse 
+# <img src="FlowScroll/resources/FlowScroll.svg" width="40" align="center" alt="Logo" /> FlowScroll 
 
 **让你的鼠标，拥有丝滑的全局惯性滚动**
 
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20MacOS%20%7C%20Linux-lightgrey.svg)]()
-[![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowMouse?color=success&label=Release)]()
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20MacOS-lightgrey.svg)]()
+[![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)]()
 
 </div>
 
 ---
 
-## ✨ 为什么选择 FlowMouse？
+## ✨ 为什么选择 FlowScroll？
 
 你是否曾羡慕过触控板或手机屏幕上那指哪打哪、带有物理**阻尼感**的滚动体验？
 传统的鼠标滚轮往往伴随着生硬的“咔哒”声，在阅读长文档或浏览网页时，视觉跳跃感极强。
 
-**FlowMouse** 彻底改变了这一现状。
+**FlowScroll** 彻底改变了这一现状。
 按下鼠标中键，移动鼠标，松开，即刻享受平滑滚动。
 它接管了底层的输入信号，通过精心调校的物理引擎算法，将你的光标位移转化为丝滑的全局惯性滚动。
 
@@ -42,12 +42,13 @@
 
 ## 📥 下载与安装
 
-进入 [Release](https://github.com/CyrilPeng/FlowMouse/releases) 页面获取最新版本。
+进入 [Release](https://github.com/CyrilPeng/FlowScroll/releases) 页面获取最新版本。
 
-- **Windows 用户**: 下载 `FlowMouse_Win.exe`，双击即可运行。
-- **macOS 用户**: 下载 `FlowMouse_Mac.dmg`，将其拖入 `Applications` 文件夹，并在“安全性与隐私”中赋予辅助功能权限。
-- **Linux 用户**: 下载 `FlowMouse_Linux_x86.AppImage`，赋予执行权限后双击运行。
+- **Windows 用户**: 下载 `FlowScroll_Win.exe`，双击即可运行。
+- **macOS 用户**: 下载 `FlowScroll_Mac.dmg`，将其拖入 `Applications` 文件夹，并在“安全性与隐私”中赋予辅助功能权限。
+- **Linux 用户（Preview）**: 下载 `FlowScroll_Linux_x86.AppImage`，赋予执行权限后双击运行。
 
+注：Ubuntu Wayland 下可能无法工作，目前优先支持 Windows / macOS，Linux 仅在 X11/Xorg 环境下尝试支持
 <br>
 
 ## 🛠️ 构建指南 (For Developers)
@@ -56,8 +57,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/CyrilPeng/FlowMouse.git
-cd FlowMouse
+git clone https://github.com/CyrilPeng/FlowScroll.git
+cd FlowScroll
 
 # 2. 安装并同步依赖
 uv sync
@@ -80,11 +81,11 @@ uv run main.py
 
 ## ☁️ WebDAV 云同步
 
-FlowMouse 支持通过 WebDAV 协议进行配置预设的云端同步，方便在多台设备间共享你的滚动参数设置。
+FlowScroll 支持通过 WebDAV 协议进行配置预设的云端同步，方便在多台设备间共享你的滚动参数设置。
 
 ### 配置步骤：
 
-1. 打开 FlowMouse 设置窗口，进入"高级系统"标签页
+1. 打开 FlowScroll 设置窗口，进入"高级设置"标签页
 2. 点击"☁️ WebDAV 云同步配置"按钮
 3. 填入你的 WebDAV 服务器信息：
    - **服务器地址**：WebDAV 服务器 URL（例如：`https://dav.jianguoyun.com/dav/`）
