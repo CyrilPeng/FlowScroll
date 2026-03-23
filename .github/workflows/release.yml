@@ -1,0 +1,145 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: FlowMouse_Win.exe
+            artifact_path: build_out/FlowMouse_Win.exe
+          - os: macos-latest
+            artifact_name: FlowMouse_Mac.dmg
+            artifact_path: FlowMouse_Mac.dmg
+          - os: ubuntu-latest
+            artifact_name: FlowMouse_Linux_x86.AppImage
+            artifact_path: FlowMouse_Linux_x86.AppImage
+
+    steps:
+      - name: 检出代码 (Checkout Code)
+        uses: actions/checkout@v4
+
+      - name: 安装 uv (Setup uv)
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: 设置 Python 环境
+        run: uv python install 3.10
+
+      - name: 安装项目依赖
+        run: uv sync
+
+      - name: 安装 Nuitka
+        run: uv pip install Nuitka
+
+      - name: 构建 Windows 版本
+        if: matrix.os == 'windows-latest'
+        run: |
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --output-dir=build_out -o FlowMouse_Win.exe main.py
+
+      # --- macOS 构建 (DMG) ---
+      - name: 构建 macOS 版本
+        if: matrix.os == 'macos-latest'
+        run: |
+          # 1. Nuitka 构建
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 --macos-app-icon=logo.icns --macos-app-name="FlowMouse" --output-dir=build_out main.py
+          
+          # 2. 【优化】兼容不同版本 Nuitka 产生的 app 目录名
+          if [ -d "build_out/main.app" ]; then
+            mv build_out/main.app "build_out/FlowMouse.app"
+          fi
+          
+          # 3. 安装工具
+          brew install create-dmg
+          
+          # 4. 执行打包 (此时路径和图标名称完全匹配)
+          create-dmg \\
+            --volname "FlowMouse Installer" \\
+            --window-pos 200 120 \\
+            --window-size 600 400 \\
+            --icon-size 100 \\
+            --icon "FlowMouse.app" 175 120 \\
+            --hide-extension "FlowMouse.app" \\
+            --app-drop-link 425 120 \\
+            "FlowMouse_Mac.dmg" \\
+            "build_out/FlowMouse.app/"
+      # --- Linux 构建 (AppImage) ---
+      - name: 构建 Linux 版本 (AppImage)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # 1. 安装构建依赖 (补充 PySide6 常见的缺失库)
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0
+          
+          # 2. 使用 Nuitka 编译
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --output-dir=build_out -o FlowMouse_Linux main.py
+          
+          # 3. 准备 AppDir 结构
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          
+          # 【优化】使用通配符匹配 .dist 目录，防止 Nuitka 版本差异导致找不到 main.dist
+          cp -r build_out/*.dist/* AppDir/usr/bin/
+          
+          # 4. 创建桌面入口文件
+          cat > AppDir/FlowMouse.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=FlowMouse
+          Exec=FlowMouse_Linux
+          Icon=flowmouse
+          Categories=Utility;
+          EOF
+          
+          # 5. 准备图标 (尝试多种来源确保不报错)
+          if [ -f "logo.png" ]; then
+            cp logo.png AppDir/flowmouse.png
+          elif [ -f "logo.ico" ]; then
+            cp logo.ico AppDir/flowmouse.ico
+          else
+            # 如果都没有，随便造一个空文件防止打包失败
+            touch AppDir/flowmouse.png
+          fi
+          
+          # 6. 下载 appimagetool 并打包
+          curl -Lo appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          
+          # 在 GitHub Actions (Ubuntu 24.04) 中运行 AppImage 工具需要加上 --appimage-extract-and-run
+          ./appimagetool --appimage-extract-and-run AppDir FlowMouse_Linux_x86.AppImage
+
+      - name: 上传构建产物 (Upload Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载所有构建产物 (Download Artifacts)
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: 自动发布到 GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

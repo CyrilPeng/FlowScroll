@@ -1,0 +1,27 @@
+[project]
+name = "FlowMouse"
+version = "1.0.0"
+description = "在 Windows 和 macOS 上体验如 iOS 般丝滑的全局中键惯性滚动"
+authors = [
+    { name = "某不科学的高数" }
+]
+urls = { Repository = "https://github.com/CyrilPeng/FlowMouse" }
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "PySide6>=6.0.0",
+    "pynput>=1.7.6",
+    "zstandard>=0.22.0",
+]
+
+[tool.setuptools]
+packages = ["FlowMouse"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[[tool.uv.index]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
