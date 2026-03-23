@@ -159,15 +159,40 @@ class MainWindow(QMainWindow):
 
     def init_system_tray(self, icon_name):
         self.tray_icon = QSystemTrayIcon(self)
-        icon_path = resource_path(icon_name)
-        if os.path.exists(icon_path):
-            self.tray_icon.setIcon(QIcon(icon_path))
-        else:
-            from PySide6.QtWidgets import QStyle
 
-            self.tray_icon.setIcon(
-                self.style().standardIcon(QStyle.SP_MessageBoxInformation)
-            )
+        # 优先尝试使用 SVG 图标，更适合系统托盘显示
+        svg_icon_path = resource_path(
+            os.path.join("FlowMouse", "resources", "FlowMouse.svg")
+        )
+        if os.path.exists(svg_icon_path):
+            from PySide6.QtGui import QPixmap
+
+            svg_icon = QIcon(svg_icon_path)
+            # 确保图标有合适的尺寸用于系统托盘
+            if not svg_icon.isNull():
+                self.tray_icon.setIcon(svg_icon)
+            else:
+                # 如果 SVG 加载失败，尝试 ICO
+                icon_path = resource_path(icon_name)
+                if os.path.exists(icon_path):
+                    self.tray_icon.setIcon(QIcon(icon_path))
+                else:
+                    from PySide6.QtWidgets import QStyle
+
+                    self.tray_icon.setIcon(
+                        self.style().standardIcon(QStyle.SP_MessageBoxInformation)
+                    )
+        else:
+            # 如果没有 SVG，使用 ICO
+            icon_path = resource_path(icon_name)
+            if os.path.exists(icon_path):
+                self.tray_icon.setIcon(QIcon(icon_path))
+            else:
+                from PySide6.QtWidgets import QStyle
+
+                self.tray_icon.setIcon(
+                    self.style().standardIcon(QStyle.SP_MessageBoxInformation)
+                )
 
         tray_menu = QMenu()
         action_show = QAction("显示设置", self)
@@ -448,14 +473,9 @@ class MainWindow(QMainWindow):
         # --- Tab 1: 参数调校 ---
         tab1_widget = QWidget()
         tab1_layout = QVBoxLayout(tab1_widget)
-        tab1_layout.setContentsMargins(0, 0, 0, 0)
+        tab1_layout.setContentsMargins(0, 16, 0, 0)
         tab1_layout.setSpacing(20)
         tab1_layout.setAlignment(Qt.AlignTop)
-
-        # Section: 核心参数 (Core Settings)
-        lbl_core = QLabel("引擎参数 Core Engine")
-        lbl_core.setObjectName("SectionTitle")
-        tab1_layout.addWidget(lbl_core)
 
         core_card, core_layout = create_card()
 
@@ -538,17 +558,12 @@ class MainWindow(QMainWindow):
 
         tab_widget.addTab(tab1_widget, "参数调校")
 
-        # --- Tab 2: 高级系统 ---
+        # --- Tab 2: 高级设置 ---
         tab2_widget = QWidget()
         tab2_layout = QVBoxLayout(tab2_widget)
-        tab2_layout.setContentsMargins(0, 0, 0, 0)
+        tab2_layout.setContentsMargins(0, 16, 0, 0)
         tab2_layout.setSpacing(20)
         tab2_layout.setAlignment(Qt.AlignTop)
-
-        # Section: 高级设置
-        lbl_adv = QLabel("高级设置 Advanced Settings")
-        lbl_adv.setObjectName("SectionTitle")
-        tab2_layout.addWidget(lbl_adv)
 
         adv_card = QFrame()
         adv_card.setObjectName("Card")
@@ -619,9 +634,7 @@ class MainWindow(QMainWindow):
         adv_layout.addWidget(create_h_line())
 
         adv_layout.addWidget(
-            QLabel(
-                "<span style='font-weight: 600; color: #E2E8F0;'>工作模式</span>"
-            )
+            QLabel("<span style='font-weight: 600; color: #E2E8F0;'>工作模式</span>")
         )
 
         from PySide6.QtWidgets import QRadioButton, QButtonGroup
@@ -714,7 +727,7 @@ class MainWindow(QMainWindow):
         # Add stretch to make content fit height
         tab2_layout.addStretch()
 
-        tab_widget.addTab(tab2_widget, "高级系统")
+        tab_widget.addTab(tab2_widget, "高级设置")
 
         # Add tab widget to content layout (replacing the old sections)
         content_layout.addWidget(tab_widget)

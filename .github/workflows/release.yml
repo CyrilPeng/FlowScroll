@@ -49,7 +49,7 @@ jobs:
       - name: 构建 Windows 版本
         if: matrix.os == 'windows-latest'
         run: |
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --output-dir=build_out -o FlowMouse_Win.exe main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-dir=FlowMouse/resources=FlowMouse/resources --output-dir=build_out -o FlowMouse_Win.exe main.py
 
       # --- macOS 构建 (DMG) ---
       - name: 构建 macOS 版本
