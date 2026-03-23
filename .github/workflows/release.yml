@@ -52,27 +52,34 @@ jobs:
       - name: 构建 macOS 版本
         if: matrix.os == 'macos-latest'
         run: |
-          # 1. Nuitka 构建
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 --macos-app-icon=logo.icns --macos-app-name="FlowMouse" --output-dir=build_out main.py
+          # 1. 检查是否有 icns 图标，如果没有就不设置图标参数
+          if [ -f "logo.icns" ]; then
+            ICON_ARG="--macos-app-icon=logo.icns"
+          else
+            ICON_ARG=""
+          fi
           
-          # 2. 【优化】兼容不同版本 Nuitka 产生的 app 目录名
+          # 2. Nuitka 构建
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --macos-app-name="FlowMouse" --output-dir=build_out main.py
+          
+          # 3. 【优化】兼容不同版本 Nuitka 产生的 app 目录名
           if [ -d "build_out/main.app" ]; then
             mv build_out/main.app "build_out/FlowMouse.app"
           fi
           
-          # 3. 安装工具
+          # 4. 安装工具
           brew install create-dmg
           
-          # 4. 执行打包 (此时路径和图标名称完全匹配)
-          create-dmg \\
-            --volname "FlowMouse Installer" \\
-            --window-pos 200 120 \\
-            --window-size 600 400 \\
-            --icon-size 100 \\
-            --icon "FlowMouse.app" 175 120 \\
-            --hide-extension "FlowMouse.app" \\
-            --app-drop-link 425 120 \\
-            "FlowMouse_Mac.dmg" \\
+          # 5. 执行打包 (此时路径和图标名称完全匹配)
+          create-dmg \
+            --volname "FlowMouse Installer" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "FlowMouse.app" 175 120 \
+            --hide-extension "FlowMouse.app" \
+            --app-drop-link 425 120 \
+            "FlowMouse_Mac.dmg" \
             "build_out/FlowMouse.app/"
       # --- Linux 构建 (AppImage) ---
       - name: 构建 Linux 版本 (AppImage)
@@ -80,7 +87,7 @@ jobs:
         run: |
           # 1. 安装构建依赖 (补充 PySide6 常见的缺失库)
           sudo apt-get update
-          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0
+          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0 imagemagick
           
           # 2. 使用 Nuitka 编译
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --output-dir=build_out -o FlowMouse_Linux main.py
@@ -102,14 +109,14 @@ jobs:
           Categories=Utility;
           EOF
           
-          # 5. 准备图标 (尝试多种来源确保不报错)
-          if [ -f "logo.png" ]; then
-            cp logo.png AppDir/flowmouse.png
+          # 5. 准备图标 - 从 SVG 转换或使用 ICO 转换
+          if [ -f "FlowMouse/resources/FlowMouse.svg" ]; then
+            convert -background none -size 256x256 FlowMouse/resources/FlowMouse.svg AppDir/flowmouse.png
           elif [ -f "logo.ico" ]; then
-            cp logo.ico AppDir/flowmouse.ico
+            convert logo.ico -resize 256x256 AppDir/flowmouse.png
           else
-            # 如果都没有，随便造一个空文件防止打包失败
-            touch AppDir/flowmouse.png
+            # 如果都没有，创建一个简单的占位图标
+            convert -size 256x256 xc:#3B82F6 -gravity center -pointsize 100 -fill white -annotate 0 "FM" AppDir/flowmouse.png
           fi
           
           # 6. 下载 appimagetool 并打包
