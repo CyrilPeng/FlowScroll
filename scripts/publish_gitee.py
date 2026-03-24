@@ -126,28 +126,41 @@ def upload_file(url, file_path, token, max_retries=4):
         cmd = [
             "curl",
             "--fail",
-            "--silent",
-            "--show-error",
             "--location",
             "--http1.1",
             "--retry", "3",
             "--retry-all-errors",
             "--connect-timeout", "30",
             "--max-time", "1800",
+            "--progress-bar",
             "-F", f"access_token={token}",
             "-F", f"file=@{file_path}",
             url,
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
 
-        if result.returncode == 0:
+        output_lines = []
+        assert process.stdout is not None
+        for line in process.stdout:
+            line = line.rstrip()
+            if line:
+                print(line, flush=True)
+                output_lines.append(line)
+
+        return_code = process.wait()
+
+        if return_code == 0:
             log(f"✅ Successfully uploaded {file_name}")
             return True
 
-        stderr = (result.stderr or "").strip()
-        stdout = (result.stdout or "").strip()
-        combined = f"{stdout}\n{stderr}".lower()
+        combined = "\n".join(output_lines).lower()
 
         duplicate_signals = [
             "already exists",
@@ -160,12 +173,7 @@ def upload_file(url, file_path, token, max_retries=4):
             log(f"⏭️ Attachment already exists on Gitee, skip: {file_name}")
             return True
 
-        if stderr:
-            log(f"❌ Failed to upload {file_name}: {stderr}")
-        elif stdout:
-            log(f"❌ Failed to upload {file_name}: {stdout}")
-        else:
-            log(f"❌ Failed to upload {file_name}: unknown error")
+        log(f"❌ Failed to upload {file_name}")
 
         if attempt < max_retries:
             sleep_seconds = attempt * 10
@@ -173,7 +181,6 @@ def upload_file(url, file_path, token, max_retries=4):
             time.sleep(sleep_seconds)
 
     return False
-
 
 def main():
     owner = "Cyril_P"
