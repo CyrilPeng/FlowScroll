@@ -17,20 +17,32 @@ def sync():
     with open(main_file, "r", encoding="utf-8") as f:
         main_content = f.read()
 
-    # 读取 main.py 第2行 (通常以 # 版本 v1.1.0 格式存在)
-    lines = main_content.splitlines()
-    if len(lines) < 2:
-        print("Error: main.py has less than 2 lines.")
-        return
-    
-    version_line = lines[1]
-    match = re.search(r'版本\s*v?([\d\.]+)', version_line)
-    if not match:
-        print(f"Error: Could not parse version from line 2: {version_line}")
-        return
-    
-    version = match.group(1)
-    print(f"✅ 从 main.py 解析到最新版本号: {version}")
+    # 优先从 GitHub Actions 的环境变量获取 Tag 版本 (例如 v1.3.0)
+    github_ref = os.environ.get("GITHUB_REF_NAME")
+    if github_ref and github_ref.startswith("v"):
+        version = github_ref.lstrip("v")
+        print(f"✅ 从 GITHUB_REF_NAME 解析到强制版本号: {version}")
+        
+        # 同步更新 main.py 的第 2 行注释，保持本地与打包时文件内容一致性
+        lines = main_content.splitlines()
+        if len(lines) >= 2:
+            lines[1] = re.sub(r'版本\s*v?[\d\.]+', f'版本 v{version}', lines[1])
+            main_content = "\n".join(lines) + ("\n" if main_content.endswith("\n") else "")
+    else:
+        # Fallback: 本地运行或无环境变量时，从 main.py 第 2 行读取
+        lines = main_content.splitlines()
+        if len(lines) < 2:
+            print("Error: main.py has less than 2 lines.")
+            return
+        
+        version_line = lines[1]
+        match = re.search(r'版本\s*v?([\d\.]+)', version_line)
+        if not match:
+            print(f"Error: Could not parse version from line 2: {version_line}")
+            return
+        
+        version = match.group(1)
+        print(f"✅ 从 main.py 解析到最新版本号: {version}")
 
     # 1. 更新 main.py 里的 myappid
     new_main_content = re.sub(

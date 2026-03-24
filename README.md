@@ -43,17 +43,17 @@
 ### 主界面
 
 <div align="center">
-  <img src="https://private-user-images.githubusercontent.com/48341401/568170217-1cc9528c-b689-46f0-ad19-1a16f1724ec8.jpg?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzQzMzUyMDQsIm5iZiI6MTc3NDMzNDkwNCwicGF0aCI6Ii80ODM0MTQwMS81NjgxNzAyMTctMWNjOTUyOGMtYjY4OS00NmYwLWFkMTktMWExNmYxNzI0ZWM4LmpwZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzI0VDA2NDgyNFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTViYTE4ODNkNGI1YmMwY2VlM2FlMTkyNzQ5ZGIxNGYwYTk4YTU1MDEzMGI1MzdjMTVhNDI0MmEwZGFmZDNhMDkmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.G0vwgMBxCjMLnnW36WEvKQ7K9XQJNEynFj6l6CYgP1Y" alt="软件主界面" width="45%" style="margin-right: 2%;">
-  <img src="https://private-user-images.githubusercontent.com/48341401/568170214-009479f1-dd35-4dfd-ab86-351ae5660188.jpg?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzQzMzUyMDQsIm5iZiI6MTc3NDMzNDkwNCwicGF0aCI6Ii80ODM0MTQwMS81NjgxNzAyMTQtMDA5NDc5ZjEtZGQzNS00ZGZkLWFiODYtMzUxYWU1NjYwMTg4LmpwZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzI0VDA2NDgyNFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWM3MjM5NTZjZmMwNDM3YWU0N2E5ZmRlMDUzMWMyYTJhOGZlZjVkYTMwMjc1Nzk0ZTM5YWJhMTFjN2Y3MGUxN2YmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.C6MKw7Qic7E247t64ts7CXciPxxFN_zx0U31jS-v0Ug" alt="设置界面" width="45%">
+  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/1.jpg" alt="软件主界面" width="45%" style="margin-right: 2%;">
+  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/2.jpg" alt="设置界面" width="45%">
 </div>
 
 ### 使用演示
 注：为清楚展示鼠标移动轨迹，VS Code 演示图用蓝色箭头对鼠标位置进行了标记，实际使用中不会显示。
 <div align="center">
-<img src="https://private-user-images.githubusercontent.com/48341401/568170215-04dc5257-9d05-47c2-a7e4-bbd11d2f367e.gif?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzQzMzUyMDQsIm5iZiI6MTc3NDMzNDkwNCwicGF0aCI6Ii80ODM0MTQwMS81NjgxNzAyMTUtMDRkYzUyNTctOWQwNS00N2MyLWE3ZTQtYmJkMTFkMmYzNjdlLmdpZj9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzI0VDA2NDgyNFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWRkYTZlNWM2ZmNjMmU2MTNjYTkyYjBhNjBhMmUzZThiYmU4NTFjZWQyYTViNGVkODQ2MmQ5MTBmNWZmYjY1YmMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.Wjj2MoBCPwCdM8dr8Z2gYBqZUvag5kCf7XZ5gLRn_Us" alt="FlowScroll 演示演示" width="80%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/demo1.gif" alt="FlowScroll 演示演示" width="80%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 <br>
 <br>
-<img src="https://private-user-images.githubusercontent.com/48341401/568170216-584ccddf-16a6-46d5-a5e6-1be1f836011b.gif?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzQzMzUyMDQsIm5iZiI6MTc3NDMzNDkwNCwicGF0aCI6Ii80ODM0MTQwMS81NjgxNzAyMTYtNTg0Y2NkZGYtMTZhNi00NmQ1LWE1ZTYtMWJlMWY4MzYwMTFiLmdpZj9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzI0VDA2NDgyNFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWQ4YWFiYzg0N2VmNWZmMzA5MDA5NThiYTA2NjZiZGJkNTUyNDEwOWNjMDQxOWQyMTEzMmQ4MDUxMDMwNTU3ZWYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.XxiiBHyr4PQp6LCXf-jGyBoUajkKJy0ZAfQXFgIixDA" alt="FlowScroll 演示演示" width="80%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/demo2.gif" alt="FlowScroll 演示演示" width="80%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 
 </div>
 
@@ -132,7 +132,7 @@ FlowScroll 支持通过 WebDAV 协议进行配置预设的云端同步，方便�
 **不妨，请作者喝一杯咖啡？**
 
 <div align="center">
-  <img src="https://private-user-images.githubusercontent.com/48341401/568170218-7c9ceb3a-03a8-44db-a7ff-aa58bb3777e4.jpg?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzQzMzUyMDQsIm5iZiI6MTc3NDMzNDkwNCwicGF0aCI6Ii80ODM0MTQwMS81NjgxNzAyMTgtN2M5Y2ViM2EtMDNhOC00NGRiLWE3ZmYtYWE1OGJiMzc3N2U0LmpwZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzI0VDA2NDgyNFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWMzMzcxODJkOTkwMzkxYTE4MjE4ZWE0MmFhYjBkZGI0YzhkZTIzOWM1OWI5ZjY0OWI3ZDRmMmEzM2JiMWVkODAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.md7Q2Jb-eAOhMgh9Ki20c9WdqQKbMlRHhvcPCIcoNYA" alt="WeChat Pay" width="250" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/wx.jpg" alt="WeChat Pay" width="250" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
   <p><i>（微信扫一扫）</i></p>
 </div>
 

@@ -1,3 +1,4 @@
+import time
 import threading
 from pynput import mouse, keyboard
 from FlowScroll.core.config import cfg
@@ -84,6 +85,7 @@ class GlobalInputListener:
         self.is_app_allowed_callback = is_app_allowed_callback
         self.mouse_listener = None
         self.key_manager = None
+        self.last_middle_click_time = 0.0
 
     def start(self):
         try:
@@ -104,13 +106,18 @@ class GlobalInputListener:
         self.mouse_listener.start()
 
     def win32_event_filter(self, msg, data):
-        # WM_MBUTTONDOWN = 0x0207, WM_MBUTTONUP = 0x0208
-        if msg in (0x0207, 0x0208):
+        # WM_MBUTTONDOWN = 0x0207, WM_MBUTTONUP = 0x0208, WM_MBUTTONDBLCLK = 0x0209
+        if msg in (0x0207, 0x0208, 0x0209):
             if self.is_app_allowed_callback():
                 # OS 级拦截中键，防止浏览器等软件原生滚动 UI 弹出
                 x, y = mouse.Controller().position
-                pressed = (msg == 0x0207)
+                pressed = (msg == 0x0207 or msg == 0x0209)
                 self.on_click(x, y, mouse.Button.middle, pressed)
+                
+                # 必须调用 suppress_event 才能在系统全局级别真正屏蔽该事件，
+                # 光返回 False 只是让 pynput 内部忽略它。
+                if self.mouse_listener and hasattr(self.mouse_listener, 'suppress_event'):
+                    self.mouse_listener.suppress_event()
                 return False
         return True
 
@@ -119,6 +126,13 @@ class GlobalInputListener:
             if pressed:
                 if not self.is_app_allowed_callback():
                     return
+                
+                # 防抖：防止鼠标硬件问题或底层 API 触发多次连击
+                current_time = time.time()
+                if current_time - self.last_middle_click_time < 0.15:
+                    return
+                self.last_middle_click_time = current_time
+
                 cfg.active = not cfg.active
                 if cfg.active:
                     cfg.origin_pos = (x, y)

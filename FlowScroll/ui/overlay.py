@@ -9,7 +9,7 @@ from FlowScroll.core.config import cfg
 class ResizableOverlay(QWidget):
     def __init__(self):
         super().__init__()
-        flags = Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+        flags = Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput
         if OS_NAME == "Windows":
             flags |= Qt.Tool
         self.setWindowFlags(flags)
