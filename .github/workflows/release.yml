@@ -52,7 +52,7 @@ jobs:
       - name: 构建 Windows 版本
         if: matrix.os == 'windows-latest'
         run: |
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-dir=FlowScroll/resources=FlowScroll/resources --output-dir=build_out -o FlowScroll_Win_${{ github.ref_name }}.exe main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --output-dir=build_out -o FlowScroll_Win_${{ github.ref_name }}.exe main.py
 
       # --- macOS 构建 (DMG) ---
       - name: 构建 macOS 版本
@@ -66,7 +66,7 @@ jobs:
           fi
           
           # 2. Nuitka 构建
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --macos-app-name="FlowScroll" --output-dir=build_out main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --include-data-files=main.py=main.py --macos-app-name="FlowScroll" --output-dir=build_out main.py
           
           # 3. 【优化】兼容不同版本 Nuitka 产生的 app 目录名
           if [ -d "build_out/main.app" ]; then

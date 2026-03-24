@@ -10,7 +10,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/a5/f5/397b61091120a9ca5
 
 [[package]]
 name = "flowscroll"
-version = "1.2.0"
+version = "1.2.4"
 source = { editable = "." }
 dependencies = [
     { name = "pynput" },

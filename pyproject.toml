@@ -1,6 +1,6 @@
 [project]
 name = "FlowScroll"
-version = "1.2.0"
+version = "1.2.4"
 description = "在 Windows 和 macOS 上体验如 iOS 般丝滑的全局中键惯性滚动"
 authors = [
     { name = "某不科学的高数" }
