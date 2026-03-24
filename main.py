@@ -1,5 +1,5 @@
 # FlowScroll - 适用于全平台的平滑滚动工具
-# 版本 v1.2.0
+# 版本 v1.2.1
 # 版权所有 (C) 2026 某不科学的高数
 #
 # 本程序是自由软件：您可以根据自由软件基金会发布的 GNU 通用公共许可证的条款（许可证的第 3 版，或（由您选择）任何更高版本）重新分发和/或修改它。
@@ -25,7 +25,7 @@ def main():
         app = QApplication(sys.argv)
 
         if OS_NAME == "Windows":
-            myappid = "cyrilpeng.FlowScroll.app.v1.1.0"
+            myappid = "cyrilpeng.FlowScroll.app.v1.2.0"
             try:
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except Exception:

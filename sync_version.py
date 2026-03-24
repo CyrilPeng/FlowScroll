@@ -1,5 +1,10 @@
 import os
+import sys
 import re
+
+# Force stdout to use utf-8 to avoid UnicodeEncodeError when printing emojis on Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 def sync():
     main_file = "main.py"

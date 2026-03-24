@@ -1,6 +1,6 @@
 [project]
 name = "FlowScroll"
-version = "1.1.0"
+version = "1.2.0"
 description = "在 Windows 和 macOS 上体验如 iOS 般丝滑的全局中键惯性滚动"
 authors = [
     { name = "某不科学的高数" }
@@ -20,8 +20,3 @@ packages = ["FlowScroll"]
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-
-[[tool.uv.index]]
-name = "tuna"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-default = true
