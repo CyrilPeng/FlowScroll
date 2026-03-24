@@ -19,14 +19,14 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact_name: FlowScroll_Win.exe
-            artifact_path: build_out/FlowScroll_Win.exe
+            artifact_name: FlowScroll_Win_v${{ github.ref_name }}.exe
+            artifact_path: build_out/FlowScroll_Win_v${{ github.ref_name }}.exe
           - os: macos-latest
-            artifact_name: FlowScroll_Mac.dmg
-            artifact_path: FlowScroll_Mac.dmg
+            artifact_name: FlowScroll_Mac_v${{ github.ref_name }}.dmg
+            artifact_path: FlowScroll_Mac_v${{ github.ref_name }}.dmg
           - os: ubuntu-latest
-            artifact_name: FlowScroll_Linux_x86.AppImage
-            artifact_path: FlowScroll_Linux_x86.AppImage
+            artifact_name: FlowScroll_Linux_x86_v${{ github.ref_name }}.AppImage
+            artifact_path: FlowScroll_Linux_x86_v${{ github.ref_name }}.AppImage
 
     steps:
       - name: 检出代码 (Checkout Code)
@@ -52,7 +52,7 @@ jobs:
       - name: 构建 Windows 版本
         if: matrix.os == 'windows-latest'
         run: |
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-dir=FlowScroll/resources=FlowScroll/resources --output-dir=build_out -o FlowScroll_Win.exe main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-dir=FlowScroll/resources=FlowScroll/resources --output-dir=build_out -o FlowScroll_Win_${{ github.ref_name }}.exe main.py
 
       # --- macOS 构建 (DMG) ---
       - name: 构建 macOS 版本
@@ -85,7 +85,7 @@ jobs:
             --icon "FlowScroll.app" 175 120 \
             --hide-extension "FlowScroll.app" \
             --app-drop-link 425 120 \
-            "FlowScroll_Mac.dmg" \
+            "FlowScroll_Mac_${{ github.ref_name }}.dmg" \
             "build_out/FlowScroll.app/"
       # --- Linux 构建 (AppImage) ---
       - name: 构建 Linux 版本 (AppImage)
@@ -130,7 +130,7 @@ jobs:
           chmod +x appimagetool
           
           # 在 GitHub Actions (Ubuntu 24.04) 中运行 AppImage 工具需要加上 --appimage-extract-and-run
-          ./appimagetool --appimage-extract-and-run AppDir FlowScroll_Linux_x86.AppImage
+          ./appimagetool --appimage-extract-and-run AppDir "FlowScroll_Linux_x86_${{ github.ref_name }}.AppImage"
 
       - name: 上传构建产物 (Upload Artifact)
         uses: actions/upload-artifact@v4
