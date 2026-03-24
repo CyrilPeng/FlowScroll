@@ -150,6 +150,12 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: 同步发布到 Gitee Releases
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: uv run python scripts/publish_gitee.py
+
       - name: 自动发布到 GitHub Releases
         uses: softprops/action-gh-release@v2
         with:

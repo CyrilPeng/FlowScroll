@@ -48,7 +48,7 @@ class ScrollEngine(threading.Thread):
                     if scroll_x != 0 or scroll_y != 0:
                         self.mouse_controller.scroll(scroll_x, scroll_y)
 
-                    time.sleep(0.01)
+                    time.sleep(0.004)
                 except Exception:
                     pass
             else:

@@ -121,7 +121,7 @@ class WindowsPlatform(PlatformInterface):
             value, _ = winreg.QueryValueEx(key, app_name)
             winreg.CloseKey(key)
             return value == app_path
-        except:
+        except Exception:
             return False
 
     def get_scroll_multiplier(self):

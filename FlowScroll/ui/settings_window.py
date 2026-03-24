@@ -1,13 +1,6 @@
-import sys
 import os
-import math
-import time
-import threading
 import json
-import platform
-import subprocess
-import ctypes
-from pynput import mouse, keyboard
+from pynput import mouse
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -16,40 +9,26 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QFrame,
-    QSlider,
-    QDoubleSpinBox,
     QPushButton,
     QDialog,
-    QGridLayout,
-    QCheckBox,
     QSystemTrayIcon,
     QMenu,
     QMessageBox,
-    QComboBox,
     QInputDialog,
-    QTextEdit,
-    QKeySequenceEdit,
     QScrollArea,
     QSizePolicy,
     QTabWidget,
 )
-from PySide6.QtCore import Qt, Signal, QObject, QTimer, QSize
+from PySide6.QtCore import Qt, Signal, QObject, QSize
 from PySide6.QtGui import (
-    QColor,
-    QPainter,
-    QPen,
-    QFont,
-    QPainterPath,
     QIcon,
     QCursor,
     QAction,
     QKeySequence,
 )
 
-from FlowScroll.platform import system_platform, OS_NAME
+from FlowScroll.platform import system_platform
 from FlowScroll.core.config import cfg, CONFIG_FILE
-from FlowScroll.services.logging_service import logger, log_crash
 from FlowScroll.core.engine import ScrollEngine
 from FlowScroll.input.listeners import GlobalInputListener
 from FlowScroll.services.autostart import AutoStartManager
@@ -154,7 +133,7 @@ class MainWindow(QMainWindow):
                     if last_used in self.presets:
                         self.current_preset_name = last_used
                         cfg.from_dict(self.presets[last_used])
-            except:
+            except Exception:
                 pass
 
     def save_presets_to_file(self):
@@ -162,7 +141,7 @@ class MainWindow(QMainWindow):
         try:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
-        except:
+        except Exception:
             pass
 
     def init_system_tray(self, icon_name):
@@ -519,7 +498,7 @@ class MainWindow(QMainWindow):
                 self.bridge, self.is_current_app_allowed
             )
             self.input_listener.start()
-        except Exception as e:
+        except Exception:
             self.ui_widgets["enable_horizontal"].setChecked(False)
             QMessageBox.critical(
                 self,

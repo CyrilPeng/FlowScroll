@@ -4,7 +4,6 @@ import sys
 import time
 import tempfile
 import traceback
-import platform
 
 
 def get_log_dir():
@@ -60,5 +59,5 @@ def log_crash(exception):
             f.write(f"Error: {str(exception)}\\n")
             f.write(traceback.format_exc())
         return crash_log_path
-    except:
+    except Exception:
         return None

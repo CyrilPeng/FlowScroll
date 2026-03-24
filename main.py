@@ -11,7 +11,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from FlowScroll.platform import system_platform, OS_NAME
-from FlowScroll.core.config import cfg
 from FlowScroll.services.logging_service import logger, log_crash
 from FlowScroll.ui.settings_window import MainWindow
 

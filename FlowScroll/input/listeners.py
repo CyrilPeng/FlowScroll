@@ -1,5 +1,4 @@
 import time
-import threading
 from pynput import mouse, keyboard
 from FlowScroll.core.config import cfg
 from FlowScroll.services.logging_service import logger
@@ -71,8 +70,13 @@ class KeyboardManager:
             k = self.qt_to_pynput.get(k, k)
             target_keys.add(k)
 
-        if self.current_keys == target_keys:
+        if not target_keys:
+            return
+
+        if target_keys.issubset(self.current_keys):
             self.bridge_callback()
+            # 触发后清空当前按键状态，防止因为按键未完全释放导致连续触发
+            self.current_keys.clear()
 
 
 class GlobalInputListener:
