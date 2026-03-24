@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title>FlowScroll minimal icon</title>
+  <desc>Minimal centered icon for FlowScroll with aligned mouse and directional arrows.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22C55E"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#bg)"/>
+
+  <!-- Mouse: centered around x=128, y=128 -->
+  <g>
+    <rect x="92" y="64" width="72" height="128" rx="36" fill="#F8FAFC"/>
+    <path d="M128 64c19.882 0 36 16.118 36 36v20H92V100c0-19.882 16.118-36 36-36z" fill="#E2E8F0"/>
+    <line x1="128" y1="64" x2="128" y2="120" stroke="#CBD5E1" stroke-width="4"/>
+    <rect x="116" y="78" width="24" height="28" rx="12" fill="url(#accent)"/>
+  </g>
+
+  <!-- Motion center aligned to mouse body center -->
+  <circle cx="128" cy="128" r="10" fill="url(#accent)"/>
+
+  <g fill="none" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Up -->
+    <path d="M128 52V32"/>
+    <path d="M118 42L128 32L138 42"/>
+
+    <!-- Down -->
+    <path d="M128 204V224"/>
+    <path d="M118 214L128 224L138 214"/>
+
+    <!-- Left -->
+    <path d="M80 128H60"/>
+    <path d="M70 118L60 128L70 138"/>
+
+    <!-- Right -->
+    <path d="M176 128H196"/>
+    <path d="M186 118L196 128L186 138"/>
+  </g>
+</svg>

@@ -1,0 +1,158 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: FlowScroll_Win.exe
+            artifact_path: build_out/FlowScroll_Win.exe
+          - os: macos-latest
+            artifact_name: FlowScroll_Mac.dmg
+            artifact_path: FlowScroll_Mac.dmg
+          - os: ubuntu-latest
+            artifact_name: FlowScroll_Linux_x86.AppImage
+            artifact_path: FlowScroll_Linux_x86.AppImage
+
+    steps:
+      - name: 检出代码 (Checkout Code)
+        uses: actions/checkout@v4
+
+      - name: 安装 uv (Setup uv)
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: 设置 Python 环境
+        run: uv python install 3.10
+
+      - name: 自动同步版本号
+        run: uv run python sync_version.py
+
+      - name: 安装项目依赖
+        run: uv sync
+
+      - name: 安装 Nuitka
+        run: uv pip install Nuitka
+
+      - name: 构建 Windows 版本
+        if: matrix.os == 'windows-latest'
+        run: |
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-dir=FlowScroll/resources=FlowScroll/resources --output-dir=build_out -o FlowScroll_Win.exe main.py
+
+      # --- macOS 构建 (DMG) ---
+      - name: 构建 macOS 版本
+        if: matrix.os == 'macos-latest'
+        run: |
+          # 1. 检查是否有 icns 图标，如果没有就不设置图标参数
+          if [ -f "logo.icns" ]; then
+            ICON_ARG="--macos-app-icon=logo.icns"
+          else
+            ICON_ARG=""
+          fi
+          
+          # 2. Nuitka 构建
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --macos-app-name="FlowScroll" --output-dir=build_out main.py
+          
+          # 3. 【优化】兼容不同版本 Nuitka 产生的 app 目录名
+          if [ -d "build_out/main.app" ]; then
+            mv build_out/main.app "build_out/FlowScroll.app"
+          fi
+          
+          # 4. 安装工具
+          brew install create-dmg
+          
+          # 5. 执行打包 (此时路径和图标名称完全匹配)
+          create-dmg \
+            --volname "FlowScroll Installer" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "FlowScroll.app" 175 120 \
+            --hide-extension "FlowScroll.app" \
+            --app-drop-link 425 120 \
+            "FlowScroll_Mac.dmg" \
+            "build_out/FlowScroll.app/"
+      # --- Linux 构建 (AppImage) ---
+      - name: 构建 Linux 版本 (AppImage)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # 1. 安装构建依赖 (补充 PySide6 常见的缺失库)
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0 imagemagick
+          
+          # 2. 使用 Nuitka 编译
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --output-dir=build_out -o FlowScroll_Linux main.py
+          
+          # 3. 准备 AppDir 结构
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          
+          # 【优化】使用通配符匹配 .dist 目录，防止 Nuitka 版本差异导致找不到 main.dist
+          cp -r build_out/*.dist/* AppDir/usr/bin/
+          
+          # 4. 创建桌面入口文件
+          cat > AppDir/FlowScroll.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=FlowScroll
+          Exec=FlowScroll_Linux
+          Icon=flowscroll
+          Categories=Utility;
+          EOF
+          
+          # 5. 准备图标 - 从 SVG 转换或使用 ICO 转换
+          if [ -f "FlowScroll/resources/FlowScroll.svg" ]; then
+            convert -background none -size 256x256 FlowScroll/resources/FlowScroll.svg AppDir/flowscroll.png
+          elif [ -f "logo.ico" ]; then
+            convert logo.ico -resize 256x256 AppDir/flowscroll.png
+          else
+            # 如果都没有，创建一个简单的占位图标
+            convert -size 256x256 xc:#3B82F6 -gravity center -pointsize 100 -fill white -annotate 0 "FS" AppDir/flowscroll.png
+          fi
+          
+          # 6. 下载 appimagetool 并打包
+          curl -Lo appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          
+          # 在 GitHub Actions (Ubuntu 24.04) 中运行 AppImage 工具需要加上 --appimage-extract-and-run
+          ./appimagetool --appimage-extract-and-run AppDir FlowScroll_Linux_x86.AppImage
+
+      - name: 上传构建产物 (Upload Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载所有构建产物 (Download Artifacts)
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: 自动发布到 GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
