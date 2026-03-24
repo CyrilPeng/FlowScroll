@@ -24,9 +24,10 @@ def upload_file(url, file_path, token):
 
     req = urllib.request.Request(url, data=body)
     req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
+    req.add_header('Content-Length', str(len(body)))
     
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=120) as response:
             response.read()
             print(f"✅ Successfully uploaded {file_name}")
             return True
