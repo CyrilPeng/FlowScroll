@@ -10,7 +10,6 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20MacOS-lightgrey.svg)]()
 [![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)]()
-
 <br>
 </div>
 
@@ -69,6 +68,9 @@ FlowScroll 的核心交互很简单：
 - 🎨 **现代、清爽的界面**  
   尽量减少设置门槛，开箱可用，同时保留足够的可调空间。
 
+- 🔁 **支持方向反转**  
+  在高级设置中可分别反转纵向 / 横向滚动方向，适配习惯"向上拨轮 = 页面向下"的用户。
+
 ---
 
 ## 🖼️ 软件展示
@@ -126,6 +128,8 @@ FlowScroll 内置 4 个预设，开箱即用，无需先理解复杂参数。首
 - **长文档 / 表格**：整体更均衡，适合作为默认方案
 - **轻柔 / 接近触控板**：节奏更平缓，适合细腻浏览
 
+> 配置保存后写入 `~/.FlowScroll_config.json`，也支持通过 WebDAV 云同步。
+
 <br>
 
 ## ⚙️ 核心配置说明
@@ -144,6 +148,21 @@ FlowScroll 内置 4 个预设，开箱即用，无需先理解复杂参数。首
 - 觉得**太慢**：先提高基础速度
 - 觉得**容易误触**：增大中心死区
 - 想要更明显的“轻推慢走、远推快冲”：提高加速度曲线
+
+<br>
+
+## 🔁 反转模式
+
+部分用户习惯反转操作方向（例如 macOS 触控板用户：双指上推 = 页面向下）。FlowScroll 支持独立反转纵向和横向滚动。
+
+### 配置方式
+
+1. 打开 FlowScroll 设置窗口，进入"高级设置"标签页
+2. 点击"配置滚轮方向反转"
+3. 勾选需要的选项：
+   - **反转纵向滚动 (Y轴)**：向上偏移鼠标时页面向下滚动
+   - **反转横向滚动 (X轴)**：向左偏移鼠标时页面向右滚动
+4. 点击"确定"即可生效，设置会随预设自动保存
 
 <br>
 
