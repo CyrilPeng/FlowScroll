@@ -24,7 +24,7 @@ def main():
         app = QApplication(sys.argv)
 
         if OS_NAME == "Windows":
-            myappid = "cyrilpeng.FlowScroll.app.v1.2.15"
+            myappid = "FlowScroll.app.v1.3.0"
             try:
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except Exception:
