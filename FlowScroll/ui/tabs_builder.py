@@ -19,6 +19,7 @@ from FlowScroll.ui.helpers import (
     add_slider_row,
     add_toggle_row,
 )
+from FlowScroll.ui.components import UpwardComboBox
 import os
 
 
@@ -95,7 +96,7 @@ def build_parameter_tab(main_window):
     preset_row = QHBoxLayout()
     preset_row.setSpacing(12)
 
-    main_window.combo_presets = QComboBox()
+    main_window.combo_presets = UpwardComboBox()
     main_window.combo_presets.addItems(main_window._all_preset_names())
     main_window.combo_presets.setCurrentText(main_window.current_preset_name)
     main_window.combo_presets.currentTextChanged.connect(
@@ -128,28 +129,42 @@ def build_parameter_tab(main_window):
     # --- Author Info ---
     author_layout = QHBoxLayout()
     author_layout.setAlignment(Qt.AlignCenter)
+    author_layout.setSpacing(4)
 
     main_window.btn_github = QPushButton()
     main_window.btn_github.setCursor(Qt.PointingHandCursor)
     main_window.btn_github.setObjectName("BtnIcon")
 
     # NEW badge (hidden by default, shown by on_update_available)
-    main_window.lbl_new_badge = QLabel("NEW")
-    main_window.lbl_new_badge.setStyleSheet(
-        "background-color: #EF4444; color: white; font-size: 10px; "
-        "font-weight: 800; padding: 2px 6px; border-radius: 8px;"
+    main_window.btn_new_badge = QPushButton("NEW")
+    main_window.btn_new_badge.setCursor(Qt.PointingHandCursor)
+    main_window.btn_new_badge.setFocusPolicy(Qt.NoFocus)
+    main_window.btn_new_badge.setStyleSheet(
+        "QPushButton { background-color: #EF4444; color: white; font-size: 10px; "
+        "font-weight: 800; padding: 2px 6px; border-radius: 8px; border: none; }"
+        "QPushButton:hover { background-color: #DC2626; }"
     )
-    main_window.lbl_new_badge.setFixedHeight(20)
-    main_window.lbl_new_badge.setVisible(False)
+    main_window.btn_new_badge.setFixedHeight(20)
+    main_window.btn_new_badge.setVisible(False)
+    main_window.btn_new_badge.clicked.connect(
+        lambda: webbrowser.open(
+            getattr(
+                main_window,
+                "github_url",
+                "https://github.com/CyrilPeng/FlowScroll/releases",
+            )
+        )
+    )
 
     # Load and set GitHub SVG Icon
+    import webbrowser
+
     gh_path = resource_path(os.path.join("FlowScroll", "resources", "github_icon.svg"))
     if os.path.exists(gh_path):
         main_window.btn_github.setIcon(QIcon(gh_path))
         main_window.btn_github.setIconSize(QSize(20, 20))
 
     main_window.btn_github.setText(" GitHub · 某不科学的高数")
-    import webbrowser
 
     main_window.btn_github.clicked.connect(
         lambda: webbrowser.open(
@@ -159,7 +174,7 @@ def build_parameter_tab(main_window):
         )
     )
 
-    author_layout.addWidget(main_window.lbl_new_badge)
+    author_layout.addWidget(main_window.btn_new_badge)
     author_layout.addWidget(main_window.btn_github)
     tab1_layout.addLayout(author_layout)
 

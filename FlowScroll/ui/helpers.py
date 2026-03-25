@@ -5,13 +5,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QWidget,
     QLabel,
-    QDoubleSpinBox,
-    QSlider,
     QCheckBox,
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 from FlowScroll.ui.utils import resource_path
+from FlowScroll.ui.components import NoWheelSlider, NoWheelSpinBox
+
 
 def create_card():
     card = QFrame()
@@ -21,10 +21,12 @@ def create_card():
     card_layout.setSpacing(20)
     return card, card_layout
 
+
 def create_h_line():
     line = QFrame()
     line.setObjectName("Separator")
     return line
+
 
 def add_slider_row(
     layout, key, icon_name, label_text, val, min_v, max_v, callback, decimals=1
@@ -39,9 +41,7 @@ def add_slider_row(
 
     if icon_name:
         icon_lbl = QLabel()
-        icon_path = resource_path(
-            os.path.join("FlowScroll", "resources", icon_name)
-        )
+        icon_path = resource_path(os.path.join("FlowScroll", "resources", icon_name))
         if os.path.exists(icon_path):
             pixmap = QIcon(icon_path).pixmap(QSize(18, 18))
             icon_lbl.setPixmap(pixmap)
@@ -50,7 +50,7 @@ def add_slider_row(
     lbl = QLabel(label_text)
     lbl.setStyleSheet("font-weight: 600; color: #F1F5F9; font-size: 14px;")
 
-    spin = QDoubleSpinBox()
+    spin = NoWheelSpinBox()
     spin.setRange(min_v, max_v)
     spin.setValue(val)
     spin.setDecimals(decimals)
@@ -65,7 +65,7 @@ def add_slider_row(
     top_layout.addWidget(spin)
 
     scale = 10**decimals
-    slider = QSlider(Qt.Horizontal)
+    slider = NoWheelSlider(Qt.Horizontal)
     slider.setRange(int(min_v * scale), int(max_v * scale))
     slider.setValue(int(val * scale))
     slider.setFixedHeight(24)
@@ -79,6 +79,7 @@ def add_slider_row(
 
     layout.addWidget(row)
     return spin
+
 
 def add_toggle_row(
     layout,

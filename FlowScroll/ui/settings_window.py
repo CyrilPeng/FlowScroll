@@ -115,8 +115,8 @@ class MainWindow(QMainWindow):
     def on_update_available(self, latest_version, html_url):
         if latest_version != self.current_version:
             self.github_url = html_url
-            if hasattr(self, "lbl_new_badge"):
-                self.lbl_new_badge.setVisible(True)
+            if hasattr(self, "btn_new_badge"):
+                self.btn_new_badge.setVisible(True)
 
     def load_presets_from_file(self):
         if os.path.exists(CONFIG_FILE):
