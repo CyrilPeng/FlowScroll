@@ -288,9 +288,9 @@ def build_advanced_tab(main_window):
     btn_work_mode = QPushButton("配置工作模式与应用过滤")
     btn_work_mode.setObjectName("BtnAdv")
     btn_work_mode.setCursor(Qt.PointingHandCursor)
-    move_path = resource_path(os.path.join("FlowScroll", "resources", "ic_move.svg"))
-    if os.path.exists(move_path):
-        btn_work_mode.setIcon(QIcon(move_path))
+    gear_path = resource_path(os.path.join("FlowScroll", "resources", "ic_gear.svg"))
+    if os.path.exists(gear_path):
+        btn_work_mode.setIcon(QIcon(gear_path))
         btn_work_mode.setIconSize(QSize(18, 18))
     btn_work_mode.clicked.connect(main_window.open_work_mode_dialog)
     work_mode_layout.addWidget(btn_work_mode)
