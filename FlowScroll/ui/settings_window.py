@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QObject, QSize
 from PySide6.QtGui import (
     QIcon,
+    QCursor,
     QAction,
     QKeySequence,
 )
@@ -38,6 +39,7 @@ from FlowScroll.core.rules import is_current_app_allowed
 from FlowScroll.input.listeners import GlobalInputListener
 from FlowScroll.services.autostart import AutoStartManager
 
+from FlowScroll.ui.overlay import ResizableOverlay
 from FlowScroll.ui.webdav_dialog import WebDAVSyncDialog
 from FlowScroll.ui.components import HotkeyEdit
 from FlowScroll.ui.utils import resource_path
@@ -49,6 +51,11 @@ mouse_controller = mouse.Controller()
 
 # --- 逻辑信号桥接 ---
 class LogicBridge(QObject):
+    show_overlay = Signal()
+    hide_overlay = Signal()
+    update_direction = Signal(str)
+    update_size = Signal(int)
+    preview_size = Signal()
     toggle_horizontal = Signal()
 
 
@@ -71,6 +78,7 @@ class MainWindow(QMainWindow):
         self.resize(650, 720)
 
         self.bridge = LogicBridge()
+        self.overlay = ResizableOverlay()
         self.autostart = AutoStartManager()
 
         self.ui_widgets = {}
@@ -86,6 +94,11 @@ class MainWindow(QMainWindow):
 
         self.init_system_tray(icon_name)
 
+        self.bridge.show_overlay.connect(self.on_show_overlay)
+        self.bridge.hide_overlay.connect(self.on_hide_overlay)
+        self.bridge.update_direction.connect(self.overlay.set_direction)
+        self.bridge.update_size.connect(self.overlay.update_geometry)
+        self.bridge.preview_size.connect(self.overlay.show_preview)
         self.bridge.toggle_horizontal.connect(self.on_toggle_horizontal_hotkey)
 
         self.init_ui()
@@ -466,11 +479,24 @@ class MainWindow(QMainWindow):
         self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
         self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
         self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
+        self.ui_widgets["overlay_size"].setValue(cfg.overlay_size)
         self.ui_widgets["enable_horizontal"].setChecked(cfg.enable_horizontal)
         self.ui_widgets["minimize_to_tray"].setChecked(cfg.minimize_to_tray)
 
         self.update_hotkey_label()
         self.save_presets_to_file()
+
+    def on_show_overlay(self):
+        self.overlay.set_direction("neutral")
+        self.overlay.move(
+            int(QCursor.pos().x() - cfg.overlay_size / 2),
+            int(QCursor.pos().y() - cfg.overlay_size / 2),
+        )
+        self.overlay.show()
+        self.overlay.raise_()
+
+    def on_hide_overlay(self):
+        self.overlay.hide()
 
     def start_threads(self):
         try:

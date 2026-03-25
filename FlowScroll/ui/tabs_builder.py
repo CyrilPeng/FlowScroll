@@ -67,6 +67,21 @@ def build_parameter_tab(main_window):
         decimals=1,
     )
     core_layout.addWidget(create_h_line())
+    main_window.ui_widgets["overlay_size"] = add_slider_row(
+        core_layout,
+        "overlay_size",
+        "ic_size.svg",
+        "导航指示器大小 (UI Size)",
+        cfg.overlay_size,
+        30,
+        150,
+        lambda v: (
+            setattr(cfg, "overlay_size", v),
+            main_window.bridge.update_size.emit(int(v)),
+            main_window.bridge.preview_size.emit(),
+        ),
+        decimals=0,
+    )
 
     tab1_layout.addWidget(core_card)
 
