@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
+    QCheckBox,
     QRadioButton,
     QButtonGroup,
     QTextEdit,
@@ -11,6 +12,80 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from FlowScroll.core.config import cfg
 from FlowScroll.ui.helpers import create_card, create_h_line
+
+
+class ReverseModeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("反转模式")
+        self.setFixedSize(400, 240)
+
+        self.setStyleSheet("""
+            QDialog { background-color: #0F172A; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+            QLabel { font-size: 13px; color: #E2E8F0; }
+            QCheckBox { color: #E2E8F0; font-size: 14px; font-weight: 600; spacing: 12px; min-height: 24px; }
+            QCheckBox::indicator { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #475569; background-color: #0F172A; }
+            QCheckBox::indicator:hover { border-color: #64748B; }
+            QCheckBox::indicator:checked { background-color: #3B82F6; border-color: #3B82F6; }
+            QPushButton {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 8px;
+                padding: 8px 16px;
+                color: #F8FAFC;
+                font-weight: 600;
+                font-size: 13px;
+            }
+            QPushButton:hover { background-color: #334155; border-color: #475569; }
+            QPushButton#BtnPrimary { background-color: #3B82F6; color: #FFFFFF; border: none; padding: 10px 24px; font-size: 14px; border-radius: 10px; }
+            QPushButton#BtnPrimary:hover { background-color: #2563EB; }
+            QPushButton#BtnPrimary:pressed { background-color: #1D4ED8; }
+            QFrame#Card { background-color: #1E293B; border-radius: 16px; border: 1px solid #334155; }
+            QFrame#Separator { background-color: #334155; max-height: 1px; }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+
+        card, card_layout = create_card()
+
+        hint_lbl = QLabel(
+            "<span style='font-weight: 600; color: #E2E8F0;'>滚轮方向</span>"
+            "<br><span style='color: #94A3B8; font-size: 12px;'>"
+            "部分习惯反转操作的用户（向上拨动滚轮 = 页面向下）可以在此调整。</span>"
+        )
+        hint_lbl.setWordWrap(True)
+        card_layout.addWidget(hint_lbl)
+
+        card_layout.addWidget(create_h_line())
+
+        self.chk_reverse_y = QCheckBox("反转纵向滚动 (Y轴)")
+        self.chk_reverse_y.setChecked(cfg.reverse_y)
+        self.chk_reverse_y.setCursor(Qt.PointingHandCursor)
+        card_layout.addWidget(self.chk_reverse_y)
+
+        self.chk_reverse_x = QCheckBox("反转横向滚动 (X轴)")
+        self.chk_reverse_x.setChecked(cfg.reverse_x)
+        self.chk_reverse_x.setCursor(Qt.PointingHandCursor)
+        card_layout.addWidget(self.chk_reverse_x)
+
+        layout.addWidget(card)
+        layout.addStretch()
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_save = QPushButton("确定")
+        btn_save.setObjectName("BtnPrimary")
+        btn_save.setCursor(Qt.PointingHandCursor)
+        btn_save.clicked.connect(self.save_and_close)
+        btn_layout.addWidget(btn_save)
+        layout.addLayout(btn_layout)
+
+    def save_and_close(self):
+        cfg.reverse_y = self.chk_reverse_y.isChecked()
+        cfg.reverse_x = self.chk_reverse_x.isChecked()
+        self.accept()
 
 
 class WorkModeDialog(QDialog):

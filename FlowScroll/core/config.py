@@ -82,6 +82,9 @@ class GlobalConfig:
 
         self.horizontal_hotkey = ""
 
+        self.reverse_y = False
+        self.reverse_x = False
+
         self.filter_mode = 0
         self.filter_list = []
         self.disable_fullscreen = True
@@ -113,6 +116,8 @@ class GlobalConfig:
             "enable_horizontal": self.enable_horizontal,
             "minimize_to_tray": self.minimize_to_tray,
             "horizontal_hotkey": self.horizontal_hotkey,
+            "reverse_y": self.reverse_y,
+            "reverse_x": self.reverse_x,
             "filter_mode": self.filter_mode,
             "filter_list": self.filter_list,
             "disable_fullscreen": self.disable_fullscreen,
@@ -133,6 +138,8 @@ class GlobalConfig:
         self.enable_horizontal = data.get("enable_horizontal", True)
         self.minimize_to_tray = data.get("minimize_to_tray", True)
         self.horizontal_hotkey = data.get("horizontal_hotkey", "")
+        self.reverse_y = data.get("reverse_y", False)
+        self.reverse_x = data.get("reverse_x", False)
         self.filter_mode = data.get("filter_mode", 0)
         self.filter_list = data.get("filter_list", [])
         self.disable_fullscreen = data.get("disable_fullscreen", True)

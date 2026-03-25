@@ -40,7 +40,13 @@ class ScrollEngine(threading.Thread):
                         last_dir = current_dir
 
                     scroll_x, scroll_y = self.strategy.calculate_scroll_speed(
-                        dx, dy, dist, cfg, platform_multiplier
+                        dx,
+                        dy,
+                        dist,
+                        cfg,
+                        platform_multiplier,
+                        reverse_x=cfg.reverse_x,
+                        reverse_y=cfg.reverse_y,
                     )
 
                     if scroll_x != 0 or scroll_y != 0:

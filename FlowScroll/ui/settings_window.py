@@ -429,6 +429,13 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
+    def open_reverse_mode_dialog(self):
+        from FlowScroll.ui.dialogs import ReverseModeDialog
+
+        dialog = ReverseModeDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self.save_presets_to_file()
+
     def toggle_autorun(self, checked):
         if not self.autostart.set_autorun(checked):
             self.sender().blockSignals(True)

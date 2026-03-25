@@ -259,6 +259,25 @@ def build_advanced_tab(main_window):
 
     tab2_layout.addWidget(adv_card)
 
+    # Section: 反转模式 (Reverse Mode)
+    lbl_reverse_mode = QLabel("反转模式 Reverse Mode")
+    lbl_reverse_mode.setObjectName("SectionTitle")
+    tab2_layout.addWidget(lbl_reverse_mode)
+
+    reverse_mode_card, reverse_mode_layout = create_card()
+
+    btn_reverse_mode = QPushButton("配置滚轮方向反转")
+    btn_reverse_mode.setObjectName("BtnAdv")
+    btn_reverse_mode.setCursor(Qt.PointingHandCursor)
+    move_path = resource_path(os.path.join("FlowScroll", "resources", "ic_move.svg"))
+    if os.path.exists(move_path):
+        btn_reverse_mode.setIcon(QIcon(move_path))
+        btn_reverse_mode.setIconSize(QSize(18, 18))
+    btn_reverse_mode.clicked.connect(main_window.open_reverse_mode_dialog)
+    reverse_mode_layout.addWidget(btn_reverse_mode)
+
+    tab2_layout.addWidget(reverse_mode_card)
+
     # Section: 工作模式 (Work Mode)
     lbl_work_mode = QLabel("工作模式 Work Mode")
     lbl_work_mode.setObjectName("SectionTitle")
