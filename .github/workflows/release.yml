@@ -38,9 +38,6 @@ jobs:
       - name: 设置 Python 环境
         run: uv python install 3.14
 
-      - name: 自动同步版本号
-        run: uv run python sync_version.py
-
       - name: 安装项目依赖
         run: uv sync
 
