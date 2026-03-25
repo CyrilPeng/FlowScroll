@@ -50,13 +50,14 @@ logger = setup_logging()
 
 
 def log_crash(exception):
-    crash_log_path = os.path.join(
-        get_log_dir(), "FlowScroll_Crash_Log.txt"
-    )
+    crash_log_path = os.path.join(get_log_dir(), "FlowScroll_Crash_Log.txt")
     try:
+        from FlowScroll import __version__
+
         with open(crash_log_path, "w", encoding="utf-8") as f:
+            f.write(f"FlowScroll v{__version__}\n")
             f.write(f"Crash Time: {time.ctime()}\n")
-            f.write(f"Error: {str(exception)}\\n")
+            f.write(f"Error: {str(exception)}\n")
             f.write(traceback.format_exc())
         return crash_log_path
     except Exception:

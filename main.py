@@ -1,5 +1,4 @@
 # FlowScroll - 适用于全平台的平滑滚动工具
-# 版本 v1.3.0
 # 版权所有 (C) 2026 某不科学的高数
 #
 # 本程序是自由软件：您可以根据自由软件基金会发布的 GNU 通用公共许可证的条款（许可证的第 3 版，或（由您选择）任何更高版本）重新分发和/或修改它。
@@ -10,6 +9,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
+from FlowScroll import __version__
 from FlowScroll.platform import system_platform, OS_NAME
 from FlowScroll.services.logging_service import logger, log_crash
 from FlowScroll.ui.settings_window import MainWindow
@@ -24,7 +24,7 @@ def main():
         app = QApplication(sys.argv)
 
         if OS_NAME == "Windows":
-            myappid = "FlowScroll.app.v1.3.0"
+            myappid = f"cyrilpeng.FlowScroll.app.v{__version__}"
             try:
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except Exception:

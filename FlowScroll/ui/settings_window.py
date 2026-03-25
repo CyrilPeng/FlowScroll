@@ -62,19 +62,9 @@ class MainWindow(QMainWindow):
             self.setWindowIcon(QIcon(resource_path(icon_name)))
 
         # 动态获取版本号
-        self.current_version = "1.0.0"
-        try:
-            main_path = resource_path("main.py")
-            if os.path.exists(main_path):
-                import re
+        from FlowScroll import __version__
 
-                with open(main_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                    match = re.search(r"版本\s*v?([\d\.]+)", content)
-                    if match:
-                        self.current_version = match.group(1)
-        except Exception:
-            pass
+        self.current_version = __version__
 
         self.setWindowTitle(f"FlowScroll v{self.current_version}")
         self.setMinimumSize(420, 680)
