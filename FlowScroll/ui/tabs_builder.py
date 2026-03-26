@@ -21,6 +21,7 @@ from FlowScroll.ui.helpers import (
 )
 from FlowScroll.ui.components import UpwardComboBox
 import os
+import webbrowser
 
 
 def build_parameter_tab(main_window):
@@ -151,13 +152,11 @@ def build_parameter_tab(main_window):
             getattr(
                 main_window,
                 "github_url",
-                "https://github.com/CyrilPeng/FlowScroll/releases",
+                "",
             )
+            or "https://github.com/CyrilPeng/FlowScroll/releases"
         )
     )
-
-    # Load and set GitHub SVG Icon
-    import webbrowser
 
     gh_path = resource_path(os.path.join("FlowScroll", "resources", "github_icon.svg"))
     if os.path.exists(gh_path):
@@ -168,9 +167,8 @@ def build_parameter_tab(main_window):
 
     main_window.btn_github.clicked.connect(
         lambda: webbrowser.open(
-            getattr(
-                main_window, "github_url", "https://github.com/CyrilPeng/FlowScroll"
-            )
+            getattr(main_window, "github_url", "")
+            or "https://github.com/CyrilPeng/FlowScroll"
         )
     )
 

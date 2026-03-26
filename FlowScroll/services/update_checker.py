@@ -4,6 +4,10 @@ from PySide6.QtCore import QThread, Signal
 from FlowScroll.services.logging_service import logger
 
 
+GITHUB_FALLBACK_URL = "https://github.com/CyrilPeng/FlowScroll/releases"
+GITEE_FALLBACK_URL = "https://gitee.com/Cyril_P/FlowScroll/releases"
+
+
 def _fetch_github():
     url = "https://api.github.com/repos/CyrilPeng/FlowScroll/releases/latest"
     req = urllib.request.Request(
@@ -12,7 +16,7 @@ def _fetch_github():
     with urllib.request.urlopen(req, timeout=5) as response:
         data = json.loads(response.read().decode("utf-8"))
         version = data.get("tag_name", "").lstrip("v")
-        html_url = data.get("html_url", "")
+        html_url = data.get("html_url", "") or GITHUB_FALLBACK_URL
         return version, html_url
 
 
@@ -24,7 +28,7 @@ def _fetch_gitee():
     with urllib.request.urlopen(req, timeout=5) as response:
         data = json.loads(response.read().decode("utf-8"))
         version = data.get("tag_name", "").lstrip("v")
-        html_url = data.get("html_url", "")
+        html_url = data.get("html_url", "") or GITEE_FALLBACK_URL
         return version, html_url
 
 
@@ -41,4 +45,5 @@ class UpdateCheckerThread(QThread):
                     self.update_available.emit(version, html_url)
                     return
             except Exception as e:
-                logger.debug(f"{name} 更新检查失败: {e}")
+                logger.warning(f"{name} 更新检查失败: {e}")
+        logger.warning("所有更新检查源均失败，未检测到可用版本")
