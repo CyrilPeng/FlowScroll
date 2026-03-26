@@ -43,8 +43,9 @@ from FlowScroll.ui.webdav_dialog import WebDAVSyncDialog
 from FlowScroll.ui.components import HotkeyEdit
 from FlowScroll.core.hotkeys import hotkey_to_display
 from FlowScroll.ui.utils import resource_path
-from FlowScroll.ui.styles import get_main_stylesheet
+from FlowScroll.ui.styles import get_main_stylesheet, get_help_dialog_style
 from FlowScroll.services.window_monitor import WindowMonitor
+from FlowScroll.services.logging_service import logger
 
 mouse_controller = mouse.Controller()
 
@@ -134,7 +135,8 @@ class MainWindow(QMainWindow):
                     else:
                         self.current_preset_name = DEFAULT_PRESET_NAME
                         cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Failed to load presets from file: {e}")
                 self.current_preset_name = DEFAULT_PRESET_NAME
                 cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
         else:
@@ -146,8 +148,8 @@ class MainWindow(QMainWindow):
         try:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to save presets to file: {e}")
 
     def _all_preset_names(self):
         return list(BUILTIN_PRESETS.keys()) + list(self.presets.keys())
@@ -369,12 +371,7 @@ class MainWindow(QMainWindow):
         msg = QMessageBox(self)
         msg.setWindowTitle("功能说明与帮助")
         msg.setIcon(QMessageBox.NoIcon)
-        msg.setStyleSheet("""
-            QMessageBox { background-color: #0F172A; }
-            QLabel { color: #F8FAFC; font-size: 13px; line-height: 1.5; }
-            QPushButton { background-color: #3B82F6; color: white; border-radius: 6px; padding: 6px 16px; font-weight: bold; }
-            QPushButton:hover { background-color: #2563EB; }
-        """)
+        msg.setStyleSheet(get_help_dialog_style())
 
         def img(name):
             path = resource_path(os.path.join("FlowScroll", "resources", name)).replace(
@@ -542,21 +539,22 @@ class MainWindow(QMainWindow):
         try:
             self.window_monitor = WindowMonitor()
             self.window_monitor.start()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to start WindowMonitor: {e}")
 
         try:
             self.scroller = ScrollEngine(self.bridge, mouse_controller)
             self.scroller.start()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to start ScrollEngine: {e}")
 
         try:
             self.input_listener = GlobalInputListener(
                 self.bridge, is_current_app_allowed, self.scroller
             )
             self.input_listener.start()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to start GlobalInputListener: {e}")
             self.ui_widgets["enable_horizontal"].setChecked(False)
             QMessageBox.critical(
                 self,

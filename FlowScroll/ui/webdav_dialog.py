@@ -1,4 +1,5 @@
 import base64
+import json
 import urllib.request
 from PySide6.QtWidgets import (
     QDialog,
@@ -12,45 +13,17 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from FlowScroll.core.config import cfg, CONFIG_FILE
+from FlowScroll.ui.styles import get_webdav_dialog_style
+from FlowScroll.constants import WEBDAV_DIALOG_WIDTH, WEBDAV_DIALOG_HEIGHT
 
 
 class WebDAVSyncDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("WebDAV 云同步配置")
-        self.setFixedSize(500, 320)
+        self.setFixedSize(WEBDAV_DIALOG_WIDTH, WEBDAV_DIALOG_HEIGHT)
 
-        self.setStyleSheet("""
-            QDialog { background-color: #0F172A; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
-            QLabel { font-size: 13px; color: #E2E8F0; font-weight: 600; }
-            QLineEdit { 
-                border: 1px solid #334155; 
-                border-radius: 8px; 
-                padding: 8px 12px; 
-                background: #1E293B; 
-                font-size: 13px;
-                color: #F8FAFC;
-            }
-            QLineEdit:focus { border: 1px solid #3B82F6; background: #0B1120; }
-            QPushButton {
-                background-color: #1E293B;
-                border: 1px solid #334155;
-                border-radius: 8px;
-                padding: 8px 16px;
-                color: #F8FAFC;
-                font-weight: 600;
-                font-size: 13px;
-                min-height: 32px;
-            }
-            QPushButton:hover { background-color: #334155; border-color: #475569; }
-            QPushButton:pressed { background-color: #0F172A; }
-            QPushButton#BtnPrimary { background-color: #3B82F6; color: #FFFFFF; border: none; }
-            QPushButton#BtnPrimary:hover { background-color: #2563EB; }
-            QPushButton#BtnPrimary:pressed { background-color: #1D4ED8; }
-            QPushButton#BtnSuccess { background-color: #059669; color: #FFFFFF; border: none; }
-            QPushButton#BtnSuccess:hover { background-color: #047857; }
-            QPushButton#BtnSuccess:pressed { background-color: #065F46; }
-        """)
+        self.setStyleSheet(get_webdav_dialog_style())
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
@@ -123,8 +96,9 @@ class WebDAVSyncDialog(QDialog):
         auth = self.get_auth_header()
 
         try:
-            with open(CONFIG_FILE, "rb") as f:
-                data = f.read()
+            # 只上传参数配置，不上传 WebDAV 凭据
+            sync_data = cfg.to_dict_for_sync()
+            data = json.dumps(sync_data, ensure_ascii=False, indent=4).encode("utf-8")
 
             req = urllib.request.Request(url, data=data, method="PUT")
             req.add_header("Authorization", auth)
@@ -151,10 +125,24 @@ class WebDAVSyncDialog(QDialog):
             req.add_header("Authorization", auth)
 
             with urllib.request.urlopen(req) as response:
-                data = response.read()
+                remote_data = json.loads(response.read().decode("utf-8"))
 
-            with open(CONFIG_FILE, "wb") as f:
-                f.write(data)
+            # 保留本地的 WebDAV 凭据
+            local_webdav_url = cfg.webdav_url
+            local_webdav_username = cfg.webdav_username
+            local_webdav_password = cfg.webdav_password
+
+            # 从云端加载参数配置
+            cfg.from_dict(remote_data)
+
+            # 恢复本地 WebDAV 凭据
+            cfg.webdav_url = local_webdav_url
+            cfg.webdav_username = local_webdav_username
+            cfg.webdav_password = local_webdav_password
+
+            # 保存到本地文件
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(cfg.to_dict(), f, ensure_ascii=False, indent=4)
 
             QMessageBox.information(
                 self, "成功", "配置已从云端下载成功！重启程序或重新加载预设生效。"

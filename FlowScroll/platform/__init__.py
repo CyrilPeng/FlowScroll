@@ -1,4 +1,5 @@
 import platform
+from FlowScroll.constants import DEFAULT_SCROLL_MULTIPLIER
 
 OS_NAME = platform.system()
 
@@ -25,7 +26,7 @@ else:
             return False
 
         def get_scroll_multiplier(self):
-            return 0.00005
+            return DEFAULT_SCROLL_MULTIPLIER
 
         def get_font_name(self):
             return "sans-serif"

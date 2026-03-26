@@ -2,7 +2,7 @@ from FlowScroll.core.config import cfg
 from FlowScroll.platform import OS_NAME
 
 
-def is_current_app_allowed():
+def is_current_app_allowed() -> bool:
     """
     统一的规则匹配逻辑，判断当前前台应用是否被允许使用平滑滚动
     """

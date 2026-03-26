@@ -1,19 +1,23 @@
 import math
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Tuple
+
+if TYPE_CHECKING:
+    from FlowScroll.core.config import GlobalConfig
 
 
 class ScrollStrategy(ABC):
     @abstractmethod
     def calculate_scroll_speed(
         self,
-        dx,
-        dy,
-        distance,
-        config,
-        platform_multiplier,
-        reverse_x=False,
-        reverse_y=False,
-    ):
+        dx: float,
+        dy: float,
+        distance: float,
+        config: "GlobalConfig",
+        platform_multiplier: float,
+        reverse_x: bool = False,
+        reverse_y: bool = False,
+    ) -> Tuple[float, float]:
         """
         计算滚动速度。
         :param dx: X轴位移
@@ -36,14 +40,14 @@ class PowerCurveStrategy(ScrollStrategy):
 
     def calculate_scroll_speed(
         self,
-        dx,
-        dy,
-        distance,
-        config,
-        platform_multiplier,
-        reverse_x=False,
-        reverse_y=False,
-    ):
+        dx: float,
+        dy: float,
+        distance: float,
+        config: "GlobalConfig",
+        platform_multiplier: float,
+        reverse_x: bool = False,
+        reverse_y: bool = False,
+    ) -> Tuple[float, float]:
         if distance <= config.dead_zone:
             return 0.0, 0.0
 
@@ -69,4 +73,4 @@ class PowerCurveStrategy(ScrollStrategy):
 
 
 # 目前先使用原版算法
-default_scroll_strategy = PowerCurveStrategy()
+default_scroll_strategy: ScrollStrategy = PowerCurveStrategy()

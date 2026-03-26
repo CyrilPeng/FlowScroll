@@ -14,37 +14,30 @@ from PySide6.QtCore import Qt
 from FlowScroll.core.config import cfg
 from FlowScroll.ui.components import HotkeyEdit
 from FlowScroll.ui.helpers import create_card, create_h_line
+from FlowScroll.ui.styles import (
+    get_dialog_stylesheet,
+    get_checkbox_style,
+    get_radiobutton_style,
+    get_textedit_style,
+    get_slider_style,
+)
+from FlowScroll.constants import (
+    REVERSE_DIALOG_WIDTH,
+    REVERSE_DIALOG_HEIGHT,
+    WORK_MODE_DIALOG_WIDTH,
+    WORK_MODE_DIALOG_HEIGHT,
+    INERTIA_DIALOG_WIDTH,
+    INERTIA_DIALOG_HEIGHT,
+)
 
 
 class ReverseModeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("反转模式")
-        self.setFixedSize(400, 240)
+        self.setFixedSize(REVERSE_DIALOG_WIDTH, REVERSE_DIALOG_HEIGHT)
 
-        self.setStyleSheet("""
-            QDialog { background-color: #0F172A; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
-            QLabel { font-size: 13px; color: #E2E8F0; }
-            QCheckBox { color: #E2E8F0; font-size: 14px; font-weight: 600; spacing: 12px; min-height: 24px; }
-            QCheckBox::indicator { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #475569; background-color: #0F172A; }
-            QCheckBox::indicator:hover { border-color: #64748B; }
-            QCheckBox::indicator:checked { background-color: #3B82F6; border-color: #3B82F6; }
-            QPushButton {
-                background-color: #1E293B;
-                border: 1px solid #334155;
-                border-radius: 8px;
-                padding: 8px 16px;
-                color: #F8FAFC;
-                font-weight: 600;
-                font-size: 13px;
-            }
-            QPushButton:hover { background-color: #334155; border-color: #475569; }
-            QPushButton#BtnPrimary { background-color: #3B82F6; color: #FFFFFF; border: none; padding: 10px 24px; font-size: 14px; border-radius: 10px; }
-            QPushButton#BtnPrimary:hover { background-color: #2563EB; }
-            QPushButton#BtnPrimary:pressed { background-color: #1D4ED8; }
-            QFrame#Card { background-color: #1E293B; border-radius: 16px; border: 1px solid #334155; }
-            QFrame#Separator { background-color: #334155; max-height: 1px; }
-        """)
+        self.setStyleSheet(get_dialog_stylesheet() + get_checkbox_style())
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
@@ -94,22 +87,11 @@ class WorkModeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("工作模式")
-        self.setFixedSize(520, 620)
+        self.setFixedSize(WORK_MODE_DIALOG_WIDTH, WORK_MODE_DIALOG_HEIGHT)
 
-        self.setStyleSheet("""
-            QDialog { background-color: #0F172A; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
-            QLabel { font-size: 13px; color: #E2E8F0; }
-            QRadioButton { color: #E2E8F0; font-size: 14px; font-weight: 600; spacing: 12px; min-height: 24px; }
-            QTextEdit { border: 1px solid #334155; border-radius: 8px; padding: 10px; background: #1E293B; font-size: 14px; color: #F8FAFC; }
-            QTextEdit:focus { border: 1px solid #3B82F6; }
-            QPushButton { background-color: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 8px 16px; color: #F8FAFC; font-weight: 600; font-size: 13px; }
-            QPushButton:hover { background-color: #334155; border-color: #475569; }
-            QPushButton#BtnPrimary { background-color: #3B82F6; color: #FFFFFF; border: none; padding: 10px 24px; font-size: 14px; border-radius: 10px; }
-            QPushButton#BtnPrimary:hover { background-color: #2563EB; }
-            QPushButton#BtnPrimary:pressed { background-color: #1D4ED8; }
-            QFrame#Card { background-color: #1E293B; border-radius: 16px; border: 1px solid #334155; }
-            QFrame#Separator { background-color: #334155; max-height: 1px; }
-        """)
+        self.setStyleSheet(
+            get_dialog_stylesheet() + get_radiobutton_style() + get_textedit_style()
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
@@ -275,31 +257,9 @@ class InertiaSettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("惯性滚动设置")
-        self.setFixedSize(460, 420)
+        self.setFixedSize(INERTIA_DIALOG_WIDTH, INERTIA_DIALOG_HEIGHT)
 
-        self.setStyleSheet("""
-            QDialog { background-color: #0F172A; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
-            QLabel { font-size: 13px; color: #E2E8F0; }
-            QPushButton {
-                background-color: #1E293B;
-                border: 1px solid #334155;
-                border-radius: 8px;
-                padding: 8px 16px;
-                color: #F8FAFC;
-                font-weight: 600;
-                font-size: 13px;
-            }
-            QPushButton:hover { background-color: #334155; border-color: #475569; }
-            QPushButton#BtnPrimary { background-color: #3B82F6; color: #FFFFFF; border: none; padding: 10px 24px; font-size: 14px; border-radius: 10px; }
-            QPushButton#BtnPrimary:hover { background-color: #2563EB; }
-            QPushButton#BtnPrimary:pressed { background-color: #1D4ED8; }
-            QFrame#Card { background-color: #1E293B; border-radius: 16px; border: 1px solid #334155; }
-            QFrame#Separator { background-color: #334155; max-height: 1px; }
-            QSlider::groove:horizontal { border-radius: 4px; height: 8px; background: #334155; }
-            QSlider::sub-page:horizontal { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #2563EB, stop:1 #3B82F6); border-radius: 4px; }
-            QSlider::handle:horizontal { background: #FFFFFF; border: 2px solid #3B82F6; width: 18px; height: 18px; margin: -5px 0; border-radius: 9px; }
-            QSlider::handle:horizontal:hover { background: #EFF6FF; border: 3px solid #2563EB; }
-        """)
+        self.setStyleSheet(get_dialog_stylesheet() + get_slider_style())
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)

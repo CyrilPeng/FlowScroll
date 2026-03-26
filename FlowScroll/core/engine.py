@@ -4,6 +4,13 @@ import threading
 from FlowScroll.core.config import cfg
 from FlowScroll.core.scroller import default_scroll_strategy
 from FlowScroll.platform import system_platform
+from FlowScroll.services.logging_service import logger
+from FlowScroll.constants import (
+    ENGINE_TICK_INTERVAL,
+    ENGINE_IDLE_POLL_INTERVAL,
+    INERTIA_STOP_THRESHOLD,
+    SCROLL_HISTORY_WINDOW,
+)
 
 
 class ScrollEngine(threading.Thread):
@@ -21,7 +28,7 @@ class ScrollEngine(threading.Thread):
 
         # 滚动速度历史（用于计算惯性初速度）
         self._scroll_history = []  # [(time_s, scroll_x, scroll_y), ...]
-        self._scroll_history_window = 0.1  # 100ms 窗口
+        self._scroll_history_window = SCROLL_HISTORY_WINDOW
 
         # 鼠标位置历史（用于计算触发阈值）
         self._mouse_pos_history = []  # [(time_s, x, y), ...]
@@ -162,9 +169,9 @@ class ScrollEngine(threading.Thread):
                         self._prune_history(self._mouse_pos_history, now)
 
                     was_active = True
-                    time.sleep(0.004)
-                except Exception:
-                    pass
+                    time.sleep(ENGINE_TICK_INTERVAL)
+                except Exception as e:
+                    logger.debug(f"ScrollEngine active mode error: {e}")
 
             elif self.inertia_active:
                 # 惯性衰减模式
@@ -180,14 +187,15 @@ class ScrollEngine(threading.Thread):
                             self.inertia_vx * self.inertia_vx
                             + self.inertia_vy * self.inertia_vy
                         )
-                        if speed_sq < 0.001:
+                        if speed_sq < INERTIA_STOP_THRESHOLD:
                             self.interrupt_inertia()
                         else:
                             self.mouse_controller.scroll(
                                 self.inertia_vx, self.inertia_vy
                             )
-                    time.sleep(0.004)
-                except Exception:
+                    time.sleep(ENGINE_TICK_INTERVAL)
+                except Exception as e:
+                    logger.debug(f"ScrollEngine inertia mode error: {e}")
                     self.interrupt_inertia()
 
             else:
@@ -197,4 +205,4 @@ class ScrollEngine(threading.Thread):
                     was_active = False
 
                 last_dir = "neutral"
-                time.sleep(0.05)
+                time.sleep(ENGINE_IDLE_POLL_INTERVAL)

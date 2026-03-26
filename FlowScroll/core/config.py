@@ -1,4 +1,10 @@
 import os
+from FlowScroll.services.crypto import encrypt_password, decrypt_password
+from FlowScroll.constants import (
+    CONFIG_VERSION,
+    DEFAULT_INERTIA_FRICTION_MS,
+    DEFAULT_INERTIA_THRESHOLD,
+)
 
 CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".FlowScroll_config.json")
 
@@ -82,7 +88,7 @@ class GlobalConfig:
         # ==========================================
         # 1. 持久化用户配置 (默认值 = 长文档/表格 预设)
         # ==========================================
-        self.config_version = 3
+        self.config_version = CONFIG_VERSION
 
         defaults = BUILTIN_PRESETS[DEFAULT_PRESET_NAME]
         self.dead_zone = defaults["dead_zone"]
@@ -109,8 +115,8 @@ class GlobalConfig:
         # 惯性滚动配置
         # ==========================================
         self.enable_inertia = False
-        self.inertia_friction_ms = 500  # 半衰期 (ms)，范围 100~3000
-        self.inertia_threshold = 80.0  # 触发阈值 (px/s)，范围 30~300
+        self.inertia_friction_ms = DEFAULT_INERTIA_FRICTION_MS
+        self.inertia_threshold = DEFAULT_INERTIA_THRESHOLD
 
         # ==========================================
         # WebDAV Sync Config
@@ -149,7 +155,32 @@ class GlobalConfig:
             "activation_mode": self.activation_mode,
             "webdav_url": self.webdav_url,
             "webdav_username": self.webdav_username,
-            "webdav_password": self.webdav_password,
+            "webdav_password": encrypt_password(self.webdav_password),
+            "enable_inertia": self.enable_inertia,
+            "inertia_friction_ms": self.inertia_friction_ms,
+            "inertia_threshold": self.inertia_threshold,
+        }
+
+    def to_dict_for_sync(self) -> dict:
+        """生成用于 WebDAV 同步的配置字典，不包含 WebDAV 凭据"""
+        return {
+            "config_version": self.config_version,
+            "sensitivity": self.sensitivity,
+            "speed_factor": self.speed_factor,
+            "dead_zone": self.dead_zone,
+            "overlay_size": self.overlay_size,
+            "enable_horizontal": self.enable_horizontal,
+            "minimize_to_tray": self.minimize_to_tray,
+            "horizontal_hotkey": self.horizontal_hotkey,
+            "activation_hotkey_click": self.activation_hotkey_click,
+            "activation_hotkey_hold": self.activation_hotkey_hold,
+            "reverse_y": self.reverse_y,
+            "reverse_x": self.reverse_x,
+            "filter_mode": self.filter_mode,
+            "filter_list": self.filter_list,
+            "disable_fullscreen": self.disable_fullscreen,
+            "disable_desktop": self.disable_desktop,
+            "activation_mode": self.activation_mode,
             "enable_inertia": self.enable_inertia,
             "inertia_friction_ms": self.inertia_friction_ms,
             "inertia_threshold": self.inertia_threshold,
@@ -177,7 +208,8 @@ class GlobalConfig:
         self.activation_mode = data.get("activation_mode", 0)
         self.webdav_url = data.get("webdav_url", "")
         self.webdav_username = data.get("webdav_username", "")
-        self.webdav_password = data.get("webdav_password", "")
+        # 解密密码，兼容旧版本明文存储
+        self.webdav_password = decrypt_password(data.get("webdav_password", ""))
         self.enable_inertia = data.get("enable_inertia", False)
         self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
         self.inertia_threshold = data.get("inertia_threshold", 80.0)

@@ -5,6 +5,7 @@ from pynput import keyboard, mouse
 from FlowScroll.core.config import cfg
 from FlowScroll.core.hotkeys import normalize_hotkey_part, normalize_hotkey_string
 from FlowScroll.services.logging_service import logger
+from FlowScroll.constants import DOUBLE_CLICK_THRESHOLD
 
 
 class KeyboardManager:
@@ -137,7 +138,7 @@ class GlobalInputListener:
             return
 
         current_time = time.time()
-        if current_time - self.last_activation_press_time < 0.15:
+        if current_time - self.last_activation_press_time < DOUBLE_CLICK_THRESHOLD:
             return
         self.last_activation_press_time = current_time
         self._toggle_active(x, y, source)

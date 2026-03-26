@@ -3,6 +3,7 @@ import winreg
 from ctypes import wintypes
 from FlowScroll.platform.base import PlatformInterface
 from FlowScroll.services.logging_service import logger
+from FlowScroll.constants import WINDOWS_SCROLL_MULTIPLIER
 
 
 class WindowsPlatform(PlatformInterface):
@@ -44,16 +45,16 @@ class WindowsPlatform(PlatformInterface):
             user32.GetWindowRect(hwnd, ctypes.byref(rect))
 
             # 获取窗口所在的显示器信息
-            HMONITOR = user32.MonitorFromWindow(hwnd, 2) # MONITOR_DEFAULTTONEAREST
-            
+            HMONITOR = user32.MonitorFromWindow(hwnd, 2)  # MONITOR_DEFAULTTONEAREST
+
             class MONITORINFO(ctypes.Structure):
                 _fields_ = [
-                    ('cbSize', ctypes.c_ulong),
-                    ('rcMonitor', wintypes.RECT),
-                    ('rcWork', wintypes.RECT),
-                    ('dwFlags', ctypes.c_ulong)
+                    ("cbSize", ctypes.c_ulong),
+                    ("rcMonitor", wintypes.RECT),
+                    ("rcWork", wintypes.RECT),
+                    ("dwFlags", ctypes.c_ulong),
                 ]
-            
+
             mi = MONITORINFO()
             mi.cbSize = ctypes.sizeof(MONITORINFO)
             user32.GetMonitorInfoW(HMONITOR, ctypes.byref(mi))
@@ -61,26 +62,26 @@ class WindowsPlatform(PlatformInterface):
             # 判断真正的全屏：
             # 1. 窗口区域必须大于或等于整个显示器区域（rcMonitor）。
             is_fullscreen = (
-                rect.left <= mi.rcMonitor.left and
-                rect.top <= mi.rcMonitor.top and
-                rect.right >= mi.rcMonitor.right and
-                rect.bottom >= mi.rcMonitor.bottom
+                rect.left <= mi.rcMonitor.left
+                and rect.top <= mi.rcMonitor.top
+                and rect.right >= mi.rcMonitor.right
+                and rect.bottom >= mi.rcMonitor.bottom
             )
-            
+
             # 2. 排除普通的“最大化”窗口：
             # 在 Windows 中，带有边框的普通窗口最大化时，系统为了隐藏边框，会让它稍微“溢出”显示器。
             # 但它的有效显示区域（不包含被切掉的边框）实际上只覆盖了“工作区（rcWork）”，而把任务栏留了出来。
             # 所以，如果当前显示器有任务栏（即工作区高度 < 显示器高度），
             # 而窗口的实际高度不足以覆盖整个显示器加上边框溢出量时，它并不是真正的全屏（比如 F11 或 游戏）。
             if is_fullscreen:
-                style = user32.GetWindowLongW(hwnd, -16) # GWL_STYLE
-                is_maximized = bool(style & 0x01000000) # WS_MAXIMIZE
-                
+                style = user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE
+                is_maximized = bool(style & 0x01000000)  # WS_MAXIMIZE
+
                 if is_maximized:
                     # 比较窗口高度与全屏高度
                     monitor_h = mi.rcMonitor.bottom - mi.rcMonitor.top
                     window_h = rect.bottom - rect.top
-                    
+
                     # 很多有边框的普通窗口最大化后，其尺寸大约是 工作区高度 + 16 (边框)
                     # 真正的 F11 全屏/独占全屏尺寸通常刚好等于 显示器高度，或者是 显示器高度 + 更少的边框溢出，并且没有 WS_MAXIMIZE 样式，或者全屏后覆盖了任务栏。
                     # 如果窗口并没有比整个屏幕高度大出明显的边框，或者它的位置受到了任务栏的挤压，这就不是全屏。
@@ -121,11 +122,12 @@ class WindowsPlatform(PlatformInterface):
             value, _ = winreg.QueryValueEx(key, app_name)
             winreg.CloseKey(key)
             return value == app_path
-        except Exception:
+        except Exception as e:
+            logger.debug(f"is_autostart_enabled check failed: {e}")
             return False
 
     def get_scroll_multiplier(self):
-        return 0.00005
+        return WINDOWS_SCROLL_MULTIPLIER
 
     def get_font_name(self):
         return "Segoe UI"

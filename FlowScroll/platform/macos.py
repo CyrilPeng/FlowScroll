@@ -3,6 +3,7 @@ import plistlib
 import subprocess
 from FlowScroll.platform.base import PlatformInterface
 from FlowScroll.services.logging_service import logger
+from FlowScroll.constants import MACOS_SCROLL_MULTIPLIER
 
 
 class MacOSPlatform(PlatformInterface):
@@ -54,7 +55,7 @@ class MacOSPlatform(PlatformInterface):
         return os.path.exists(self.plist_path)
 
     def get_scroll_multiplier(self):
-        return 0.0001
+        return MACOS_SCROLL_MULTIPLIER
 
     def get_font_name(self):
         return ".AppleSystemUIFont"
