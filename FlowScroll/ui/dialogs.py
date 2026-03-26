@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from FlowScroll.core.config import cfg
+from FlowScroll.ui.components import HotkeyEdit
 from FlowScroll.ui.helpers import create_card, create_h_line
 
 
@@ -92,7 +93,7 @@ class WorkModeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("工作模式")
-        self.setFixedSize(480, 490)
+        self.setFixedSize(520, 620)
 
         self.setStyleSheet("""
             QDialog { background-color: #0F172A; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
@@ -124,31 +125,37 @@ class WorkModeDialog(QDialog):
 
         self.activation_group = QButtonGroup(self)
 
-        self.radio_click_toggle = QRadioButton("点击中键启用/关闭")
+        self.radio_click_toggle = QRadioButton("点击启用键启用/关闭")
         self.radio_click_toggle.setCursor(Qt.PointingHandCursor)
         self.activation_group.addButton(self.radio_click_toggle, 0)
         card_layout.addWidget(self.radio_click_toggle)
 
         desc_click = QLabel(
             "<span style='color: #94A3B8; font-size: 12px;'>"
-            "点击鼠标中键后启用平滑滚动，再次点击中键则关闭。</span>"
+            "点击后启用，再次点击自动关闭功能。留空时默认使用鼠标中键。</span>"
         )
         desc_click.setWordWrap(True)
         desc_click.setContentsMargins(24, 0, 0, 0)
         card_layout.addWidget(desc_click)
+        card_layout.addLayout(
+            self._create_hotkey_row("click", cfg.activation_hotkey_click)
+        )
 
-        self.radio_hold = QRadioButton("长按中键时启用")
+        self.radio_hold = QRadioButton("长按启用键时启用")
         self.radio_hold.setCursor(Qt.PointingHandCursor)
         self.activation_group.addButton(self.radio_hold, 1)
         card_layout.addWidget(self.radio_hold)
 
         desc_hold = QLabel(
             "<span style='color: #94A3B8; font-size: 12px;'>"
-            "长按鼠标中键时可全向移动，松开中键时自动关闭功能。</span>"
+            "长按时启用，松开时自动关闭功能。留空时默认使用鼠标中键。</span>"
         )
         desc_hold.setWordWrap(True)
         desc_hold.setContentsMargins(24, 0, 0, 0)
         card_layout.addWidget(desc_hold)
+        card_layout.addLayout(
+            self._create_hotkey_row("hold", cfg.activation_hotkey_hold)
+        )
 
         self.radio_click_toggle.setChecked(cfg.activation_mode == 0)
         self.radio_hold.setChecked(cfg.activation_mode == 1)
@@ -222,8 +229,38 @@ class WorkModeDialog(QDialog):
         btn_layout.addWidget(btn_save)
         layout.addLayout(btn_layout)
 
+    def _create_hotkey_row(self, key_name, hotkey_value):
+        wrapper = QVBoxLayout()
+        wrapper.setContentsMargins(24, 0, 0, 0)
+        wrapper.setSpacing(8)
+
+        hint = QLabel(
+            "<span style='color: #CBD5E1; font-size: 12px;'>设置启用键 ↓</span>"
+         )
+        hint.setWordWrap(True)
+        wrapper.addWidget(hint)
+
+        row = QHBoxLayout()
+        row.setSpacing(8)
+
+        edit = HotkeyEdit()
+        edit.set_hotkey(hotkey_value)
+        edit.setMaximumSequenceLength(1)
+        row.addWidget(edit, 1)
+
+        btn_clear = QPushButton("默认")
+        btn_clear.setCursor(Qt.PointingHandCursor)
+        btn_clear.clicked.connect(edit.clear)
+        row.addWidget(btn_clear)
+
+        wrapper.addLayout(row)
+        setattr(self, f"activation_hotkey_edit_{key_name}", edit)
+        return wrapper
+
     def save_and_close(self):
         cfg.activation_mode = self.activation_group.checkedId()
+        cfg.activation_hotkey_click = self.activation_hotkey_edit_click.hotkey_text()
+        cfg.activation_hotkey_hold = self.activation_hotkey_edit_hold.hotkey_text()
         cfg.filter_mode = self.button_group.checkedId()
         cfg.filter_list = [
             line.strip()

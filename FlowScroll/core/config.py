@@ -11,6 +11,8 @@ BUILTIN_PRESETS = {
         "enable_horizontal": False,
         "minimize_to_tray": True,
         "horizontal_hotkey": "",
+        "activation_hotkey_click": "",
+        "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
         "filter_list": [],
@@ -25,6 +27,8 @@ BUILTIN_PRESETS = {
         "enable_horizontal": False,
         "minimize_to_tray": True,
         "horizontal_hotkey": "",
+        "activation_hotkey_click": "",
+        "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
         "filter_list": [],
@@ -39,6 +43,8 @@ BUILTIN_PRESETS = {
         "enable_horizontal": True,
         "minimize_to_tray": True,
         "horizontal_hotkey": "",
+        "activation_hotkey_click": "",
+        "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
         "filter_list": [],
@@ -53,6 +59,8 @@ BUILTIN_PRESETS = {
         "enable_horizontal": False,
         "minimize_to_tray": True,
         "horizontal_hotkey": "",
+        "activation_hotkey_click": "",
+        "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
         "filter_list": [],
@@ -74,7 +82,7 @@ class GlobalConfig:
         # ==========================================
         # 1. 持久化用户配置 (默认值 = 长文档/表格 预设)
         # ==========================================
-        self.config_version = 2
+        self.config_version = 3
 
         defaults = BUILTIN_PRESETS[DEFAULT_PRESET_NAME]
         self.dead_zone = defaults["dead_zone"]
@@ -85,6 +93,8 @@ class GlobalConfig:
         self.minimize_to_tray = defaults["minimize_to_tray"]
 
         self.horizontal_hotkey = ""
+        self.activation_hotkey_click = ""
+        self.activation_hotkey_hold = ""
 
         self.reverse_y = False
         self.reverse_x = False
@@ -121,6 +131,8 @@ class GlobalConfig:
             "enable_horizontal": self.enable_horizontal,
             "minimize_to_tray": self.minimize_to_tray,
             "horizontal_hotkey": self.horizontal_hotkey,
+            "activation_hotkey_click": self.activation_hotkey_click,
+            "activation_hotkey_hold": self.activation_hotkey_hold,
             "reverse_y": self.reverse_y,
             "reverse_x": self.reverse_x,
             "filter_mode": self.filter_mode,
@@ -144,6 +156,8 @@ class GlobalConfig:
         self.enable_horizontal = data.get("enable_horizontal", True)
         self.minimize_to_tray = data.get("minimize_to_tray", True)
         self.horizontal_hotkey = data.get("horizontal_hotkey", "")
+        self.activation_hotkey_click = data.get("activation_hotkey_click", "")
+        self.activation_hotkey_hold = data.get("activation_hotkey_hold", "")
         self.reverse_y = data.get("reverse_y", False)
         self.reverse_x = data.get("reverse_x", False)
         self.filter_mode = data.get("filter_mode", 0)

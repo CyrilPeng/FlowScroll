@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPainter, QPixmap
 
 from FlowScroll.core.config import cfg
 from FlowScroll.ui.utils import resource_path
@@ -279,8 +279,15 @@ def build_advanced_tab(main_window):
     btn_webdav.setCursor(Qt.PointingHandCursor)
     cloud_path = resource_path(os.path.join("FlowScroll", "resources", "ic_cloud.svg"))
     if os.path.exists(cloud_path):
-        btn_webdav.setIcon(QIcon(cloud_path))
-        btn_webdav.setIconSize(QSize(18, 18))
+        base_icon = QIcon(cloud_path)
+        source_pixmap = base_icon.pixmap(QSize(18, 18))
+        shifted_pixmap = QPixmap(18, 20)
+        shifted_pixmap.fill(Qt.transparent)
+        painter = QPainter(shifted_pixmap)
+        painter.drawPixmap(0, 3, source_pixmap)
+        painter.end()
+        btn_webdav.setIcon(QIcon(shifted_pixmap))
+        btn_webdav.setIconSize(QSize(18, 20))
     btn_webdav.clicked.connect(main_window.open_webdav_settings)
     adv_layout.addWidget(btn_webdav)
 
