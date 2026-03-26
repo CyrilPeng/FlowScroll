@@ -59,9 +59,10 @@ class KeyboardManager:
 class GlobalInputListener:
     """统筹管理鼠标和键盘的输入拦截与分发。"""
 
-    def __init__(self, bridge, is_app_allowed_callback):
+    def __init__(self, bridge, is_app_allowed_callback, scroll_engine=None):
         self.bridge = bridge
         self.is_app_allowed_callback = is_app_allowed_callback
+        self.scroll_engine = scroll_engine
         self.mouse_listener = None
         self.key_manager = None
         self.last_activation_press_time = 0.0
@@ -123,6 +124,11 @@ class GlobalInputListener:
             self._set_active(True, x, y, source)
 
     def _handle_activation_press(self, x, y, source):
+        # 惯性运行中，中键只中断惯性，不激活
+        if self.scroll_engine and self.scroll_engine.inertia_active:
+            self.scroll_engine.interrupt_inertia()
+            return
+
         if not self.is_app_allowed_callback():
             return
 
@@ -141,6 +147,12 @@ class GlobalInputListener:
             self._set_active(False)
 
     def _on_key_press(self, _key_name, current_keys):
+        # 惯性运行中，非修饰键按下则中断
+        if self.scroll_engine and self.scroll_engine.inertia_active:
+            modifier_only = {"ctrl", "alt", "shift", "meta"}
+            if _key_name not in modifier_only:
+                self.scroll_engine.interrupt_inertia()
+
         if self._is_keyboard_hotkey_active(cfg.horizontal_hotkey, current_keys):
             if not self.horizontal_hotkey_active:
                 self.horizontal_hotkey_active = True
@@ -186,21 +198,38 @@ class GlobalInputListener:
 
     def win32_event_filter(self, msg, _data):
         # WM_MBUTTONDOWN = 0x0207, WM_MBUTTONUP = 0x0208, WM_MBUTTONDBLCLK = 0x0209
-        if (
-            msg in (0x0207, 0x0208, 0x0209)
-            and self.is_app_allowed_callback()
-            and self._uses_default_middle_activation()
-        ):
-            x, y = mouse.Controller().position
-            pressed = msg in (0x0207, 0x0209)
-            self.on_click(x, y, mouse.Button.middle, pressed)
+        if msg in (0x0207, 0x0208, 0x0209):
+            # 惯性运行中，中键只中断惯性
+            if self.scroll_engine and self.scroll_engine.inertia_active:
+                if msg == 0x0207:  # WM_MBUTTONDOWN
+                    self.scroll_engine.interrupt_inertia()
+                if self.mouse_listener and hasattr(
+                    self.mouse_listener, "suppress_event"
+                ):
+                    self.mouse_listener.suppress_event()
+                return False
 
-            if self.mouse_listener and hasattr(self.mouse_listener, "suppress_event"):
-                self.mouse_listener.suppress_event()
-            return False
+            if (
+                self.is_app_allowed_callback()
+                and self._uses_default_middle_activation()
+            ):
+                x, y = mouse.Controller().position
+                pressed = msg in (0x0207, 0x0209)
+                self.on_click(x, y, mouse.Button.middle, pressed)
+
+                if self.mouse_listener and hasattr(
+                    self.mouse_listener, "suppress_event"
+                ):
+                    self.mouse_listener.suppress_event()
+                return False
         return True
 
     def on_click(self, x, y, button, pressed):
+        # 惯性运行中，任何鼠标点击都中断惯性
+        if pressed and self.scroll_engine and self.scroll_engine.inertia_active:
+            self.scroll_engine.interrupt_inertia()
+            return
+
         if pressed and button == self._get_horizontal_mouse_button():
             self.bridge.toggle_horizontal.emit()
             return

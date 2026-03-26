@@ -106,6 +106,13 @@ class GlobalConfig:
         self.disable_desktop = True
 
         # ==========================================
+        # 惯性滚动配置
+        # ==========================================
+        self.enable_inertia = False
+        self.inertia_friction_ms = 500  # 半衰期 (ms)，范围 100~3000
+        self.inertia_threshold = 80.0  # 触发阈值 (px/s)，范围 30~300
+
+        # ==========================================
         # WebDAV Sync Config
         # ==========================================
         self.webdav_url = ""
@@ -143,6 +150,9 @@ class GlobalConfig:
             "webdav_url": self.webdav_url,
             "webdav_username": self.webdav_username,
             "webdav_password": self.webdav_password,
+            "enable_inertia": self.enable_inertia,
+            "inertia_friction_ms": self.inertia_friction_ms,
+            "inertia_threshold": self.inertia_threshold,
         }
 
     def from_dict(self, data):
@@ -168,6 +178,9 @@ class GlobalConfig:
         self.webdav_url = data.get("webdav_url", "")
         self.webdav_username = data.get("webdav_username", "")
         self.webdav_password = data.get("webdav_password", "")
+        self.enable_inertia = data.get("enable_inertia", False)
+        self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
+        self.inertia_threshold = data.get("inertia_threshold", 80.0)
 
 
 cfg = GlobalConfig()
