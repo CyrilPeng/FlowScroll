@@ -20,6 +20,8 @@ from FlowScroll.ui.styles import (
     get_radiobutton_style,
     get_textedit_style,
     get_slider_style,
+    get_value_label_style,
+    get_hint_label_style,
 )
 from FlowScroll.constants import (
     REVERSE_DIALOG_WIDTH,
@@ -284,9 +286,7 @@ class InertiaSettingsDialog(QDialog):
             "<span style='font-weight: 600; color: #E2E8F0;'>阻尼 / 摩擦力</span>"
         )
         self.friction_value_label = QLabel()
-        self.friction_value_label.setStyleSheet(
-            "color: #3B82F6; font-weight: 700; font-size: 13px;"
-        )
+        self.friction_value_label.setStyleSheet(get_value_label_style())
         friction_header.addWidget(friction_title)
         friction_header.addStretch()
         friction_header.addWidget(self.friction_value_label)
@@ -300,10 +300,11 @@ class InertiaSettingsDialog(QDialog):
         card_layout1.addWidget(friction_desc)
 
         friction_slider_row = QHBoxLayout()
+        hint_style = get_hint_label_style()
         lbl_compact = QLabel("紧凑")
-        lbl_compact.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        lbl_compact.setStyleSheet(hint_style)
         lbl_loose = QLabel("松弛")
-        lbl_loose.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        lbl_loose.setStyleSheet(hint_style)
 
         self.friction_slider = QSlider(Qt.Horizontal)
         self.friction_slider.setRange(100, 3000)
@@ -328,9 +329,7 @@ class InertiaSettingsDialog(QDialog):
             "<span style='font-weight: 600; color: #E2E8F0;'>触发阈值</span>"
         )
         self.threshold_value_label = QLabel()
-        self.threshold_value_label.setStyleSheet(
-            "color: #3B82F6; font-weight: 700; font-size: 13px;"
-        )
+        self.threshold_value_label.setStyleSheet(get_value_label_style())
         threshold_header.addWidget(threshold_title)
         threshold_header.addStretch()
         threshold_header.addWidget(self.threshold_value_label)
@@ -346,9 +345,9 @@ class InertiaSettingsDialog(QDialog):
 
         threshold_slider_row = QHBoxLayout()
         lbl_slow = QLabel("低")
-        lbl_slow.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        lbl_slow.setStyleSheet(hint_style)
         lbl_fast = QLabel("高")
-        lbl_fast.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        lbl_fast.setStyleSheet(hint_style)
 
         self.threshold_slider = QSlider(Qt.Horizontal)
         self.threshold_slider.setRange(30, 300)

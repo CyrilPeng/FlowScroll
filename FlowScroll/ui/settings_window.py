@@ -1,9 +1,7 @@
 import os
-import json
 from pynput import mouse
 
 from PySide6.QtWidgets import (
-    QApplication,
     QMainWindow,
     QWidget,
     QVBoxLayout,
@@ -11,28 +9,20 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QDialog,
-    QSystemTrayIcon,
-    QMenu,
     QMessageBox,
     QInputDialog,
     QScrollArea,
     QSizePolicy,
     QTabWidget,
 )
-from PySide6.QtCore import Qt, Signal, QObject, QSize
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import (
     QIcon,
     QCursor,
-    QAction,
 )
 
 from FlowScroll.platform import system_platform
-from FlowScroll.core.config import (
-    cfg,
-    CONFIG_FILE,
-    BUILTIN_PRESETS,
-    DEFAULT_PRESET_NAME,
-)
+from FlowScroll.core.config import cfg, BUILTIN_PRESETS, DEFAULT_PRESET_NAME
 from FlowScroll.core.engine import ScrollEngine
 from FlowScroll.core.rules import is_current_app_allowed
 from FlowScroll.input.listeners import GlobalInputListener
@@ -43,24 +33,20 @@ from FlowScroll.ui.webdav_dialog import WebDAVSyncDialog
 from FlowScroll.ui.components import HotkeyEdit
 from FlowScroll.core.hotkeys import hotkey_to_display
 from FlowScroll.ui.utils import resource_path
-from FlowScroll.ui.styles import get_main_stylesheet, get_help_dialog_style
+from FlowScroll.ui.styles import (
+    get_main_stylesheet,
+    get_help_dialog_style,
+    get_help_button_style,
+)
+from FlowScroll.ui.bridge import LogicBridge
+from FlowScroll.ui.preset_manager import PresetManager
+from FlowScroll.ui.tray_manager import TrayManager
 from FlowScroll.services.window_monitor import WindowMonitor
 from FlowScroll.services.logging_service import logger
 
 mouse_controller = mouse.Controller()
 
 
-# --- 逻辑信号桥接 ---
-class LogicBridge(QObject):
-    show_overlay = Signal()
-    hide_overlay = Signal()
-    update_direction = Signal(str)
-    update_size = Signal(int)
-    preview_size = Signal()
-    toggle_horizontal = Signal()
-
-
-# --- 主界面 ---
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -69,7 +55,6 @@ class MainWindow(QMainWindow):
         if os.path.exists(resource_path(icon_name)):
             self.setWindowIcon(QIcon(resource_path(icon_name)))
 
-        # 动态获取版本号
         from FlowScroll import __version__
 
         self.current_version = __version__
@@ -81,19 +66,19 @@ class MainWindow(QMainWindow):
         self.bridge = LogicBridge()
         self.overlay = ResizableOverlay()
         self.autostart = AutoStartManager()
+        self.preset_manager = PresetManager()
 
         self.ui_widgets = {}
-        self.presets = {}
-        self.current_preset_name = DEFAULT_PRESET_NAME
         self.github_url = "https://github.com/CyrilPeng/FlowScroll"
 
-        self.load_presets_from_file()
+        self.preset_manager.load_from_file()
 
         # 确保窗口图标已经设置好再初始化系统托盘
         if self.windowIcon().isNull() and os.path.exists(resource_path(icon_name)):
             self.setWindowIcon(QIcon(resource_path(icon_name)))
 
-        self.init_system_tray(icon_name)
+        self.tray_manager = TrayManager(self, icon_name)
+        self.tray_manager.show_window.connect(self.show_normal_window)
 
         self.bridge.show_overlay.connect(self.on_show_overlay)
         self.bridge.hide_overlay.connect(self.on_hide_overlay)
@@ -105,6 +90,18 @@ class MainWindow(QMainWindow):
         self.init_ui()
         self.start_threads()
         self.check_for_updates()
+
+    @property
+    def presets(self):
+        return self.preset_manager.presets
+
+    @property
+    def current_preset_name(self):
+        return self.preset_manager.current_preset_name
+
+    @current_preset_name.setter
+    def current_preset_name(self, value):
+        self.preset_manager.current_preset_name = value
 
     def check_for_updates(self):
         from FlowScroll.services.update_checker import UpdateCheckerThread
@@ -119,40 +116,11 @@ class MainWindow(QMainWindow):
             if hasattr(self, "btn_new_badge"):
                 self.btn_new_badge.setVisible(True)
 
-    def load_presets_from_file(self):
-        if os.path.exists(CONFIG_FILE):
-            try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    self.presets = data.get("presets", {})
-                    last_used = data.get("last_used", DEFAULT_PRESET_NAME)
-                    if last_used in BUILTIN_PRESETS:
-                        self.current_preset_name = last_used
-                        cfg.from_dict(BUILTIN_PRESETS[last_used])
-                    elif last_used in self.presets:
-                        self.current_preset_name = last_used
-                        cfg.from_dict(self.presets[last_used])
-                    else:
-                        self.current_preset_name = DEFAULT_PRESET_NAME
-                        cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
-            except Exception as e:
-                logger.warning(f"Failed to load presets from file: {e}")
-                self.current_preset_name = DEFAULT_PRESET_NAME
-                cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
-        else:
-            self.current_preset_name = DEFAULT_PRESET_NAME
-            cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
-
     def save_presets_to_file(self):
-        data = {"presets": self.presets, "last_used": self.current_preset_name}
-        try:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-        except Exception as e:
-            logger.error(f"Failed to save presets to file: {e}")
+        self.preset_manager.save_to_file()
 
     def _all_preset_names(self):
-        return list(BUILTIN_PRESETS.keys()) + list(self.presets.keys())
+        return self.preset_manager.get_all_names()
 
     def _refresh_combo(self, select_name):
         self.combo_presets.blockSignals(True)
@@ -161,51 +129,6 @@ class MainWindow(QMainWindow):
         self.combo_presets.setCurrentText(select_name)
         self.combo_presets.blockSignals(False)
 
-    def init_system_tray(self, icon_name):
-        self.tray_icon = QSystemTrayIcon(self)
-
-        # 先尝试直接加载窗口图标，因为窗口图标已经设置好了
-        if not self.windowIcon().isNull():
-            self.tray_icon.setIcon(self.windowIcon())
-        else:
-            # 如果窗口图标没有，尝试加载 ICO 文件
-            icon_path = resource_path(icon_name)
-            if os.path.exists(icon_path):
-                tray_icon = QIcon(icon_path)
-                if not tray_icon.isNull():
-                    self.tray_icon.setIcon(tray_icon)
-                else:
-                    # 最后使用默认图标
-                    from PySide6.QtWidgets import QStyle
-
-                    self.tray_icon.setIcon(
-                        self.style().standardIcon(QStyle.SP_MessageBoxInformation)
-                    )
-            else:
-                # 使用默认图标
-                from PySide6.QtWidgets import QStyle
-
-                self.tray_icon.setIcon(
-                    self.style().standardIcon(QStyle.SP_MessageBoxInformation)
-                )
-
-        tray_menu = QMenu()
-        action_show = QAction("显示设置", self)
-        action_show.triggered.connect(self.show_normal_window)
-        action_quit = QAction("退出程序", self)
-        action_quit.triggered.connect(QApplication.instance().quit)
-
-        tray_menu.addAction(action_show)
-        tray_menu.addSeparator()
-        tray_menu.addAction(action_quit)
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.activated.connect(self.on_tray_click)
-        self.tray_icon.show()
-
-    def on_tray_click(self, reason):
-        if reason == QSystemTrayIcon.DoubleClick or reason == QSystemTrayIcon.Trigger:
-            self.show_normal_window()
-
     def show_normal_window(self):
         self.show()
         self.setWindowState(Qt.WindowNoState)
@@ -213,7 +136,7 @@ class MainWindow(QMainWindow):
         self.activateWindow()
 
     def closeEvent(self, event):
-        if cfg.minimize_to_tray and self.tray_icon.isVisible():
+        if cfg.minimize_to_tray and self.tray_manager.is_visible():
             self.hide()
             event.ignore()
         else:
@@ -269,20 +192,7 @@ class MainWindow(QMainWindow):
         btn_help = QPushButton("?")
         btn_help.setObjectName("BtnIcon")
         btn_help.setCursor(Qt.PointingHandCursor)
-        btn_help.setStyleSheet("""
-            QPushButton {
-                font-size: 16px; 
-                font-weight: 800; 
-                color: #CBD5E1; 
-                background-color: #1E293B;
-                border: 1px solid #475569;
-                border-radius: 12px;
-                min-width: 24px;
-                min-height: 24px;
-                padding: 4px;
-            }
-            QPushButton:hover { background-color: #334155; border-color: #64748B; color: #F8FAFC; }
-        """)
+        btn_help.setStyleSheet(get_help_button_style())
         btn_help.clicked.connect(self.show_help_dialog)
         header_layout.addWidget(btn_help)
 
@@ -405,14 +315,10 @@ class MainWindow(QMainWindow):
         new_state = not cfg.enable_horizontal
         setattr(cfg, "enable_horizontal", new_state)
         self.ui_widgets["enable_horizontal"].setChecked(new_state)
-        if self.tray_icon.isVisible():
-            state_str = "已开启" if new_state else "已关闭"
-            self.tray_icon.showMessage(
-                "横向滚动切换",
-                f"横向滚动 {state_str}",
-                QSystemTrayIcon.Information,
-                1500,
-            )
+        self.tray_manager.show_message(
+            "横向滚动切换",
+            f"横向滚动 {'已开启' if new_state else '已关闭'}",
+        )
 
     def open_webdav_settings(self):
         dialog = WebDAVSyncDialog(self)
@@ -477,9 +383,7 @@ class MainWindow(QMainWindow):
                 f"预设“{text}”已存在，是否用当前配置覆盖它？",
             ):
                 return
-            self.presets[text] = cfg.to_dict()
-            self.current_preset_name = text
-            self.save_presets_to_file()
+            self.preset_manager.save_preset(text)
             self._refresh_combo(text)
 
     def delete_preset(self):
@@ -494,20 +398,12 @@ class MainWindow(QMainWindow):
             f"确定要删除预设“{name}”吗？此操作不可撤销。",
         ):
             return
-        del self.presets[name]
-        self.current_preset_name = DEFAULT_PRESET_NAME
-        self.save_presets_to_file()
+        self.preset_manager.delete_preset(name)
         self._refresh_combo(DEFAULT_PRESET_NAME)
         self.load_selected_preset(DEFAULT_PRESET_NAME)
 
     def load_selected_preset(self, name):
-        if name in BUILTIN_PRESETS:
-            cfg.from_dict(BUILTIN_PRESETS[name])
-            self.current_preset_name = name
-        elif name in self.presets:
-            cfg.from_dict(self.presets[name])
-            self.current_preset_name = name
-        else:
+        if not self.preset_manager.load_preset(name):
             return
         self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
         self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)

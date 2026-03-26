@@ -2,7 +2,6 @@ import hashlib
 import base64
 import os
 import platform
-from typing import Optional
 
 
 def _get_machine_key() -> bytes:

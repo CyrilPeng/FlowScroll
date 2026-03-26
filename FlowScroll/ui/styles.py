@@ -197,3 +197,50 @@ def get_help_dialog_style() -> str:
         QPushButton {{ background-color: {COLOR_ACCENT}; color: white; border-radius: 6px; padding: 6px 16px; font-weight: bold; }}
         QPushButton:hover {{ background-color: {COLOR_ACCENT_HOVER}; }}
     """
+
+
+def get_value_label_style() -> str:
+    """获取数值标签样式（用于滑块旁的数值显示）"""
+    return f"color: {COLOR_ACCENT}; font-weight: 700; font-size: 13px;"
+
+
+def get_hint_label_style() -> str:
+    """获取提示标签样式（用于滑块两端的标签）"""
+    return f"color: {COLOR_TEXT_MUTED}; font-size: 12px;"
+
+
+def get_section_label_style() -> str:
+    """获取节标题标签样式"""
+    return f"font-weight: 600; color: {COLOR_TEXT_PRIMARY}; font-size: 14px;"
+
+
+def get_hotkey_label_style() -> str:
+    """获取快捷键标签样式"""
+    return f"color: {COLOR_TEXT_MUTED}; font-size: 13px; font-weight: 600;"
+
+
+def get_new_badge_style() -> str:
+    """获取 NEW 徽章样式"""
+    return f"""
+        QPushButton {{ background-color: #EF4444; color: white; font-size: 10px; 
+            font-weight: 800; padding: 2px 6px; border-radius: 8px; border: none; }}
+        QPushButton:hover {{ background-color: #DC2626; }}
+    """
+
+
+def get_help_button_style() -> str:
+    """获取帮助按钮样式"""
+    return f"""
+        QPushButton {{
+            font-size: 16px; 
+            font-weight: 800; 
+            color: #CBD5E1; 
+            background-color: {COLOR_BG_CARD};
+            border: 1px solid {COLOR_BORDER_HOVER};
+            border-radius: 12px;
+            min-width: 24px;
+            min-height: 24px;
+            padding: 4px;
+        }}
+        QPushButton:hover {{ background-color: {COLOR_BORDER}; border-color: #64748B; color: {COLOR_TEXT_PRIMARY}; }}
+    """

@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 from FlowScroll.ui.utils import resource_path
 from FlowScroll.ui.components import NoWheelSlider, NoWheelSpinBox
+from FlowScroll.ui.styles import get_section_label_style
 
 
 def create_card():
@@ -48,7 +49,7 @@ def add_slider_row(
         top_layout.addWidget(icon_lbl)
 
     lbl = QLabel(label_text)
-    lbl.setStyleSheet("font-weight: 600; color: #F1F5F9; font-size: 14px;")
+    lbl.setStyleSheet(get_section_label_style())
 
     spin = NoWheelSpinBox()
     spin.setRange(min_v, max_v)

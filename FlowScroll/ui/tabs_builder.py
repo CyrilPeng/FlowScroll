@@ -20,6 +20,7 @@ from FlowScroll.ui.helpers import (
     add_toggle_row,
 )
 from FlowScroll.ui.components import UpwardComboBox
+from FlowScroll.ui.styles import get_new_badge_style, get_hotkey_label_style
 import os
 import webbrowser
 
@@ -140,11 +141,7 @@ def build_parameter_tab(main_window):
     main_window.btn_new_badge = QPushButton("NEW")
     main_window.btn_new_badge.setCursor(Qt.PointingHandCursor)
     main_window.btn_new_badge.setFocusPolicy(Qt.NoFocus)
-    main_window.btn_new_badge.setStyleSheet(
-        "QPushButton { background-color: #EF4444; color: white; font-size: 10px; "
-        "font-weight: 800; padding: 2px 6px; border-radius: 8px; border: none; }"
-        "QPushButton:hover { background-color: #DC2626; }"
-    )
+    main_window.btn_new_badge.setStyleSheet(get_new_badge_style())
     main_window.btn_new_badge.setFixedHeight(20)
     main_window.btn_new_badge.setVisible(False)
     main_window.btn_new_badge.clicked.connect(
@@ -204,9 +201,7 @@ def build_advanced_tab(main_window):
     row_horizontal_layout.addStretch()
 
     main_window.lbl_hotkey = QLabel()
-    main_window.lbl_hotkey.setStyleSheet(
-        "color: #94A3B8; font-size: 13px; font-weight: 600;"
-    )
+    main_window.lbl_hotkey.setStyleSheet(get_hotkey_label_style())
     main_window.update_hotkey_label()
     row_horizontal_layout.addWidget(main_window.lbl_hotkey)
 
