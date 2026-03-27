@@ -1,17 +1,39 @@
 [project]
 name = "FlowScroll"
 version = "1.4.0"
-description = "在 Windows 和 macOS 上体验如 iOS 般丝滑的全局中键惯性滚动"
+description = "全局无级滚动工具——把浏览器里的中键自动滚动，带到整个系统"
 authors = [
     { name = "某不科学的高数" }
 ]
 urls = { Repository = "https://github.com/CyrilPeng/FlowScroll" }
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Desktop Environment",
+]
 dependencies = [
     "PySide6>=6.0.0",
     "pynput>=1.7.6",
     "zstandard>=0.22.0",
+    "keyring>=24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
 ]
 
 [tool.setuptools]
@@ -20,3 +42,6 @@ packages = ["FlowScroll"]
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

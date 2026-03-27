@@ -36,10 +36,16 @@ jobs:
           enable-cache: true
 
       - name: 设置 Python 环境
-        run: uv python install 3.14
+        run: uv python install 3.12
 
       - name: 安装项目依赖
         run: uv sync
+
+      - name: 安装测试依赖
+        run: uv pip install pytest
+
+      - name: 运行测试
+        run: uv run python -m pytest tests/ -v
 
       - name: 安装 Nuitka
         run: uv pip install Nuitka

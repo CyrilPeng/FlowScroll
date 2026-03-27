@@ -1,4 +1,4 @@
-from FlowScroll.core.config import cfg
+from FlowScroll.core.config import cfg, runtime
 from FlowScroll.platform import OS_NAME
 
 
@@ -6,18 +6,18 @@ def is_current_app_allowed() -> bool:
     """
     统一的规则匹配逻辑，判断当前前台应用是否被允许使用平滑滚动
     """
-    if cfg.disable_fullscreen and cfg.is_fullscreen:
+    if cfg.disable_fullscreen and runtime.is_fullscreen:
         return False
 
     # 拦截 Windows 桌面
     if cfg.disable_desktop and OS_NAME == "Windows":
-        if cfg.current_window_class in ("Progman", "WorkerW"):
+        if runtime.current_window_class in ("Progman", "WorkerW"):
             return False
 
     if cfg.filter_mode == 0:
         return True
 
-    app_name = cfg.current_window_name.lower()
+    app_name = runtime.current_window_name.lower()
 
     # 黑名单模式
     if cfg.filter_mode == 1:

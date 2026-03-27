@@ -8,7 +8,7 @@
 
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20MacOS-lightgrey.svg)]()
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 [![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)]()
 
 </div>
@@ -56,11 +56,14 @@ FlowScroll 就是把这种熟悉、直觉的交互方式扩展到整个桌面系
 
 | 平台 | 文件 | 安装方式 |
 | :--- | :--- | :--- |
-| **Windows** | `FlowScroll_Win.exe` | 双击即可运行 |
-| **macOS** | `FlowScroll_Mac.dmg` | 拖入 Applications，并在"隐私与安全性"中授予辅助功能权限 |
-| **Linux（Preview）** | `FlowScroll_Linux_x86.AppImage` | 赋予执行权限后运行 |
+| **Windows** | `FlowScroll_Win_v*.exe` | 双击即可运行 |
+| **macOS** | `FlowScroll_Mac_v*.dmg` | 拖入 Applications，并在"隐私与安全性"中授予辅助功能权限 |
+| **Linux（Preview）** | `FlowScroll_Linux_x86_v*.AppImage` | 赋予执行权限后运行 |
 
-> Linux 仍处于预览阶段，通常在 **X11 / Xorg** 下正常工作；Wayland 下通常无法使用。
+> **平台支持状态**
+> - **Windows**：完整支持，推荐平台
+> - **macOS**：主要支持，需授予辅助功能权限；全屏检测精度有限
+> - **Linux**：实验性预览，仅在 X11/Xorg 下可用；Wayland 由于安全限制无法进行全局输入监听
 
 ---
 
@@ -211,6 +214,8 @@ macOS 对全局输入监听有严格限制。FlowScroll 依赖 [pynput](https://
 - **不读取剪贴板、不截屏、不上传任何使用数据**
 
 唯一的默认网络请求是启动时的版本检查（`GET https://api.github.com/repos/CyrilPeng/FlowScroll/releases/latest`），不会上传本地数据。
+
+WebDAV 密码通过系统安全存储（macOS Keychain / Windows Credential Manager / Linux Secret Service）管理，配置文件中不保存可逆密码。
 
 ---
 

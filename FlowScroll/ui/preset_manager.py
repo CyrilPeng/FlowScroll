@@ -27,6 +27,7 @@ class PresetManager:
                     data = json.load(f)
                     self.presets = data.get("presets", {})
                     last_used = data.get("last_used", DEFAULT_PRESET_NAME)
+
                     if last_used in BUILTIN_PRESETS:
                         self.current_preset_name = last_used
                         cfg.from_dict(BUILTIN_PRESETS[last_used])

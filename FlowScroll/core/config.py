@@ -1,5 +1,7 @@
 import os
-from FlowScroll.services.crypto import encrypt_password, decrypt_password
+from dataclasses import dataclass
+from typing import Tuple
+
 from FlowScroll.constants import (
     CONFIG_VERSION,
     DEFAULT_INERTIA_FRICTION_MS,
@@ -78,15 +80,26 @@ BUILTIN_PRESETS = {
 DEFAULT_PRESET_NAME = "长文档/表格"
 
 
+@dataclass
+class RuntimeState:
+    """运行时状态，不持久化，进程生命周期内有效。"""
+
+    active: bool = False
+    origin_pos: Tuple[int, int] = (0, 0)
+    current_window_name: str = ""
+    current_window_class: str = ""
+    is_fullscreen: bool = False
+
+
 class GlobalConfig:
     """
-    全局配置与状态管理
-    按照重构计划拆分为：持久化用户配置、运行时状态。
+    持久化用户配置。
+    运行时状态已拆分到 RuntimeState。
     """
 
     def __init__(self):
         # ==========================================
-        # 1. 持久化用户配置 (默认值 = 长文档/表格 预设)
+        # 持久化用户配置 (默认值 = 长文档/表格 预设)
         # ==========================================
         self.config_version = CONFIG_VERSION
 
@@ -119,20 +132,10 @@ class GlobalConfig:
         self.inertia_threshold = DEFAULT_INERTIA_THRESHOLD
 
         # ==========================================
-        # WebDAV Sync Config
+        # WebDAV 连接信息 (非敏感)
         # ==========================================
         self.webdav_url = ""
         self.webdav_username = ""
-        self.webdav_password = ""
-
-        # ==========================================
-        # 2. 运行时状态 (不持久化)
-        # ==========================================
-        self.active = False
-        self.origin_pos = (0, 0)
-        self.current_window_name = ""
-        self.current_window_class = ""
-        self.is_fullscreen = False
 
     def to_dict(self):
         return {
@@ -155,7 +158,6 @@ class GlobalConfig:
             "activation_mode": self.activation_mode,
             "webdav_url": self.webdav_url,
             "webdav_username": self.webdav_username,
-            "webdav_password": encrypt_password(self.webdav_password),
             "enable_inertia": self.enable_inertia,
             "inertia_friction_ms": self.inertia_friction_ms,
             "inertia_threshold": self.inertia_threshold,
@@ -187,9 +189,6 @@ class GlobalConfig:
         }
 
     def from_dict(self, data):
-        # 兼容旧版本配置
-        _version = data.get("config_version", 1)
-
         self.sensitivity = data.get("sensitivity", 2.0)
         self.speed_factor = data.get("speed_factor", 2.0)
         self.dead_zone = data.get("dead_zone", 20.0)
@@ -208,11 +207,10 @@ class GlobalConfig:
         self.activation_mode = data.get("activation_mode", 0)
         self.webdav_url = data.get("webdav_url", "")
         self.webdav_username = data.get("webdav_username", "")
-        # 解密密码，兼容旧版本明文存储
-        self.webdav_password = decrypt_password(data.get("webdav_password", ""))
         self.enable_inertia = data.get("enable_inertia", False)
         self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
         self.inertia_threshold = data.get("inertia_threshold", 80.0)
 
 
 cfg = GlobalConfig()
+runtime = RuntimeState()

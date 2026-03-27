@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from FlowScroll.core.config import cfg, CONFIG_FILE
+from FlowScroll.services.credential_service import credential_service
 from FlowScroll.ui.styles import get_webdav_dialog_style
 from FlowScroll.constants import WEBDAV_DIALOG_WIDTH, WEBDAV_DIALOG_HEIGHT
 
@@ -40,11 +41,20 @@ class WebDAVSyncDialog(QDialog):
         self.edit_user = QLineEdit(cfg.webdav_username)
         layout.addWidget(self.edit_user)
 
-        # Password
+        # Password — 从安全存储读取
         layout.addWidget(QLabel("密码 / 应用授权码"))
-        self.edit_pwd = QLineEdit(cfg.webdav_password)
+        saved_password = credential_service.load_password()
+        self.edit_pwd = QLineEdit(saved_password)
         self.edit_pwd.setEchoMode(QLineEdit.Password)
         layout.addWidget(self.edit_pwd)
+
+        if not credential_service.is_keyring_available:
+            hint = QLabel(
+                "⚠ 系统钥匙串不可用，密码仅在本次会话内存中保存，不会写入磁盘。"
+            )
+            hint.setStyleSheet("color: #F59E0B; font-size: 11px;")
+            hint.setWordWrap(True)
+            layout.addWidget(hint)
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -85,7 +95,21 @@ class WebDAVSyncDialog(QDialog):
     def save_config(self):
         cfg.webdav_url = self.edit_url.text().strip()
         cfg.webdav_username = self.edit_user.text().strip()
-        cfg.webdav_password = self.edit_pwd.text().strip()
+        password = self.edit_pwd.text().strip()
+
+        # 密码通过安全存储管理
+        if password:
+            saved = credential_service.save_password(password)
+            if not saved:
+                QMessageBox.warning(
+                    self,
+                    "注意",
+                    "系统钥匙串不可用，密码仅保存在本次会话内存中。\n"
+                    "下次启动后需要重新输入。",
+                )
+        else:
+            credential_service.delete_password()
+
         QMessageBox.information(
             self, "提示", "WebDAV 配置已暂存，请记得在主界面保存预设以持久化。"
         )
@@ -127,20 +151,18 @@ class WebDAVSyncDialog(QDialog):
             with urllib.request.urlopen(req) as response:
                 remote_data = json.loads(response.read().decode("utf-8"))
 
-            # 保留本地的 WebDAV 凭据
+            # 保留本地的 WebDAV 连接信息
             local_webdav_url = cfg.webdav_url
             local_webdav_username = cfg.webdav_username
-            local_webdav_password = cfg.webdav_password
 
             # 从云端加载参数配置
             cfg.from_dict(remote_data)
 
-            # 恢复本地 WebDAV 凭据
+            # 恢复本地 WebDAV 连接信息
             cfg.webdav_url = local_webdav_url
             cfg.webdav_username = local_webdav_username
-            cfg.webdav_password = local_webdav_password
 
-            # 保存到本地文件
+            # 保存到本地文件 (不含密码)
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(cfg.to_dict(), f, ensure_ascii=False, indent=4)
 

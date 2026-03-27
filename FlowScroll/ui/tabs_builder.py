@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QCheckBox,
-    QComboBox,
     QSizePolicy,
 )
 from PySide6.QtCore import Qt, QSize

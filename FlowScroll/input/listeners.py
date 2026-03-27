@@ -2,7 +2,7 @@ import time
 
 from pynput import keyboard, mouse
 
-from FlowScroll.core.config import cfg
+from FlowScroll.core.config import cfg, runtime
 from FlowScroll.core.hotkeys import normalize_hotkey_part, normalize_hotkey_string
 from FlowScroll.services.logging_service import logger
 from FlowScroll.constants import DOUBLE_CLICK_THRESHOLD
@@ -107,19 +107,19 @@ class GlobalInputListener:
     def _set_active(self, active, x=None, y=None, source=None):
         if active:
             if x is not None and y is not None:
-                cfg.origin_pos = (x, y)
-            cfg.active = True
+                runtime.origin_pos = (x, y)
+            runtime.active = True
             self.activation_input_source = source
             self.bridge.show_overlay.emit()
             return
 
-        if cfg.active:
-            cfg.active = False
+        if runtime.active:
+            runtime.active = False
             self.activation_input_source = None
             self.bridge.hide_overlay.emit()
 
     def _toggle_active(self, x, y, source):
-        if cfg.active:
+        if runtime.active:
             self._set_active(False)
         else:
             self._set_active(True, x, y, source)

@@ -1,7 +1,7 @@
 import math
 import time
 import threading
-from FlowScroll.core.config import cfg
+from FlowScroll.core.config import cfg, runtime
 from FlowScroll.core.scroller import default_scroll_strategy
 from FlowScroll.platform import system_platform
 from FlowScroll.services.logging_service import logger
@@ -121,14 +121,17 @@ class ScrollEngine(threading.Thread):
         was_active = False
 
         while True:
-            if cfg.active:
+            if runtime.active:
                 # 惯性运行中被激活（新滚动开始），中断惯性
                 if self.inertia_active:
                     self.interrupt_inertia()
 
                 try:
                     curr_x, curr_y = self.mouse_controller.position
-                    dx, dy = curr_x - cfg.origin_pos[0], curr_y - cfg.origin_pos[1]
+                    dx, dy = (
+                        curr_x - runtime.origin_pos[0],
+                        curr_y - runtime.origin_pos[1],
+                    )
 
                     if not cfg.enable_horizontal:
                         dx = 0
