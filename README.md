@@ -33,8 +33,9 @@ FlowScroll 就是把这种熟悉、直觉的交互方式扩展到整个桌面系
 ### 主界面
 
 <div align="center">
-  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/1.jpg" alt="软件主界面" width="45%" style="margin-right: 2%;">
-  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/2.jpg" alt="设置界面" width="45%">
+  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/1.jpg" alt="软件主界面" width="30%" style="margin-right: 2%;">
+  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/2.jpg" alt="设置界面" width="30%" style="margin-right: 2%;">
+  <img src="https://git-pictures.cyrilworkshop.dpdns.org/flowscroll/3.jpg" alt="工作模式" width="30%">
 </div>
 
 ### 使用演示
