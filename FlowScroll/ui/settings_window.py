@@ -281,6 +281,7 @@ class MainWindow(QMainWindow):
         msg.setWindowTitle("功能说明与帮助")
         msg.setIcon(QMessageBox.NoIcon)
         msg.setStyleSheet(get_help_dialog_style())
+        msg.setTextFormat(Qt.RichText)
 
         def img(name):
             path = resource_path(os.path.join("FlowScroll", "resources", name)).replace(

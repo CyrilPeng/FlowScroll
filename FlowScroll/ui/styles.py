@@ -191,9 +191,10 @@ def get_webdav_dialog_style() -> str:
 
 def get_help_dialog_style() -> str:
     """获取帮助对话框样式"""
+    font_family = _get_font_family()
     return f"""
-        QMessageBox {{ background-color: {COLOR_BG_DARK}; }}
-        QLabel {{ color: {COLOR_TEXT_PRIMARY}; font-size: 14px; line-height: 1.5; }}
+        QMessageBox {{ background-color: {COLOR_BG_DARK}; font-family: {font_family}; }}
+        QLabel {{ color: {COLOR_TEXT_PRIMARY}; font-size: 14px; font-family: {font_family}; }}
         QPushButton {{ background-color: {COLOR_ACCENT}; color: white; border-radius: 6px; padding: 6px 16px; font-weight: bold; }}
         QPushButton:hover {{ background-color: {COLOR_ACCENT_HOVER}; }}
     """
