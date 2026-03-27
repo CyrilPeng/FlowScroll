@@ -23,7 +23,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
-        "filter_list": [],
+        "filter_blacklist": [],
+        "filter_whitelist": [],
         "disable_fullscreen": True,
         "disable_desktop": True,
     },
@@ -39,7 +40,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
-        "filter_list": [],
+        "filter_blacklist": [],
+        "filter_whitelist": [],
         "disable_fullscreen": True,
         "disable_desktop": True,
     },
@@ -55,7 +57,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
-        "filter_list": [],
+        "filter_blacklist": [],
+        "filter_whitelist": [],
         "disable_fullscreen": True,
         "disable_desktop": True,
     },
@@ -71,7 +74,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_hold": "",
         "activation_mode": 0,
         "filter_mode": 0,
-        "filter_list": [],
+        "filter_blacklist": [],
+        "filter_whitelist": [],
         "disable_fullscreen": True,
         "disable_desktop": True,
     },
@@ -120,7 +124,8 @@ class GlobalConfig:
 
         self.activation_mode = 0  # 0=点击中键启用/关闭, 1=长按中键时启用
         self.filter_mode = 0
-        self.filter_list = []
+        self.filter_blacklist = []
+        self.filter_whitelist = []
         self.disable_fullscreen = True
         self.disable_desktop = True
 
@@ -152,7 +157,9 @@ class GlobalConfig:
             "reverse_y": self.reverse_y,
             "reverse_x": self.reverse_x,
             "filter_mode": self.filter_mode,
-            "filter_list": self.filter_list,
+            "filter_blacklist": self.filter_blacklist,
+            "filter_whitelist": self.filter_whitelist,
+            "filter_list": self._get_active_filter_list(),
             "disable_fullscreen": self.disable_fullscreen,
             "disable_desktop": self.disable_desktop,
             "activation_mode": self.activation_mode,
@@ -179,7 +186,9 @@ class GlobalConfig:
             "reverse_y": self.reverse_y,
             "reverse_x": self.reverse_x,
             "filter_mode": self.filter_mode,
-            "filter_list": self.filter_list,
+            "filter_blacklist": self.filter_blacklist,
+            "filter_whitelist": self.filter_whitelist,
+            "filter_list": self._get_active_filter_list(),
             "disable_fullscreen": self.disable_fullscreen,
             "disable_desktop": self.disable_desktop,
             "activation_mode": self.activation_mode,
@@ -201,7 +210,27 @@ class GlobalConfig:
         self.reverse_y = data.get("reverse_y", False)
         self.reverse_x = data.get("reverse_x", False)
         self.filter_mode = data.get("filter_mode", 0)
-        self.filter_list = data.get("filter_list", [])
+        legacy_list = data.get("filter_list", [])
+        self.filter_blacklist = data.get("filter_blacklist")
+        self.filter_whitelist = data.get("filter_whitelist")
+
+        if self.filter_blacklist is None:
+            if self.filter_mode in (0, 1):
+                self.filter_blacklist = legacy_list
+            else:
+                self.filter_blacklist = []
+        if self.filter_whitelist is None:
+            if self.filter_mode in (0, 2):
+                self.filter_whitelist = legacy_list
+            else:
+                self.filter_whitelist = []
+
+        self.filter_blacklist = [
+            str(v).strip() for v in self.filter_blacklist if str(v).strip()
+        ]
+        self.filter_whitelist = [
+            str(v).strip() for v in self.filter_whitelist if str(v).strip()
+        ]
         self.disable_fullscreen = data.get("disable_fullscreen", True)
         self.disable_desktop = data.get("disable_desktop", True)
         self.activation_mode = data.get("activation_mode", 0)
@@ -211,6 +240,13 @@ class GlobalConfig:
         self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
         self.inertia_threshold = data.get("inertia_threshold", 80.0)
 
+
+    def _get_active_filter_list(self):
+        if self.filter_mode == 1:
+            return list(self.filter_blacklist)
+        if self.filter_mode == 2:
+            return list(self.filter_whitelist)
+        return []
 
 cfg = GlobalConfig()
 runtime = RuntimeState()

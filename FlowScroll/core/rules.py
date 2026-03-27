@@ -21,14 +21,14 @@ def is_current_app_allowed() -> bool:
 
     # 黑名单模式
     if cfg.filter_mode == 1:
-        for keyword in cfg.filter_list:
+        for keyword in cfg.filter_blacklist:
             if keyword.lower() in app_name:
                 return False
         return True
 
     # 白名单模式
     elif cfg.filter_mode == 2:
-        for keyword in cfg.filter_list:
+        for keyword in cfg.filter_whitelist:
             if keyword.lower() in app_name:
                 return True
         return False

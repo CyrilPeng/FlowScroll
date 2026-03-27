@@ -43,6 +43,7 @@ from FlowScroll.ui.preset_manager import PresetManager
 from FlowScroll.ui.tray_manager import TrayManager
 from FlowScroll.services.window_monitor import WindowMonitor
 from FlowScroll.services.logging_service import logger
+from FlowScroll.services.update_checker import is_newer_version
 
 mouse_controller = mouse.Controller()
 
@@ -111,7 +112,7 @@ class MainWindow(QMainWindow):
         self.update_checker.start()
 
     def on_update_available(self, latest_version, html_url):
-        if latest_version != self.current_version:
+        if is_newer_version(latest_version, self.current_version):
             self.github_url = html_url
             if hasattr(self, "btn_new_badge"):
                 self.btn_new_badge.setVisible(True)
@@ -405,6 +406,14 @@ class MainWindow(QMainWindow):
     def load_selected_preset(self, name):
         if not self.preset_manager.load_preset(name):
             return
+        self.sync_ui_from_config()
+
+        if hasattr(self, "scroller") and self.scroller:
+            self.scroller.update_friction()
+
+        self.save_presets_to_file()
+
+    def sync_ui_from_config(self):
         self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
         self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
         self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
@@ -412,12 +421,10 @@ class MainWindow(QMainWindow):
         self.ui_widgets["enable_horizontal"].setChecked(cfg.enable_horizontal)
         self.ui_widgets["minimize_to_tray"].setChecked(cfg.minimize_to_tray)
         self.ui_widgets["enable_inertia"].setChecked(cfg.enable_inertia)
-
-        if hasattr(self, "scroller") and self.scroller:
-            self.scroller.update_friction()
+        if "disable_fullscreen" in self.ui_widgets:
+            self.ui_widgets["disable_fullscreen"].setChecked(cfg.disable_fullscreen)
 
         self.update_hotkey_label()
-        self.save_presets_to_file()
 
     def on_show_overlay(self):
         self.overlay.set_direction("neutral")

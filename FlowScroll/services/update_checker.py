@@ -1,11 +1,48 @@
 import urllib.request
 import json
-from PySide6.QtCore import QThread, Signal
+import re
 from FlowScroll.services.logging_service import logger
+
+try:
+    from PySide6.QtCore import QThread, Signal
+except ModuleNotFoundError:  # pragma: no cover - test fallback for non-GUI environments
+    class QThread:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    class Signal:
+        def __init__(self, *_args, **_kwargs):
+            pass
 
 
 GITHUB_FALLBACK_URL = "https://github.com/CyrilPeng/FlowScroll/releases"
 GITEE_FALLBACK_URL = "https://gitee.com/Cyril_P/FlowScroll/releases"
+
+
+def parse_version_components(version: str) -> tuple[int, ...]:
+    if not version:
+        return ()
+    return tuple(int(part) for part in re.findall(r"\d+", version))
+
+
+def is_prerelease_version(version: str) -> bool:
+    normalized = version.lower()
+    return any(marker in normalized for marker in ("alpha", "beta", "rc", "pre", "dev"))
+
+
+def is_newer_version(latest_version: str, current_version: str) -> bool:
+    if is_prerelease_version(latest_version):
+        return False
+
+    latest = parse_version_components(latest_version)
+    current = parse_version_components(current_version)
+    if not latest or not current:
+        return False
+
+    max_len = max(len(latest), len(current))
+    latest += (0,) * (max_len - len(latest))
+    current += (0,) * (max_len - len(current))
+    return latest > current
 
 
 def _fetch_github():

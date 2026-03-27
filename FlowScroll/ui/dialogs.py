@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QPushButton,
     QSlider,
+    QFileDialog,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt
 from FlowScroll.core.config import cfg
@@ -37,7 +39,8 @@ class ReverseModeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("反转模式")
-        self.setFixedSize(REVERSE_DIALOG_WIDTH, REVERSE_DIALOG_HEIGHT)
+        self.setMinimumSize(REVERSE_DIALOG_WIDTH, REVERSE_DIALOG_HEIGHT)
+        self.setSizeGripEnabled(True)
 
         self.setStyleSheet(get_dialog_stylesheet() + get_checkbox_style())
 
@@ -79,6 +82,9 @@ class ReverseModeDialog(QDialog):
         btn_layout.addWidget(btn_save)
         layout.addLayout(btn_layout)
 
+        adaptive_height = max(REVERSE_DIALOG_HEIGHT, self.sizeHint().height())
+        self.resize(REVERSE_DIALOG_WIDTH, adaptive_height)
+
     def save_and_close(self):
         cfg.reverse_y = self.chk_reverse_y.isChecked()
         cfg.reverse_x = self.chk_reverse_x.isChecked()
@@ -89,7 +95,8 @@ class WorkModeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("工作模式")
-        self.setFixedSize(WORK_MODE_DIALOG_WIDTH, WORK_MODE_DIALOG_HEIGHT)
+        self.setMinimumSize(WORK_MODE_DIALOG_WIDTH, WORK_MODE_DIALOG_HEIGHT)
+        self.setSizeGripEnabled(True)
 
         self.setStyleSheet(
             get_dialog_stylesheet() + get_radiobutton_style() + get_textedit_style()
@@ -177,7 +184,25 @@ class WorkModeDialog(QDialog):
         self.radio_blacklist = QRadioButton("黑名单模式")
         self.radio_blacklist.setCursor(Qt.PointingHandCursor)
         self.button_group.addButton(self.radio_blacklist, 1)
-        card_layout2.addWidget(self.radio_blacklist)
+
+        row_black_mode = QHBoxLayout()
+        row_black_mode.addWidget(self.radio_blacklist)
+        row_black_mode.addStretch()
+        self.btn_import_black = QPushButton("导入")
+        self.btn_import_black.setCursor(Qt.PointingHandCursor)
+        self.btn_import_black.setObjectName("BtnSmall")
+        self.btn_import_black.clicked.connect(
+            lambda: self._import_keywords_to(self.text_edit_blacklist)
+        )
+        row_black_mode.addWidget(self.btn_import_black)
+        self.btn_clear_black = QPushButton("清空")
+        self.btn_clear_black.setCursor(Qt.PointingHandCursor)
+        self.btn_clear_black.setObjectName("BtnSmall")
+        self.btn_clear_black.clicked.connect(
+            lambda: self._clear_keywords(self.text_edit_blacklist, "黑名单")
+        )
+        row_black_mode.addWidget(self.btn_clear_black)
+        card_layout2.addLayout(row_black_mode)
 
         desc_blacklist = QLabel(
             "<span style='color: #94A3B8; font-size: 12px;'>"
@@ -188,19 +213,69 @@ class WorkModeDialog(QDialog):
         desc_blacklist.setContentsMargins(24, 0, 0, 0)
         card_layout2.addWidget(desc_blacklist)
 
+        self.radio_whitelist = QRadioButton("白名单模式")
+        self.radio_whitelist.setCursor(Qt.PointingHandCursor)
+        self.button_group.addButton(self.radio_whitelist, 2)
+
+        row_white_mode = QHBoxLayout()
+        row_white_mode.addWidget(self.radio_whitelist)
+        row_white_mode.addStretch()
+        self.btn_import_white = QPushButton("导入")
+        self.btn_import_white.setCursor(Qt.PointingHandCursor)
+        self.btn_import_white.setObjectName("BtnSmall")
+        self.btn_import_white.clicked.connect(
+            lambda: self._import_keywords_to(self.text_edit_whitelist)
+        )
+        row_white_mode.addWidget(self.btn_import_white)
+        self.btn_clear_white = QPushButton("清空")
+        self.btn_clear_white.setCursor(Qt.PointingHandCursor)
+        self.btn_clear_white.setObjectName("BtnSmall")
+        self.btn_clear_white.clicked.connect(
+            lambda: self._clear_keywords(self.text_edit_whitelist, "白名单")
+        )
+        row_white_mode.addWidget(self.btn_clear_white)
+        card_layout2.addLayout(row_white_mode)
+
+        desc_whitelist = QLabel(
+            "<span style='color: #94A3B8; font-size: 12px;'>"
+            "每行输入一个应用名称关键词，不区分大小写。<br>"
+            "白名单模式下仅在指定应用中启用滚动功能，例如输入 <b>chrome</b> "
+            "即可只在浏览器中启用。</span>"
+        )
+        desc_whitelist.setWordWrap(True)
+        desc_whitelist.setContentsMargins(24, 0, 0, 0)
+        card_layout2.addWidget(desc_whitelist)
+
         self.radio_global.setChecked(cfg.filter_mode == 0)
         self.radio_blacklist.setChecked(cfg.filter_mode == 1)
+        self.radio_whitelist.setChecked(cfg.filter_mode == 2)
 
         card_layout2.addWidget(create_h_line())
 
-        self.text_edit = QTextEdit()
-        self.text_edit.setPlainText("\n".join(cfg.filter_list))
-        self.text_edit.setMinimumHeight(80)
-        self.text_edit.setEnabled(cfg.filter_mode != 0)
-        self.button_group.idClicked.connect(
-            lambda mid: self.text_edit.setEnabled(mid != 0)
-        )
-        card_layout2.addWidget(self.text_edit)
+        list_row = QHBoxLayout()
+        list_row.setSpacing(10)
+
+        left_col = QVBoxLayout()
+        lbl_black = QLabel("黑名单关键词")
+        lbl_black.setStyleSheet("color: #E2E8F0; font-weight: 600;")
+        self.text_edit_blacklist = QTextEdit()
+        self.text_edit_blacklist.setPlainText("\n".join(cfg.filter_blacklist))
+        self.text_edit_blacklist.setMinimumHeight(120)
+        left_col.addWidget(lbl_black)
+        left_col.addWidget(self.text_edit_blacklist)
+
+        right_col = QVBoxLayout()
+        lbl_white = QLabel("白名单关键词")
+        lbl_white.setStyleSheet("color: #E2E8F0; font-weight: 600;")
+        self.text_edit_whitelist = QTextEdit()
+        self.text_edit_whitelist.setPlainText("\n".join(cfg.filter_whitelist))
+        self.text_edit_whitelist.setMinimumHeight(120)
+        right_col.addWidget(lbl_white)
+        right_col.addWidget(self.text_edit_whitelist)
+
+        list_row.addLayout(left_col, 1)
+        list_row.addLayout(right_col, 1)
+        card_layout2.addLayout(list_row)
 
         layout.addWidget(card2)
 
@@ -213,6 +288,9 @@ class WorkModeDialog(QDialog):
         btn_save.clicked.connect(self.save_and_close)
         btn_layout.addWidget(btn_save)
         layout.addLayout(btn_layout)
+
+        adaptive_height = max(WORK_MODE_DIALOG_HEIGHT, self.sizeHint().height())
+        self.resize(WORK_MODE_DIALOG_WIDTH, adaptive_height)
 
     def _create_hotkey_row(self, key_name, hotkey_value):
         wrapper = QVBoxLayout()
@@ -241,19 +319,56 @@ class WorkModeDialog(QDialog):
         cfg.activation_hotkey_click = self.activation_hotkey_edit_click.hotkey_text()
         cfg.activation_hotkey_hold = self.activation_hotkey_edit_hold.hotkey_text()
         cfg.filter_mode = self.button_group.checkedId()
-        cfg.filter_list = [
-            line.strip()
-            for line in self.text_edit.toPlainText().split("\n")
-            if line.strip()
-        ]
+        cfg.filter_blacklist = self._parse_keywords(
+            self.text_edit_blacklist.toPlainText()
+        )
+        cfg.filter_whitelist = self._parse_keywords(
+            self.text_edit_whitelist.toPlainText()
+        )
         self.accept()
+
+    @staticmethod
+    def _parse_keywords(text):
+        return [line.strip() for line in text.split("\n") if line.strip()]
+
+    def _clear_keywords(self, target_edit: QTextEdit, list_name: str):
+        reply = QMessageBox.question(
+            self,
+            "确认清空",
+            f"确定要清空{list_name}关键词吗？此操作不可撤销。",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            target_edit.clear()
+
+    def _import_keywords_to(self, target_edit: QTextEdit):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "导入关键词",
+            "",
+            "文本文件 (*.txt *.csv *.log);;所有文件 (*.*)",
+        )
+        if not file_path:
+            return
+
+        with open(file_path, "rb") as f:
+            raw = f.read()
+
+        try:
+            content = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            content = raw.decode("gbk", errors="ignore")
+
+        target_edit.setPlainText("\n".join(self._parse_keywords(content)))
 
 
 class InertiaSettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("惯性滚动设置")
-        self.setFixedSize(INERTIA_DIALOG_WIDTH, INERTIA_DIALOG_HEIGHT)
+        self.setMinimumSize(INERTIA_DIALOG_WIDTH, INERTIA_DIALOG_HEIGHT)
+        self.setSizeGripEnabled(True)
 
         self.setStyleSheet(get_dialog_stylesheet() + get_slider_style())
 
@@ -373,6 +488,9 @@ class InertiaSettingsDialog(QDialog):
         # 初始化显示
         self._update_friction_label()
         self._update_threshold_label()
+
+        adaptive_height = max(INERTIA_DIALOG_HEIGHT, self.sizeHint().height())
+        self.resize(INERTIA_DIALOG_WIDTH, adaptive_height)
 
     def _update_friction_label(self):
         ms = self.friction_slider.value()

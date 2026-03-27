@@ -15,14 +15,20 @@ from PySide6.QtCore import Qt
 from FlowScroll.core.config import cfg, CONFIG_FILE
 from FlowScroll.services.credential_service import credential_service
 from FlowScroll.ui.styles import get_webdav_dialog_style
-from FlowScroll.constants import WEBDAV_DIALOG_WIDTH, WEBDAV_DIALOG_HEIGHT
+from FlowScroll.constants import (
+    WEBDAV_DIALOG_DEFAULT_WIDTH,
+    WEBDAV_DIALOG_DEFAULT_HEIGHT,
+    WEBDAV_DIALOG_MIN_WIDTH,
+    WEBDAV_DIALOG_MIN_HEIGHT,
+)
 
 
 class WebDAVSyncDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("WebDAV 云同步配置")
-        self.setFixedSize(WEBDAV_DIALOG_WIDTH, WEBDAV_DIALOG_HEIGHT)
+        self.setMinimumSize(WEBDAV_DIALOG_MIN_WIDTH, WEBDAV_DIALOG_MIN_HEIGHT)
+        self.setSizeGripEnabled(True)
 
         self.setStyleSheet(get_webdav_dialog_style())
 
@@ -79,6 +85,9 @@ class WebDAVSyncDialog(QDialog):
 
         layout.addStretch()
         layout.addLayout(btn_layout)
+
+        adaptive_height = max(WEBDAV_DIALOG_DEFAULT_HEIGHT, self.sizeHint().height())
+        self.resize(WEBDAV_DIALOG_DEFAULT_WIDTH, adaptive_height)
 
     def get_full_url(self):
         url = self.edit_url.text().strip()

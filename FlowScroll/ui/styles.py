@@ -118,6 +118,18 @@ def get_dialog_stylesheet() -> str:
         }}
         QPushButton:hover {{ background-color: {COLOR_BORDER}; border-color: {COLOR_BORDER_HOVER}; }}
         QPushButton:pressed {{ background-color: {COLOR_BG_DARK}; }}
+        QPushButton#BtnSmall {{
+            background-color: {COLOR_BG_DARK};
+            border: 1px solid {COLOR_BORDER_HOVER};
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: {COLOR_TEXT_SECONDARY};
+            font-size: 12px;
+            font-weight: 600;
+            min-height: 34px;
+        }}
+        QPushButton#BtnSmall:hover {{ background-color: {COLOR_BORDER}; border-color: #64748B; color: {COLOR_TEXT_PRIMARY}; }}
+        QPushButton#BtnSmall:pressed {{ background-color: {COLOR_BG_DARK}; }}
         QPushButton#BtnPrimary {{ background-color: {COLOR_ACCENT}; color: #FFFFFF; border: none; padding: 10px 24px; font-size: 14px; border-radius: 10px; }}
         QPushButton#BtnPrimary:hover {{ background-color: {COLOR_ACCENT_HOVER}; }}
         QPushButton#BtnPrimary:pressed {{ background-color: {COLOR_ACCENT_PRESSED}; }}
@@ -182,6 +194,8 @@ def get_webdav_dialog_style() -> str:
         get_dialog_stylesheet()
         + get_lineedit_style()
         + f"""
+        /* Avoid vertical clipping for CJK labels in WebDAV dialog buttons */
+        QPushButton {{ min-height: 36px; padding-top: 8px; padding-bottom: 8px; }}
         QPushButton#BtnSuccess {{ background-color: {COLOR_SUCCESS}; color: #FFFFFF; border: none; }}
         QPushButton#BtnSuccess:hover {{ background-color: {COLOR_SUCCESS_HOVER}; }}
         QPushButton#BtnSuccess:pressed {{ background-color: #065F46; }}

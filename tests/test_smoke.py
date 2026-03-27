@@ -228,13 +228,52 @@ class TestRules:
         from FlowScroll.core.rules import is_current_app_allowed
 
         cfg.filter_mode = 1
-        cfg.filter_list = ["potplayer", "vlc"]
+        cfg.filter_blacklist = ["potplayer", "vlc"]
+        cfg.filter_whitelist = []
         runtime.current_window_name = "PotPlayer"
         runtime.is_fullscreen = False
         assert is_current_app_allowed() is False
 
         runtime.current_window_name = "Chrome"
         assert is_current_app_allowed() is True
+
+    def test_whitelist_mode(self):
+        from FlowScroll.core.config import cfg, runtime
+        from FlowScroll.core.rules import is_current_app_allowed
+
+        cfg.filter_mode = 2
+        cfg.filter_blacklist = []
+        cfg.filter_whitelist = ["chrome", "code"]
+        runtime.is_fullscreen = False
+
+        runtime.current_window_name = "Google Chrome"
+        assert is_current_app_allowed() is True
+
+        runtime.current_window_name = "PotPlayer"
+        assert is_current_app_allowed() is False
+
+    def test_legacy_filter_list_migration(self):
+        from FlowScroll.core.config import GlobalConfig
+
+        c = GlobalConfig()
+        c.from_dict({"filter_mode": 1, "filter_list": ["potplayer"]})
+        assert c.filter_blacklist == ["potplayer"]
+        assert c.filter_whitelist == []
+
+        c.from_dict({"filter_mode": 2, "filter_list": ["chrome"]})
+        assert c.filter_blacklist == []
+        assert c.filter_whitelist == ["chrome"]
+
+
+class TestUpdateChecker:
+    def test_newer_version_detection(self):
+        from FlowScroll.services.update_checker import is_newer_version
+
+        assert is_newer_version("1.4.1", "1.4.0") is True
+        assert is_newer_version("v1.5.0", "1.4.9") is True
+        assert is_newer_version("1.4.0", "1.4.0") is False
+        assert is_newer_version("1.3.9", "1.4.0") is False
+        assert is_newer_version("1.4.0-beta.1", "1.4.0") is False
 
 
 # ---------------------------------------------------------------------------

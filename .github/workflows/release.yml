@@ -30,6 +30,47 @@ jobs:
       - name: 检出代码 (Checkout Code)
         uses: actions/checkout@v4
 
+      - name: 将 Tag 版本注入到 FlowScroll/__init__.py
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "RELEASE_VERSION=${TAG_VERSION}" >> "$GITHUB_ENV"
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["GITHUB_REF_NAME"]
+          if version.startswith("v"):
+              version = version[1:]
+
+          version_file = Path("FlowScroll/__init__.py")
+          content = version_file.read_text(encoding="utf-8")
+          updated = re.sub(
+              r'__version__\s*=\s*"[^"]+"',
+              f'__version__ = "{version}"',
+              content,
+              count=1,
+          )
+          if content == updated:
+              raise SystemExit("Failed to locate __version__ assignment in FlowScroll/__init__.py")
+          version_file.write_text(updated, encoding="utf-8")
+          print(f"Synchronized FlowScroll version to {version}")
+          PY
+
+      - name: 验证注入的版本
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text = Path("FlowScroll/__init__.py").read_text(encoding="utf-8")
+          match = re.search(r'__version__\s*=\s*"([^"]+)"', text)
+          if not match:
+              raise SystemExit("Unable to read __version__ from FlowScroll/__init__.py")
+          print(f"FlowScroll.__version__ = {match.group(1)}")
+          PY
+
       - name: 安装 uv (Setup uv)
         uses: astral-sh/setup-uv@v3
         with:
