@@ -333,6 +333,13 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
+    def open_filter_mode_dialog(self):
+        from FlowScroll.ui.dialogs import AppFilterDialog
+
+        dialog = AppFilterDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self.save_presets_to_file()
+
     def open_reverse_mode_dialog(self):
         from FlowScroll.ui.dialogs import ReverseModeDialog
 

@@ -28,6 +28,8 @@ class TestGlobalConfig:
         assert c.enable_horizontal is True
         assert c.enable_inertia is False
         assert c.activation_mode == 0
+        assert c.activation_compat_mode is False
+        assert c.activation_delay_ms == 0
 
     def test_to_dict_roundtrip(self):
         from FlowScroll.core.config import GlobalConfig
@@ -36,6 +38,8 @@ class TestGlobalConfig:
         c.sensitivity = 3.5
         c.speed_factor = 1.0
         c.reverse_y = True
+        c.activation_compat_mode = True
+        c.activation_delay_ms = 180
 
         d = c.to_dict()
         c2 = GlobalConfig()
@@ -44,6 +48,8 @@ class TestGlobalConfig:
         assert c2.sensitivity == 3.5
         assert c2.speed_factor == 1.0
         assert c2.reverse_y is True
+        assert c2.activation_compat_mode is True
+        assert c2.activation_delay_ms == 180
 
     def test_to_dict_excludes_credentials(self):
         from FlowScroll.core.config import GlobalConfig

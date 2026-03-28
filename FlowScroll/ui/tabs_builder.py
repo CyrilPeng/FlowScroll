@@ -289,7 +289,7 @@ def build_advanced_tab(main_window):
     btn_reverse_mode.clicked.connect(main_window.open_reverse_mode_dialog)
     adv_layout.addWidget(btn_reverse_mode)
 
-    btn_work_mode = QPushButton("配置工作模式与应用过滤")
+    btn_work_mode = QPushButton("配置工作模式")
     btn_work_mode.setObjectName("BtnAdv")
     btn_work_mode.setCursor(Qt.PointingHandCursor)
     gear_path = resource_path(os.path.join("FlowScroll", "resources", "ic_gear.svg"))
@@ -298,6 +298,16 @@ def build_advanced_tab(main_window):
         btn_work_mode.setIconSize(QSize(18, 18))
     btn_work_mode.clicked.connect(main_window.open_work_mode_dialog)
     adv_layout.addWidget(btn_work_mode)
+
+    btn_app_filter = QPushButton("配置应用过滤模式")
+    btn_app_filter.setObjectName("BtnAdv")
+    btn_app_filter.setCursor(Qt.PointingHandCursor)
+    filter_path = resource_path(os.path.join("FlowScroll", "resources", "ic_filter.svg"))
+    if os.path.exists(filter_path):
+        btn_app_filter.setIcon(QIcon(filter_path))
+        btn_app_filter.setIconSize(QSize(18, 18))
+    btn_app_filter.clicked.connect(main_window.open_filter_mode_dialog)
+    adv_layout.addWidget(btn_app_filter)
 
     btn_webdav = QPushButton("WebDAV 云同步配置")
     btn_webdav.setObjectName("BtnAdv")

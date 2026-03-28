@@ -22,6 +22,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_click": "",
         "activation_hotkey_hold": "",
         "activation_mode": 0,
+        "activation_compat_mode": False,
+        "activation_delay_ms": 0,
         "filter_mode": 0,
         "filter_blacklist": [],
         "filter_whitelist": [],
@@ -39,6 +41,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_click": "",
         "activation_hotkey_hold": "",
         "activation_mode": 0,
+        "activation_compat_mode": False,
+        "activation_delay_ms": 0,
         "filter_mode": 0,
         "filter_blacklist": [],
         "filter_whitelist": [],
@@ -56,6 +60,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_click": "",
         "activation_hotkey_hold": "",
         "activation_mode": 0,
+        "activation_compat_mode": False,
+        "activation_delay_ms": 0,
         "filter_mode": 0,
         "filter_blacklist": [],
         "filter_whitelist": [],
@@ -73,6 +79,8 @@ BUILTIN_PRESETS = {
         "activation_hotkey_click": "",
         "activation_hotkey_hold": "",
         "activation_mode": 0,
+        "activation_compat_mode": False,
+        "activation_delay_ms": 0,
         "filter_mode": 0,
         "filter_blacklist": [],
         "filter_whitelist": [],
@@ -123,6 +131,8 @@ class GlobalConfig:
         self.reverse_x = False
 
         self.activation_mode = 0  # 0=点击中键启用/关闭, 1=长按中键时启用
+        self.activation_compat_mode = False
+        self.activation_delay_ms = 0
         self.filter_mode = 0
         self.filter_blacklist = []
         self.filter_whitelist = []
@@ -163,6 +173,8 @@ class GlobalConfig:
             "disable_fullscreen": self.disable_fullscreen,
             "disable_desktop": self.disable_desktop,
             "activation_mode": self.activation_mode,
+            "activation_compat_mode": self.activation_compat_mode,
+            "activation_delay_ms": self.activation_delay_ms,
             "webdav_url": self.webdav_url,
             "webdav_username": self.webdav_username,
             "enable_inertia": self.enable_inertia,
@@ -192,6 +204,8 @@ class GlobalConfig:
             "disable_fullscreen": self.disable_fullscreen,
             "disable_desktop": self.disable_desktop,
             "activation_mode": self.activation_mode,
+            "activation_compat_mode": self.activation_compat_mode,
+            "activation_delay_ms": self.activation_delay_ms,
             "enable_inertia": self.enable_inertia,
             "inertia_friction_ms": self.inertia_friction_ms,
             "inertia_threshold": self.inertia_threshold,
@@ -234,6 +248,8 @@ class GlobalConfig:
         self.disable_fullscreen = data.get("disable_fullscreen", True)
         self.disable_desktop = data.get("disable_desktop", True)
         self.activation_mode = data.get("activation_mode", 0)
+        self.activation_compat_mode = data.get("activation_compat_mode", False)
+        self.activation_delay_ms = int(data.get("activation_delay_ms", 0))
         self.webdav_url = data.get("webdav_url", "")
         self.webdav_username = data.get("webdav_username", "")
         self.enable_inertia = data.get("enable_inertia", False)
