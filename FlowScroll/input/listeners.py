@@ -3,7 +3,7 @@ from threading import Timer
 
 from pynput import keyboard, mouse
 
-from FlowScroll.core.config import cfg, runtime
+from FlowScroll.core.config import STATE_LOCK, cfg, runtime
 from FlowScroll.core.hotkeys import normalize_hotkey_part, normalize_hotkey_string
 from FlowScroll.services.logging_service import logger
 from FlowScroll.constants import DOUBLE_CLICK_THRESHOLD
@@ -107,13 +107,15 @@ class GlobalInputListener:
         return bool(target_keys) and target_keys.issubset(current_keys)
 
     def _get_horizontal_mouse_button(self):
-        hotkey = normalize_hotkey_string(cfg.horizontal_hotkey)
+        with STATE_LOCK:
+            hotkey = normalize_hotkey_string(cfg.horizontal_hotkey)
         return self.mouse_hotkey_map.get(hotkey)
 
     def _get_activation_hotkey(self):
-        if cfg.activation_mode == 1:
-            return normalize_hotkey_string(cfg.activation_hotkey_hold)
-        return normalize_hotkey_string(cfg.activation_hotkey_click)
+        with STATE_LOCK:
+            if cfg.activation_mode == 1:
+                return normalize_hotkey_string(cfg.activation_hotkey_hold)
+            return normalize_hotkey_string(cfg.activation_hotkey_click)
 
     def _get_activation_mouse_button(self):
         hotkey = self._get_activation_hotkey()
@@ -126,26 +128,33 @@ class GlobalInputListener:
 
     def _set_active(self, active, x=None, y=None, source=None):
         if active:
-            if x is not None and y is not None:
-                runtime.origin_pos = (x, y)
-            runtime.active = True
+            with STATE_LOCK:
+                if x is not None and y is not None:
+                    runtime.origin_pos = (x, y)
+                runtime.active = True
             self.activation_input_source = source
             self.bridge.show_overlay.emit()
             return
 
-        if runtime.active:
-            runtime.active = False
+        with STATE_LOCK:
+            currently_active = runtime.active
+            if currently_active:
+                runtime.active = False
+        if currently_active:
             self.activation_input_source = None
             self.bridge.hide_overlay.emit()
 
     def _toggle_active(self, x, y, source):
-        if runtime.active:
+        with STATE_LOCK:
+            currently_active = runtime.active
+        if currently_active:
             self._set_active(False)
         else:
             self._set_active(True, x, y, source)
 
     def _should_delay_activation(self):
-        return bool(cfg.activation_compat_mode) and int(cfg.activation_delay_ms) > 0
+        with STATE_LOCK:
+            return bool(cfg.activation_compat_mode) and int(cfg.activation_delay_ms) > 0
 
     def _cancel_pending_activation(self, source=None):
         if source is not None and self._pending_activation_source != source:
@@ -159,11 +168,14 @@ class GlobalInputListener:
         if not self.is_app_allowed_callback():
             return
 
-        if cfg.activation_mode == 1:
+        with STATE_LOCK:
+            activation_mode = cfg.activation_mode
+
+        if activation_mode == 1:
             self._set_active(True, x, y, source)
             return
 
-        current_time = time.time()
+        current_time = time.monotonic()
         if current_time - self.last_activation_press_time < DOUBLE_CLICK_THRESHOLD:
             return
         self.last_activation_press_time = current_time
@@ -172,7 +184,8 @@ class GlobalInputListener:
     def _schedule_activation(self, x, y, source):
         self._cancel_pending_activation()
         self._pending_activation_source = source
-        delay_s = max(0, int(cfg.activation_delay_ms)) / 1000.0
+        with STATE_LOCK:
+            delay_s = max(0, int(cfg.activation_delay_ms)) / 1000.0
 
         def _fire():
             if self._pending_activation_source != source:
@@ -181,7 +194,8 @@ class GlobalInputListener:
             self._pending_activation_source = None
             if not self._pressed_activation_sources.get(source, False):
                 return
-            self._activate_now(x, y, source)
+            current_x, current_y = mouse.Controller().position
+            self._activate_now(current_x, current_y, source)
 
         self._pending_activation_timer = Timer(delay_s, _fire)
         self._pending_activation_timer.daemon = True
@@ -195,7 +209,9 @@ class GlobalInputListener:
 
         # Click mode: when already active, pressing the activation key/button
         # should close immediately even if compatibility delay is enabled.
-        if cfg.activation_mode == 0 and runtime.active:
+        with STATE_LOCK:
+            click_mode_and_active = cfg.activation_mode == 0 and runtime.active
+        if click_mode_and_active:
             self._cancel_pending_activation()
             self._set_active(False)
             return
@@ -211,7 +227,9 @@ class GlobalInputListener:
         self._pressed_activation_sources[source] = False
         self._cancel_pending_activation(source)
 
-        if cfg.activation_mode == 1 and self.activation_input_source == source:
+        with STATE_LOCK:
+            activation_mode = cfg.activation_mode
+        if activation_mode == 1 and self.activation_input_source == source:
             self._set_active(False)
 
     def _on_key_press(self, key_name, current_keys):
@@ -221,7 +239,9 @@ class GlobalInputListener:
             if key_name not in modifier_only:
                 self.scroll_engine.interrupt_inertia()
 
-        if self._is_keyboard_hotkey_active(cfg.horizontal_hotkey, current_keys):
+        with STATE_LOCK:
+            horizontal_hotkey = cfg.horizontal_hotkey
+        if self._is_keyboard_hotkey_active(horizontal_hotkey, current_keys):
             if not self.horizontal_hotkey_active:
                 self.horizontal_hotkey_active = True
                 self.bridge.toggle_horizontal.emit()
@@ -241,7 +261,9 @@ class GlobalInputListener:
             self.activation_hotkey_active = False
 
     def _on_key_release(self, _key_name, current_keys):
-        if not self._is_keyboard_hotkey_active(cfg.horizontal_hotkey, current_keys):
+        with STATE_LOCK:
+            horizontal_hotkey = cfg.horizontal_hotkey
+        if not self._is_keyboard_hotkey_active(horizontal_hotkey, current_keys):
             self.horizontal_hotkey_active = False
 
         activation_hotkey = self._get_activation_hotkey()

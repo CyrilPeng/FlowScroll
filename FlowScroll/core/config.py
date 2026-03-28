@@ -1,4 +1,5 @@
 import os
+import threading
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -266,3 +267,4 @@ class GlobalConfig:
 
 cfg = GlobalConfig()
 runtime = RuntimeState()
+STATE_LOCK = threading.RLock()

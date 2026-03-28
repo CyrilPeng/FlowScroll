@@ -1,7 +1,8 @@
 import math
 import time
 import threading
-from FlowScroll.core.config import cfg, runtime
+from types import SimpleNamespace
+from FlowScroll.core.config import STATE_LOCK, cfg, runtime
 from FlowScroll.core.scroller import default_scroll_strategy
 from FlowScroll.platform import system_platform
 from FlowScroll.services.logging_service import logger
@@ -24,7 +25,8 @@ class ScrollEngine(threading.Thread):
         self.inertia_active = False
         self.inertia_vx = 0.0
         self.inertia_vy = 0.0
-        self.friction = self._compute_friction(cfg.inertia_friction_ms)
+        with STATE_LOCK:
+            self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
         # 滚动速度历史（用于计算惯性初速度）
         self._scroll_history = []  # [(time_s, scroll_x, scroll_y), ...]
@@ -43,7 +45,8 @@ class ScrollEngine(threading.Thread):
 
     def update_friction(self):
         """配置变更后调用，重新计算摩擦系数。"""
-        self.friction = self._compute_friction(cfg.inertia_friction_ms)
+        with STATE_LOCK:
+            self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
     def interrupt_inertia(self):
         """立即中断惯性滑动。"""
@@ -89,14 +92,17 @@ class ScrollEngine(threading.Thread):
 
     def _try_enter_inertia(self):
         """尝试从 active 状态进入惯性模式。"""
-        if not cfg.enable_inertia:
+        with STATE_LOCK:
+            enable_inertia = cfg.enable_inertia
+            inertia_threshold = cfg.inertia_threshold
+        if not enable_inertia:
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
             return
 
         # 检查鼠标速度是否超过阈值
         mouse_speed = self._get_mouse_speed_px_per_s()
-        if mouse_speed < cfg.inertia_threshold:
+        if mouse_speed < inertia_threshold:
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
             return
@@ -121,7 +127,17 @@ class ScrollEngine(threading.Thread):
         was_active = False
 
         while True:
-            if runtime.active:
+            with STATE_LOCK:
+                active = runtime.active
+                origin_pos = runtime.origin_pos
+                enable_horizontal = cfg.enable_horizontal
+                dead_zone = cfg.dead_zone
+                sensitivity = cfg.sensitivity
+                speed_factor = cfg.speed_factor
+                reverse_x = cfg.reverse_x
+                reverse_y = cfg.reverse_y
+
+            if active:
                 # 惯性运行中被激活（新滚动开始），中断惯性
                 if self.inertia_active:
                     self.interrupt_inertia()
@@ -129,17 +145,17 @@ class ScrollEngine(threading.Thread):
                 try:
                     curr_x, curr_y = self.mouse_controller.position
                     dx, dy = (
-                        curr_x - runtime.origin_pos[0],
-                        curr_y - runtime.origin_pos[1],
+                        curr_x - origin_pos[0],
+                        curr_y - origin_pos[1],
                     )
 
-                    if not cfg.enable_horizontal:
+                    if not enable_horizontal:
                         dx = 0
 
                     dist = math.hypot(dx, dy)
                     current_dir = "neutral"
 
-                    if dist > cfg.dead_zone:
+                    if dist > dead_zone:
                         if abs(dx) > abs(dy):
                             current_dir = "right" if dx > 0 else "left"
                         else:
@@ -153,17 +169,21 @@ class ScrollEngine(threading.Thread):
                         dx,
                         dy,
                         dist,
-                        cfg,
+                        SimpleNamespace(
+                            dead_zone=dead_zone,
+                            sensitivity=sensitivity,
+                            speed_factor=speed_factor,
+                        ),
                         platform_multiplier,
-                        reverse_x=cfg.reverse_x,
-                        reverse_y=cfg.reverse_y,
+                        reverse_x=reverse_x,
+                        reverse_y=reverse_y,
                     )
 
                     if scroll_x != 0 or scroll_y != 0:
                         self.mouse_controller.scroll(scroll_x, scroll_y)
 
                         # 记录滚动速度历史
-                        now = time.time()
+                        now = time.monotonic()
                         self._scroll_history.append((now, scroll_x, scroll_y))
                         self._prune_history(self._scroll_history, now)
 
@@ -179,7 +199,9 @@ class ScrollEngine(threading.Thread):
             elif self.inertia_active:
                 # 惯性衰减模式
                 try:
-                    if not cfg.enable_inertia:
+                    with STATE_LOCK:
+                        enable_inertia = cfg.enable_inertia
+                    if not enable_inertia:
                         self.interrupt_inertia()
                     else:
                         self.inertia_vx *= self.friction
