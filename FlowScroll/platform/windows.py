@@ -1,4 +1,5 @@
 import ctypes
+import os
 import winreg
 from ctypes import wintypes
 from FlowScroll.platform.base import PlatformInterface
@@ -99,17 +100,17 @@ class WindowsPlatform(PlatformInterface):
     def set_autostart(self, app_name, app_path, enable):
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         try:
-            key = winreg.OpenKey(
+            with winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS
-            )
-            if enable:
-                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, app_path)
-            else:
-                try:
-                    winreg.DeleteValue(key, app_name)
-                except FileNotFoundError:
-                    pass
-            winreg.CloseKey(key)
+            ) as key:
+                if enable:
+                    command = self._build_startup_command(app_path)
+                    winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, command)
+                else:
+                    try:
+                        winreg.DeleteValue(key, app_name)
+                    except FileNotFoundError:
+                        pass
             return True
         except Exception as e:
             logger.error(f"设置开机自启失败: {e}")
@@ -118,13 +119,45 @@ class WindowsPlatform(PlatformInterface):
     def is_autostart_enabled(self, app_name, app_path):
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
-            value, _ = winreg.QueryValueEx(key, app_name)
-            winreg.CloseKey(key)
-            return value == app_path
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ
+            ) as key:
+                value, _ = winreg.QueryValueEx(key, app_name)
+            saved_executable = self._normalize_path(self._extract_executable(value))
+            expected_executable = self._normalize_path(self._extract_executable(app_path))
+            return bool(saved_executable) and saved_executable == expected_executable
         except Exception as e:
             logger.debug(f"is_autostart_enabled check failed: {e}")
             return False
+
+    @staticmethod
+    def _normalize_path(path):
+        if not path:
+            return ""
+        return os.path.normcase(os.path.normpath(path.strip().strip('"')))
+
+    @staticmethod
+    def _extract_executable(command):
+        if not command:
+            return ""
+        cmd = command.strip()
+        if not cmd:
+            return ""
+        if cmd[0] == '"':
+            end_quote = cmd.find('"', 1)
+            return cmd[1:end_quote] if end_quote > 0 else cmd[1:]
+        return cmd.split(" ", 1)[0]
+
+    @staticmethod
+    def _build_startup_command(app_path):
+        cmd = (app_path or "").strip()
+        if not cmd:
+            return cmd
+        if '"' in cmd:
+            return cmd
+        if " " in cmd:
+            return f'"{cmd}"'
+        return cmd
 
     def get_scroll_multiplier(self):
         return WINDOWS_SCROLL_MULTIPLIER

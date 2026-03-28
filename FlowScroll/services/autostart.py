@@ -1,6 +1,6 @@
 import sys
 import os
-from FlowScroll.platform import system_platform
+from FlowScroll.platform import system_platform, OS_NAME
 
 
 class AutoStartManager:
@@ -9,10 +9,16 @@ class AutoStartManager:
     def __init__(self) -> None:
         self.app_name: str = "FlowScroll"
         if getattr(sys, "frozen", False):
-            self.app_path: str = sys.executable
+            self.app_path: str = os.path.abspath(sys.executable)
         else:
-            # 开发环境下通常不建议真正开启自启，这里指向入口脚本
-            self.app_path = os.path.abspath(sys.argv[0])
+            script_path = os.path.abspath(sys.argv[0])
+            if OS_NAME == "Windows":
+                # Windows Run requires a runnable command.
+                python_path = os.path.abspath(sys.executable)
+                self.app_path = f'"{python_path}" "{script_path}"'
+            else:
+                # 开发环境下通常不建议真正开启自启，这里指向入口脚本
+                self.app_path = script_path
 
     def is_autorun(self) -> bool:
         return system_platform.is_autostart_enabled(self.app_name, self.app_path)
