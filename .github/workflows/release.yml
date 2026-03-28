@@ -1,4 +1,4 @@
-name: Build and Release
+name: Release
 
 on:
   push:
@@ -82,12 +82,6 @@ jobs:
 
       - name: 安装项目依赖
         run: uv sync
-
-      - name: 安装测试依赖
-        run: uv pip install pytest
-
-      - name: 运行测试
-        run: uv run python -m pytest tests/ -v
 
       - name: 安装 Nuitka
         run: uv pip install Nuitka

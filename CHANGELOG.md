@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.5.2
+## v1.5.3
 
 ### Fixed
 - 修复防误触延迟触发时使用按下坐标的问题，改为触发当下读取实时鼠标坐标，避免激活瞬间位移跳变
@@ -9,6 +9,9 @@
 
 ### Added
 - 新增两条输入时序回归测试：延迟激活实时坐标测试、monotonic 防抖测试
+
+### Improved
+- CI/CD 流程拆分：新增面向 push/PR 的常规 CI（依赖安装 + pytest），Release workflow 聚焦 tag 打包与发布
 
 ---
 
