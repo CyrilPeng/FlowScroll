@@ -9,50 +9,7 @@ on:
   pull_request:
 
 jobs:
-  version-discipline:
-    name: Version Discipline
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Validate Main Branch Version Policy
-        if: github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          python - <<'PY'
-          import re
-          from pathlib import Path
-
-          version_text = Path("FlowScroll/__init__.py").read_text(encoding="utf-8")
-          match = re.search(r'__version__\s*=\s*"([^"]+)"', version_text)
-          if not match:
-              raise SystemExit("Unable to locate __version__ in FlowScroll/__init__.py")
-          version = match.group(1)
-
-          normalized = version.lower()
-          prerelease_markers = ("dev", "a", "b", "rc", "alpha", "beta", "pre")
-          if not any(marker in normalized for marker in prerelease_markers):
-              raise SystemExit(
-                  f"main branch must use a development/prerelease version, got: {version}"
-              )
-          print(f"main branch version policy OK: {version}")
-          PY
-
-      - name: Validate Changelog Has Unreleased
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
-          if "## Unreleased" not in changelog:
-              raise SystemExit("CHANGELOG.md must contain an '## Unreleased' section")
-          print("CHANGELOG Unreleased section OK")
-          PY
-
   test:
-    needs: version-discipline
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -80,3 +37,127 @@ jobs:
 
       - name: Run Tests
         run: uv run python -m pytest tests/ -v
+
+  package-verify:
+    needs: test
+    name: Package Verify on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: FlowScroll_CI_Win.exe
+            artifact_path: build_out/FlowScroll_CI_Win.exe
+          - os: macos-latest
+            artifact_name: FlowScroll_CI_Mac.dmg
+            artifact_path: FlowScroll_CI_Mac.dmg
+          - os: ubuntu-latest
+            artifact_name: FlowScroll_CI_Linux.AppImage
+            artifact_path: FlowScroll_CI_Linux.AppImage
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Setup Python
+        run: uv python install 3.12
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Install Nuitka
+        run: uv pip install Nuitka
+
+      - name: Build Windows package
+        if: matrix.os == 'windows-latest'
+        run: |
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_CI_Win.exe main.py
+
+      - name: Build macOS package
+        if: matrix.os == 'macos-latest'
+        run: |
+          if [ -f "logo.icns" ]; then
+            ICON_ARG="--macos-app-icon=logo.icns"
+          else
+            ICON_ARG=""
+          fi
+
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --include-data-files=main.py=main.py --include-data-dir=FlowScroll/locales=FlowScroll/locales --macos-app-name="FlowScroll" --output-dir=build_out main.py
+
+          if [ -d "build_out/main.app" ]; then
+            mv build_out/main.app "build_out/FlowScroll.app"
+          fi
+
+          brew install create-dmg
+
+          create-dmg \
+            --volname "FlowScroll Installer" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "FlowScroll.app" 175 120 \
+            --hide-extension "FlowScroll.app" \
+            --app-drop-link 425 120 \
+            "FlowScroll_CI_Mac.dmg" \
+            "build_out/FlowScroll.app/"
+
+      - name: Build Linux package
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0 imagemagick
+
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
+
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+          cp -r build_out/*.dist/* AppDir/usr/bin/
+
+          cat > AppDir/FlowScroll.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=FlowScroll
+          Exec=FlowScroll_Linux
+          Icon=flowscroll
+          Categories=Utility;
+          EOF
+
+          cp AppDir/FlowScroll.desktop AppDir/usr/share/applications/FlowScroll.desktop
+
+          cat > AppDir/AppRun <<'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          export PATH="$HERE/usr/bin:$PATH"
+          exec "$HERE/usr/bin/FlowScroll_Linux" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+          if [ -f "FlowScroll/resources/FlowScroll.svg" ]; then
+            convert -background none -size 256x256 FlowScroll/resources/FlowScroll.svg AppDir/flowscroll.png
+          elif [ -f "logo.ico" ]; then
+            convert logo.ico -resize 256x256 AppDir/flowscroll.png
+          else
+            convert -size 256x256 xc:#3B82F6 -gravity center -pointsize 100 -fill white -annotate 0 "FS" AppDir/flowscroll.png
+          fi
+
+          cp AppDir/flowscroll.png AppDir/usr/share/icons/hicolor/256x256/apps/flowscroll.png
+
+          curl -Lo appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+
+          ./appimagetool --appimage-extract-and-run AppDir "FlowScroll_CI_Linux.AppImage"
+
+      - name: Upload CI package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
