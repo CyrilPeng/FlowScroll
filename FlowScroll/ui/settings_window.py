@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QTabWidget,
+    QTextEdit,
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import (
@@ -44,8 +45,9 @@ from FlowScroll.core.hotkeys import hotkey_to_display
 from FlowScroll.ui.utils import resource_path
 from FlowScroll.ui.styles import (
     get_main_stylesheet,
-    get_help_dialog_style,
+    get_dialog_stylesheet,
     get_help_button_style,
+    get_textedit_style,
 )
 from FlowScroll.ui.bridge import LogicBridge
 from FlowScroll.ui.preset_manager import PresetManager
@@ -376,6 +378,12 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
 
+        hint_label = QLabel(tr("main.hotkey_dialog.hint"))
+        hint_label.setWordWrap(True)
+        hint_label.setTextFormat(Qt.RichText)
+        hint_label.setStyleSheet("color: #CBD5E1; font-size: 13px; line-height: 1.5;")
+        layout.addWidget(hint_label)
+
         hotkey_edit = HotkeyEdit()
         hotkey_edit.set_hotkey(cfg.horizontal_hotkey)
         hotkey_edit.setMaximumSequenceLength(1)
@@ -407,11 +415,16 @@ class MainWindow(QMainWindow):
             self.save_presets_to_file()
 
     def show_help_dialog(self):
-        msg = QMessageBox(self)
-        msg.setWindowTitle(tr("main.help.title"))
-        msg.setIcon(QMessageBox.NoIcon)
-        msg.setStyleSheet(get_help_dialog_style())
-        msg.setTextFormat(Qt.RichText)
+        dialog = QDialog(self)
+        dialog.setWindowTitle(tr("main.help.title"))
+        dialog.setMinimumSize(520, 420)
+        dialog.resize(620, 500)
+        dialog.setSizeGripEnabled(True)
+        dialog.setStyleSheet(get_dialog_stylesheet() + get_textedit_style())
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(14)
 
         def img(name):
             path = resource_path(os.path.join("FlowScroll", "resources", name)).replace(
@@ -426,8 +439,24 @@ class MainWindow(QMainWindow):
             target_icon=img("ic_target.svg"),
             move_icon=img("ic_move.svg"),
         )
-        msg.setText(help_text)
-        msg.exec()
+
+        help_view = QTextEdit(dialog)
+        help_view.setReadOnly(True)
+        help_view.setAcceptRichText(True)
+        help_view.setHtml(help_text)
+        help_view.setMinimumHeight(280)
+        layout.addWidget(help_view)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_close = QPushButton(tr("main.hotkey_dialog.ok"))
+        btn_close.setObjectName("BtnPrimary")
+        btn_close.setCursor(Qt.PointingHandCursor)
+        btn_close.clicked.connect(dialog.accept)
+        btn_layout.addWidget(btn_close)
+        layout.addLayout(btn_layout)
+
+        dialog.exec()
 
     def on_toggle_horizontal_hotkey(self):
         new_state = not cfg.enable_horizontal
