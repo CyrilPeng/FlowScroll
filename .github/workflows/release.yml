@@ -165,6 +165,7 @@ jobs:
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 
           mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
           cp -r build_out/*.dist/* AppDir/usr/bin/
@@ -178,6 +179,16 @@ jobs:
           Categories=Utility;
           EOF
 
+          cp AppDir/FlowScroll.desktop AppDir/usr/share/applications/FlowScroll.desktop
+
+          cat > AppDir/AppRun <<'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          export PATH="$HERE/usr/bin:$PATH"
+          exec "$HERE/usr/bin/FlowScroll_Linux" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
           if [ -f "FlowScroll/resources/FlowScroll.svg" ]; then
             convert -background none -size 256x256 FlowScroll/resources/FlowScroll.svg AppDir/flowscroll.png
           elif [ -f "logo.ico" ]; then
@@ -185,6 +196,8 @@ jobs:
           else
             convert -size 256x256 xc:#3B82F6 -gravity center -pointsize 100 -fill white -annotate 0 "FS" AppDir/flowscroll.png
           fi
+
+          cp AppDir/flowscroll.png AppDir/usr/share/icons/hicolor/256x256/apps/flowscroll.png
 
           curl -Lo appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- 恢复 `main` 分支的开发版版本纪律：版本号回到开发版本，并保留 `Unreleased` 区段以满足 CI 校验
+- 修复 Linux AppImage 打包产物缺少 `AppRun` 入口脚本的问题，并补齐 `.desktop` 与图标安装路径
+
 ## v1.6.3
 
 > 稳定版发布：本版本对应当前本地发布提交，`main` 分支后续可继续前进。

@@ -1,6 +1,6 @@
 [project]
 name = "FlowScroll"
-version = "1.6.3"
+version = "1.6.4.dev0"
 description = "全局无级滚动工具——把浏览器里的中键自动滚动，带到整个系统"
 authors = [
     { name = "某不科学的高数" }
