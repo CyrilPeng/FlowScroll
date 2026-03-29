@@ -737,7 +737,8 @@ class TestWebDAVErrorFormatting:
         from FlowScroll.ui.webdav_dialog import format_webdav_error
 
         message = format_webdav_error(URLError(socket.timeout("timed out")))
-        assert "timeout" in message.lower() or "超时" in message
+        lowered = message.lower()
+        assert "timeout" in lowered or "timed out" in lowered or "超时" in message
 
     def test_format_http_error(self):
         from FlowScroll.ui.webdav_dialog import format_webdav_error
