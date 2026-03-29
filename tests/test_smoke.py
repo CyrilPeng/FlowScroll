@@ -891,3 +891,27 @@ class TestWebDAVErrorFormatting:
 
         assert statuses == [204]
         assert logged == []
+
+
+class TestMainTabPersistence:
+    def test_persist_config_change_updates_cfg_and_saves(self):
+        from FlowScroll.core.config import cfg
+        from FlowScroll.ui.tabs_builder import _persist_config_change
+
+        class DummyWindow:
+            def __init__(self):
+                self.saved = 0
+
+            def save_presets_to_file(self):
+                self.saved += 1
+
+        window = DummyWindow()
+        original_overlay_size = cfg.overlay_size
+
+        try:
+            _persist_config_change(window, "overlay_size", 88)
+
+            assert cfg.overlay_size == 88
+            assert window.saved == 1
+        finally:
+            cfg.overlay_size = original_overlay_size

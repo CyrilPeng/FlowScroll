@@ -26,6 +26,13 @@ import webbrowser
 from FlowScroll.i18n import tr
 
 
+def _persist_config_change(main_window, attr_name, value, after_change=None):
+    setattr(cfg, attr_name, value)
+    if after_change is not None:
+        after_change(value)
+    main_window.save_presets_to_file()
+
+
 def build_parameter_tab(main_window):
     tab1_widget = QWidget()
     tab1_layout = QVBoxLayout(tab1_widget)
@@ -43,7 +50,7 @@ def build_parameter_tab(main_window):
         cfg.sensitivity,
         1.0,
         5.0,
-        lambda v: setattr(cfg, "sensitivity", v),
+        lambda v: _persist_config_change(main_window, "sensitivity", v),
         decimals=1,
     )
     core_layout.addWidget(create_h_line())
@@ -55,7 +62,7 @@ def build_parameter_tab(main_window):
         cfg.speed_factor,
         0.01,
         10.00,
-        lambda v: setattr(cfg, "speed_factor", v),
+        lambda v: _persist_config_change(main_window, "speed_factor", v),
         decimals=2,
     )
     core_layout.addWidget(create_h_line())
@@ -67,7 +74,7 @@ def build_parameter_tab(main_window):
         cfg.dead_zone,
         0.0,
         100.0,
-        lambda v: setattr(cfg, "dead_zone", v),
+        lambda v: _persist_config_change(main_window, "dead_zone", v),
         decimals=1,
     )
     core_layout.addWidget(create_h_line())
@@ -79,10 +86,14 @@ def build_parameter_tab(main_window):
         cfg.overlay_size,
         30,
         150,
-        lambda v: (
-            setattr(cfg, "overlay_size", v),
-            main_window.bridge.update_size.emit(int(v)),
-            main_window.bridge.preview_size.emit(),
+        lambda v: _persist_config_change(
+            main_window,
+            "overlay_size",
+            v,
+            after_change=lambda new_value: (
+                main_window.bridge.update_size.emit(int(new_value)),
+                main_window.bridge.preview_size.emit(),
+            ),
         ),
         decimals=0,
     )
@@ -205,7 +216,9 @@ def build_advanced_tab(main_window):
 
     chk_horizontal = QCheckBox(tr("tab.advanced.enable_horizontal"))
     chk_horizontal.setChecked(cfg.enable_horizontal)
-    chk_horizontal.toggled.connect(lambda v: setattr(cfg, "enable_horizontal", v))
+    chk_horizontal.toggled.connect(
+        lambda v: _persist_config_change(main_window, "enable_horizontal", v)
+    )
     chk_horizontal.setFocusPolicy(Qt.NoFocus)
     chk_horizontal.setCursor(Qt.PointingHandCursor)
     main_window.ui_widgets["enable_horizontal"] = chk_horizontal
@@ -241,7 +254,9 @@ def build_advanced_tab(main_window):
 
     chk_inertia = QCheckBox(tr("tab.advanced.enable_inertia"))
     chk_inertia.setChecked(cfg.enable_inertia)
-    chk_inertia.toggled.connect(lambda v: setattr(cfg, "enable_inertia", v))
+    chk_inertia.toggled.connect(
+        lambda v: _persist_config_change(main_window, "enable_inertia", v)
+    )
     chk_inertia.setFocusPolicy(Qt.NoFocus)
     chk_inertia.setCursor(Qt.PointingHandCursor)
     main_window.ui_widgets["enable_inertia"] = chk_inertia
@@ -268,7 +283,7 @@ def build_advanced_tab(main_window):
         "minimize_to_tray",
         tr("tab.advanced.minimize_to_tray"),
         cfg.minimize_to_tray,
-        lambda v: setattr(cfg, "minimize_to_tray", v),
+        lambda v: _persist_config_change(main_window, "minimize_to_tray", v),
     )
     adv_layout.addWidget(create_h_line())
 
@@ -288,7 +303,7 @@ def build_advanced_tab(main_window):
         "disable_fullscreen",
         tr("tab.advanced.disable_fullscreen"),
         cfg.disable_fullscreen,
-        lambda v: setattr(cfg, "disable_fullscreen", v),
+        lambda v: _persist_config_change(main_window, "disable_fullscreen", v),
         style_sheet="color: #FCA5A5;",
     )
     adv_layout.addWidget(create_h_line())
