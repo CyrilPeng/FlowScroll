@@ -9,7 +9,7 @@ from FlowScroll.ui.utils import resource_path
 
 
 class TrayManager(QObject):
-    """System tray icon and menu wiring."""
+    """系统托盘图标与菜单逻辑封装。"""
 
     show_window = Signal()
 

@@ -89,7 +89,7 @@ def build_parameter_tab(main_window):
 
     tab1_layout.addWidget(core_card)
 
-    # --- 预设管理 (Presets) ---
+    # 预设管理区域。
     lbl_preset = QLabel(tr("tab.presets.title"))
     lbl_preset.setObjectName("SectionTitle")
     tab1_layout.addWidget(lbl_preset)
@@ -129,7 +129,7 @@ def build_parameter_tab(main_window):
 
     tab1_layout.addWidget(preset_card)
 
-    # --- Author Info ---
+    # 作者与发布信息区域。
     author_layout = QHBoxLayout()
     author_layout.setAlignment(Qt.AlignCenter)
     author_layout.setSpacing(4)
@@ -138,7 +138,7 @@ def build_parameter_tab(main_window):
     main_window.btn_github.setCursor(Qt.PointingHandCursor)
     main_window.btn_github.setObjectName("BtnIcon")
 
-    # NEW badge (hidden by default, shown by on_update_available)
+    # 更新徽标，默认隐藏，在检测到状态变化后显示。
     main_window.btn_new_badge = QPushButton("NEW")
     main_window.btn_new_badge.setCursor(Qt.PointingHandCursor)
     main_window.btn_new_badge.setFocusPolicy(Qt.NoFocus)
@@ -197,7 +197,7 @@ def build_advanced_tab(main_window):
     adv_layout.addWidget(main_window.input_hook_status_label)
     adv_layout.addWidget(create_h_line())
 
-    # --- Horizontal Hotkey Row ---
+    # 横向滚动快捷键设置行。
     row_horizontal = QWidget()
     row_horizontal_layout = QHBoxLayout(row_horizontal)
     row_horizontal_layout.setContentsMargins(0, 0, 0, 0)
@@ -225,7 +225,7 @@ def build_advanced_tab(main_window):
         btn_gear.setIcon(QIcon(gear_path))
         btn_gear.setIconSize(QSize(16, 16))
     else:
-        btn_gear.setText("⚙️")
+        btn_gear.setText("鈿欙笍")
     btn_gear.clicked.connect(main_window.open_hotkey_dialog)
     row_horizontal_layout.addWidget(btn_gear)
     main_window.ui_widgets["horizontal_hotkey_button"] = btn_gear
@@ -233,7 +233,7 @@ def build_advanced_tab(main_window):
     adv_layout.addWidget(row_horizontal)
     adv_layout.addWidget(create_h_line())
 
-    # --- 惯性滚动 Row ---
+    # 惯性滚动设置行。
     row_inertia = QWidget()
     row_inertia_layout = QHBoxLayout(row_inertia)
     row_inertia_layout.setContentsMargins(0, 0, 0, 0)
@@ -272,7 +272,7 @@ def build_advanced_tab(main_window):
     )
     adv_layout.addWidget(create_h_line())
 
-    # Autorun (not stored in cfg, so key=None)
+    # 开机自启动不存入 cfg，因此这里的 key 传入 None。
     add_toggle_row(
         adv_layout,
         None,
@@ -282,7 +282,7 @@ def build_advanced_tab(main_window):
     )
     adv_layout.addWidget(create_h_line())
 
-    # Inline Advanced Rules
+    # 内联显示的高级规则开关。
     main_window.ui_widgets["disable_fullscreen"] = add_toggle_row(
         adv_layout,
         "disable_fullscreen",
@@ -345,7 +345,7 @@ def build_advanced_tab(main_window):
     tab2_layout.addWidget(adv_card)
     main_window.refresh_input_hook_status_ui()
 
-    # Add stretch to make content fit height
+    # 添加拉伸项，让内容自然贴顶显示。
     tab2_layout.addStretch()
 
     return tab2_widget

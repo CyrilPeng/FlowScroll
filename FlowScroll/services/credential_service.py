@@ -1,7 +1,8 @@
 """
 凭据安全存储服务。
-优先使用系统钥匙串（macOS Keychain / Windows Credential Manager /
-Linux Secret Service）。不可用时保守降级：不落盘密码，仅在会话内存中保留。
+
+优先使用系统密码库，例如 macOS Keychain、Windows Credential Manager
+或 Linux Secret Service；如果不可用，则降级为仅保存在当前会话内存中。
 """
 
 from FlowScroll.services.logging_service import logger
@@ -26,7 +27,7 @@ class CredentialService:
 
             backend = keyring.get_keyring()
             if backend is None:
-                logger.info("keyring 无后端，降级为内存存储")
+                logger.info("keyring 无可用后端，降级为内存存储")
                 return
 
             # 仅接受真正可用的后端，屏蔽 null/fail 类后端。
@@ -38,7 +39,7 @@ class CredentialService:
                 )
                 return
 
-            # 做一次写入/读取/删除探测，确认后端可正常工作。
+            # 执行一次写入、读取、删除探测，确认后端可正常工作。
             try:
                 keyring.set_password(_SERVICE_NAME, _PROBE_KEY, "ok")
                 result = keyring.get_password(_SERVICE_NAME, _PROBE_KEY)
@@ -65,7 +66,7 @@ class CredentialService:
         return self._keyring_available
 
     def save_password(self, password: str) -> bool:
-        """保存密码到系统钥匙串。成功返回 True。"""
+        """保存密码到系统密码库，成功时返回 True。"""
         if not password:
             self._memory_password = ""
             return True
@@ -101,7 +102,7 @@ class CredentialService:
                 self._keyring.delete_password(_SERVICE_NAME, _KEY_WEBDAV)
                 return True
             except Exception as e:
-                logger.debug(f"Keyring 删除密码: {e}")
+                logger.debug(f"Keyring 删除密码失败: {e}")
         return False
 
 

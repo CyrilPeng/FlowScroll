@@ -131,7 +131,7 @@ def test_delayed_activation_uses_realtime_mouse_position(monkeypatch):
     assert FakeTimer.last_instance is not None
     assert FakeTimer.last_instance.started is True
 
-    # Move mouse before timer fires; origin must use the latest position.
+    # 在定时器触发前移动鼠标，起点应使用最新位置。
     FakeController.position = (200, 300)
     FakeTimer.last_instance.callback()
 
@@ -172,7 +172,7 @@ def test_click_mode_debounce_uses_monotonic(monkeypatch):
         assert runtime.origin_pos == (1, 1)
     assert bridge.show_overlay.count == 1
 
-    # Second press in threshold window must be ignored.
+    # 阈值时间窗内的第二次触发应被忽略。
     listener._activate_now(2, 2, "mouse")
     with STATE_LOCK:
         assert runtime.active is True

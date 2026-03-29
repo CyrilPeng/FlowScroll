@@ -241,7 +241,7 @@ class MainWindow(QMainWindow):
         content_layout.setContentsMargins(32, 40, 32, 40)
         content_layout.setSpacing(20)
 
-        # --- Header Section ---
+        # 头部区域。
         header_layout = QHBoxLayout()
         header_layout.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
@@ -290,11 +290,11 @@ class MainWindow(QMainWindow):
         # 引入外部 Tab 构建函数。
         from FlowScroll.ui.tabs_builder import build_parameter_tab, build_advanced_tab
 
-        # --- Tab Widget ---
+        # 标签页容器。
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabPosition(QTabWidget.North)
 
-        # Build tabs
+        # 构建各标签页内容。
         tab1_widget = build_parameter_tab(self)
         self.tab_widget.addTab(tab1_widget, tr("main.tab.parameters"))
 
@@ -304,7 +304,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.currentChanged.connect(self.update_tab_height)
         self.update_tab_height(0)
 
-        # Add tab widget to content layout
+        # 将标签页加入主体布局。
         content_layout.addWidget(self.tab_widget)
 
         scroll_area.setWidget(content_widget)

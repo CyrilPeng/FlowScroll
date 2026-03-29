@@ -24,17 +24,17 @@ class KeyboardManager:
     def _get_key_name(self, key):
         if isinstance(key, keyboard.KeyCode):
             if key.char:
-                # Ctrl+letter on some platforms can produce control chars
-                # (e.g. Ctrl+K -> '\x0b'). Convert them back to letters.
+                # 某些平台上，Ctrl+字母可能会产生控制字符，
+                # 例如 Ctrl+K -> '\x0b'，这里将其还原为字母。
                 if len(key.char) == 1 and 1 <= ord(key.char) <= 26:
                     return chr(ord(key.char) + 96)
                 return key.char.lower()
             vk = getattr(key, 'vk', None)
             if isinstance(vk, int):
-                # A-Z
+                # 大写字母 A-Z。
                 if 65 <= vk <= 90:
                     return chr(vk + 32)
-                # 0-9
+                # 数字 0-9。
                 if 48 <= vk <= 57:
                     return chr(vk)
             return None
@@ -93,7 +93,7 @@ class GlobalInputListener:
         self.activation_hotkey_active = False
         self.activation_input_source = None
 
-        # Compatibility mode: delay activation until key/button is held long enough.
+        # 延迟启动模式：按键或鼠标按住达到阈值后才真正启用。
         self._pending_activation_timer = None
         self._pending_activation_source = None
         self._pressed_activation_sources = {'mouse': False, 'keyboard': False}
@@ -215,13 +215,13 @@ class GlobalInputListener:
         self._pending_activation_timer.start()
 
     def _handle_activation_press(self, x, y, source):
-        # Inertia running: only interrupt, do not activate.
+        # 惯性运行中只负责打断，不应再次激活滚动。
         if self.scroll_engine and self.scroll_engine.inertia_active:
             self.scroll_engine.interrupt_inertia()
             return
 
-        # Click mode: when already active, pressing the activation key/button
-        # should close immediately even if compatibility delay is enabled.
+        # 单击启用模式下，如果当前已经处于激活状态，
+        # 再次按下触发键应立即关闭，不受延迟启动影响。
         with STATE_LOCK:
             click_mode_and_active = cfg.activation_mode == 0 and runtime.active
         if click_mode_and_active:
@@ -246,7 +246,7 @@ class GlobalInputListener:
             self._set_active(False)
 
     def _on_key_press(self, key_name, current_keys):
-        # Inertia running: interrupt on non-modifier key press.
+        # 惯性运行中，按下非修饰键时直接打断惯性。
         if self.scroll_engine and self.scroll_engine.inertia_active:
             modifier_only = {'ctrl', 'alt', 'shift', 'meta'}
             if key_name not in modifier_only:
@@ -308,11 +308,11 @@ class GlobalInputListener:
             logger.error(f'鼠标钩子失败: {e}')
 
     def win32_event_filter(self, msg, _data):
-        # WM_MBUTTONDOWN = 0x0207, WM_MBUTTONUP = 0x0208, WM_MBUTTONDBLCLK = 0x0209
+        # WM_MBUTTONDOWN = 0x0207，WM_MBUTTONUP = 0x0208，WM_MBUTTONDBLCLK = 0x0209
         if msg in (0x0207, 0x0208, 0x0209):
-            # Inertia running: middle button only interrupts inertia.
+            # 惯性运行中，中键只用于打断惯性。
             if self.scroll_engine and self.scroll_engine.inertia_active:
-                if msg == 0x0207:  # WM_MBUTTONDOWN
+                if msg == 0x0207:  # 中键按下
                     self.scroll_engine.interrupt_inertia()
                 if self.mouse_listener and hasattr(self.mouse_listener, 'suppress_event'):
                     self.mouse_listener.suppress_event()
@@ -329,7 +329,7 @@ class GlobalInputListener:
         return True
 
     def on_click(self, x, y, button, pressed):
-        # Inertia running: any mouse click interrupts inertia.
+        # 惯性运行中，任意鼠标点击都会打断惯性。
         if pressed and self.scroll_engine and self.scroll_engine.inertia_active:
             self.scroll_engine.interrupt_inertia()
             return

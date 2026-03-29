@@ -7,7 +7,7 @@ import traceback
 
 
 def get_log_dir():
-    # Save logs to temp/flowscroll directory
+    # 将日志统一写入系统临时目录下的 flowscroll 子目录。
     temp_dir = tempfile.gettempdir()
     log_dir = os.path.join(temp_dir, "flowscroll")
     os.makedirs(log_dir, exist_ok=True)
@@ -21,19 +21,19 @@ def setup_logging():
     logger = logging.getLogger("FlowScroll")
     logger.setLevel(logging.DEBUG)
 
-    # 避免重复添加handler
+    # 避免重复添加处理器。
     if logger.handlers:
         return logger
 
-    # 文件处理器
+    # 文件处理器。
     file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
 
-    # 控制台处理器
+    # 控制台处理器。
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
 
-    # 格式化
+    # 统一日志格式。
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )

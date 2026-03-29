@@ -7,7 +7,7 @@ from FlowScroll.services.logging_service import logger
 
 try:
     from PySide6.QtCore import QThread, Signal
-except ModuleNotFoundError:  # pragma: no cover - test fallback for non-GUI environments
+except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境下的降级替身
     class QThread:
         def __init__(self, *_args, **_kwargs):
             pass
@@ -77,10 +77,10 @@ def _fetch_gitee():
 
 
 class UpdateCheckerThread(QThread):
-    update_available = Signal(str, str)  # version, url
+    update_available = Signal(str, str)  # 版本号、发布地址
 
     def run(self):
-        # 优先 GitHub，失败则回退 Gitee。
+        # 优先检查 GitHub，失败后再回退到 Gitee。
         for name, fetcher in [("GitHub", _fetch_github), ("Gitee", _fetch_gitee)]:
             try:
                 version, html_url = fetcher()

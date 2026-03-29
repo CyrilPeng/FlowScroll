@@ -37,7 +37,8 @@ class SingleInstanceManager(QObject):
                 self.server.errorString(),
             )
             self.server = None
-            # Fail open: keep app usable even if IPC setup is unavailable.
+            # 即使单实例通信初始化失败，也允许程序继续运行，
+            # 避免因 IPC 异常导致主功能完全不可用。
             return True
 
         return True

@@ -21,48 +21,48 @@ class ScrollEngine(threading.Thread):
         self.mouse_controller = mouse_controller
         self.strategy = default_scroll_strategy
 
-        # 惯性状态
+        # 惯性状态。
         self.inertia_active = False
         self.inertia_vx = 0.0
         self.inertia_vy = 0.0
         with STATE_LOCK:
             self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
-        # 滚动速度历史（用于计算惯性初速度）
-        self._scroll_history = []  # [(time_s, scroll_x, scroll_y), ...]
+        # 滚动速度历史，用于估算惯性初速度。
+        self._scroll_history = []  # 格式: [(时间戳秒, 横向滚动, 纵向滚动), ...]
         self._scroll_history_window = SCROLL_HISTORY_WINDOW
 
-        # 鼠标位置历史（用于计算触发阈值）
-        self._mouse_pos_history = []  # [(time_s, x, y), ...]
+        # 鼠标位置历史，用于计算触发惯性的速度阈值。
+        self._mouse_pos_history = []  # 格式: [(时间戳秒, x, y), ...]
 
     @staticmethod
     def _compute_friction(half_life_ms):
-        """将半衰期 (ms) 转换为每帧 (4ms) 的摩擦系数。"""
+        """将半衰期毫秒值换算为每帧的摩擦系数。"""
         if half_life_ms <= 0:
             return 0.9
-        ticks = half_life_ms / 4.0  # 4ms per tick
+        ticks = half_life_ms / 4.0  # 每帧按 4ms 计算。
         return math.pow(0.5, 1.0 / ticks)
 
     def update_friction(self):
-        """配置变更后调用，重新计算摩擦系数。"""
+        """配置变化后重新计算摩擦系数。"""
         with STATE_LOCK:
             self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
     def interrupt_inertia(self):
-        """立即中断惯性滑动。"""
+        """立即中断惯性滚动。"""
         if self.inertia_active:
             self.inertia_active = False
             self.inertia_vx = 0.0
             self.inertia_vy = 0.0
 
     def _prune_history(self, history, now):
-        """清理超过窗口期的历史记录。"""
+        """清理超出时间窗口的历史记录。"""
         cutoff = now - self._scroll_history_window
         while history and history[0][0] < cutoff:
             history.pop(0)
 
     def _get_max_speed_from_history(self):
-        """从滚动历史中获取最大模值对应的速度向量。"""
+        """从滚动历史中取出模长最大的速度向量。"""
         if not self._scroll_history:
             return 0.0, 0.0
 
@@ -77,7 +77,7 @@ class ScrollEngine(threading.Thread):
         return best_vx, best_vy
 
     def _get_mouse_speed_px_per_s(self):
-        """计算最近窗口内鼠标的平均移动速度 (px/s)。"""
+        """计算最近时间窗口内鼠标的平均移动速度，单位 px/s。"""
         if len(self._mouse_pos_history) < 2:
             return 0.0
 
@@ -91,7 +91,7 @@ class ScrollEngine(threading.Thread):
         return dist / dt
 
     def _try_enter_inertia(self):
-        """尝试从 active 状态进入惯性模式。"""
+        """尝试从激活状态切换到惯性模式。"""
         with STATE_LOCK:
             enable_inertia = cfg.enable_inertia
             inertia_threshold = cfg.inertia_threshold
@@ -100,14 +100,14 @@ class ScrollEngine(threading.Thread):
             self._mouse_pos_history.clear()
             return
 
-        # 检查鼠标速度是否超过阈值
+        # 先检查鼠标速度是否达到进入惯性的阈值。
         mouse_speed = self._get_mouse_speed_px_per_s()
         if mouse_speed < inertia_threshold:
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
             return
 
-        # 获取惯性初速度
+        # 从最近滚动历史中提取惯性初速度。
         vx, vy = self._get_max_speed_from_history()
         speed_sq = vx * vx + vy * vy
         if speed_sq < 0.01:
@@ -138,7 +138,7 @@ class ScrollEngine(threading.Thread):
                 reverse_y = cfg.reverse_y
 
             if active:
-                # 惯性运行中被激活（新滚动开始），中断惯性
+                # 如果惯性还在运行但用户重新激活滚动，则立即中断惯性。
                 if self.inertia_active:
                     self.interrupt_inertia()
 
@@ -182,12 +182,12 @@ class ScrollEngine(threading.Thread):
                     if scroll_x != 0 or scroll_y != 0:
                         self.mouse_controller.scroll(scroll_x, scroll_y)
 
-                        # 记录滚动速度历史
+                        # 记录滚动速度历史。
                         now = time.monotonic()
                         self._scroll_history.append((now, scroll_x, scroll_y))
                         self._prune_history(self._scroll_history, now)
 
-                        # 记录鼠标位置历史
+                        # 记录鼠标位置历史。
                         self._mouse_pos_history.append((now, curr_x, curr_y))
                         self._prune_history(self._mouse_pos_history, now)
 
@@ -197,7 +197,7 @@ class ScrollEngine(threading.Thread):
                     logger.debug(f"ScrollEngine active mode error: {e}")
 
             elif self.inertia_active:
-                # 惯性衰减模式
+                # 惯性衰减阶段。
                 try:
                     with STATE_LOCK:
                         enable_inertia = cfg.enable_inertia
@@ -207,7 +207,7 @@ class ScrollEngine(threading.Thread):
                         self.inertia_vx *= self.friction
                         self.inertia_vy *= self.friction
 
-                        # 速度过低时停止
+                        # 速度过低时停止惯性。
                         speed_sq = (
                             self.inertia_vx * self.inertia_vx
                             + self.inertia_vy * self.inertia_vy
@@ -224,7 +224,7 @@ class ScrollEngine(threading.Thread):
                     self.interrupt_inertia()
 
             else:
-                # 检测从 active 到 inactive 的转换，尝试进入惯性
+                # 检测从 active 到 inactive 的转换，必要时尝试进入惯性。
                 if was_active:
                     self._try_enter_inertia()
                     was_active = False
