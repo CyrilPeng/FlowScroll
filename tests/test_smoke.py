@@ -726,6 +726,21 @@ class TestWebDAVErrorFormatting:
         assert validate_webdav_url("dav.jianguoyun.com/dav/") is not None
         assert validate_webdav_url("https://dav.jianguoyun.com/dav/") is None
 
+    def test_build_webdav_urls_normalize_root_directory(self):
+        from FlowScroll.ui.webdav_dialog import (
+            build_legacy_webdav_file_url,
+            build_preferred_webdav_file_url,
+        )
+
+        assert (
+            build_legacy_webdav_file_url("https://dav.jianguoyun.com/dav")
+            == "https://dav.jianguoyun.com/dav/FlowScroll_config.json"
+        )
+        assert (
+            build_preferred_webdav_file_url("https://dav.jianguoyun.com/dav/")
+            == "https://dav.jianguoyun.com/dav/FlowScroll/FlowScroll_config.json"
+        )
+
     def test_format_connection_refused_error(self):
         from FlowScroll.ui.webdav_dialog import format_webdav_error
 
@@ -892,6 +907,119 @@ class TestWebDAVErrorFormatting:
 
         assert statuses == [204]
         assert logged == []
+
+    def test_webdav_upload_falls_back_to_app_subdir_after_root_404(self, monkeypatch):
+        import FlowScroll.ui.webdav_dialog as webdav_dialog
+
+        requests = []
+
+        class DummyResponse:
+            def __init__(self, status):
+                self.status = status
+
+            def read(self):
+                return b"{}"
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        def fake_urlopen(req, timeout=10):
+            requests.append((req.get_method(), req.full_url, timeout))
+            if req.get_method() == "PUT" and req.full_url.endswith(
+                "/dav/FlowScroll_config.json"
+            ):
+                raise HTTPError(
+                    url=req.full_url,
+                    code=404,
+                    msg="Not Found",
+                    hdrs=None,
+                    fp=None,
+                )
+            if req.get_method() == "MKCOL" and req.full_url.endswith("/dav/FlowScroll/"):
+                return DummyResponse(201)
+            if req.get_method() == "PUT" and req.full_url.endswith(
+                "/dav/FlowScroll/FlowScroll_config.json"
+            ):
+                return DummyResponse(201)
+            raise AssertionError(f"unexpected request: {req.get_method()} {req.full_url}")
+
+        monkeypatch.setattr(webdav_dialog.urllib.request, "urlopen", fake_urlopen)
+
+        job = webdav_dialog.WebDAVJobThread(
+            "upload",
+            "https://dav.jianguoyun.com/dav/",
+            "Basic abc",
+            "alice",
+            {"ok": True},
+        )
+        statuses = []
+        job.upload_finished.connect(statuses.append)
+
+        job.run()
+
+        assert statuses == [201]
+        assert requests == [
+            ("PUT", "https://dav.jianguoyun.com/dav/FlowScroll_config.json", 10),
+            ("MKCOL", "https://dav.jianguoyun.com/dav/FlowScroll/", 10),
+            ("PUT", "https://dav.jianguoyun.com/dav/FlowScroll/FlowScroll_config.json", 10),
+        ]
+
+    def test_webdav_download_falls_back_to_app_subdir_after_legacy_404(self, monkeypatch):
+        import FlowScroll.ui.webdav_dialog as webdav_dialog
+
+        requests = []
+
+        class DummyResponse:
+            status = 200
+
+            def read(self):
+                return b'{"sensitivity": 2.5}'
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        def fake_urlopen(req, timeout=10):
+            requests.append((req.get_method(), req.full_url, timeout))
+            if req.get_method() == "GET" and req.full_url.endswith(
+                "/dav/FlowScroll_config.json"
+            ):
+                raise HTTPError(
+                    url=req.full_url,
+                    code=404,
+                    msg="Not Found",
+                    hdrs=None,
+                    fp=None,
+                )
+            if req.get_method() == "GET" and req.full_url.endswith(
+                "/dav/FlowScroll/FlowScroll_config.json"
+            ):
+                return DummyResponse()
+            raise AssertionError(f"unexpected request: {req.get_method()} {req.full_url}")
+
+        monkeypatch.setattr(webdav_dialog.urllib.request, "urlopen", fake_urlopen)
+
+        job = webdav_dialog.WebDAVJobThread(
+            "download",
+            "https://dav.jianguoyun.com/dav/",
+            "Basic abc",
+            "alice",
+        )
+        payloads = []
+        job.download_finished.connect(payloads.append)
+
+        job.run()
+
+        assert payloads == [{"sensitivity": 2.5}]
+        assert requests == [
+            ("GET", "https://dav.jianguoyun.com/dav/FlowScroll_config.json", 10),
+            ("GET", "https://dav.jianguoyun.com/dav/FlowScroll/FlowScroll_config.json", 10),
+        ]
 
 
 class TestMainTabPersistence:

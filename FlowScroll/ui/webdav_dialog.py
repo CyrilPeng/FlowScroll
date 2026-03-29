@@ -96,6 +96,9 @@ WEBDAV_LOG_FIELD_ORDER = (
     "duration_ms",
 )
 
+WEBDAV_CONFIG_FILENAME = "FlowScroll_config.json"
+WEBDAV_APP_DIRNAME = "FlowScroll"
+
 
 def mask_webdav_username(username: str) -> str:
     value = (username or "").strip()
@@ -131,6 +134,30 @@ def validate_webdav_url(url: str) -> str | None:
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         return tr("webdav.invalid_url")
     return None
+
+
+def normalize_webdav_base_url(url: str) -> str:
+    value = (url or "").strip()
+    if not value:
+        return value
+    return value if value.endswith("/") else value + "/"
+
+
+def build_legacy_webdav_file_url(base_url: str) -> str:
+    return normalize_webdav_base_url(base_url) + WEBDAV_CONFIG_FILENAME
+
+
+def build_preferred_webdav_file_url(base_url: str) -> str:
+    return (
+        normalize_webdav_base_url(base_url)
+        + WEBDAV_APP_DIRNAME
+        + "/"
+        + WEBDAV_CONFIG_FILENAME
+    )
+
+
+def build_webdav_collection_url(base_url: str) -> str:
+    return normalize_webdav_base_url(base_url) + WEBDAV_APP_DIRNAME + "/"
 
 
 def format_webdav_error(error: Exception) -> str:
@@ -183,25 +210,76 @@ class WebDAVJobThread(QThread):
         self.username = username
         self.payload = payload or {}
 
+    def _open(self, request: urllib.request.Request):
+        return urllib.request.urlopen(request, timeout=10)
+
+    def _upload_to_url(self, target_url: str, data: bytes):
+        req = urllib.request.Request(target_url, data=data, method="PUT")
+        req.add_header("Authorization", self.auth)
+        req.add_header("Content-Type", "application/json")
+        with self._open(req) as response:
+            return int(response.status)
+
+    def _ensure_app_collection(self):
+        collection_url = build_webdav_collection_url(self.url)
+        req = urllib.request.Request(collection_url, method="MKCOL")
+        req.add_header("Authorization", self.auth)
+        try:
+            with self._open(req) as response:
+                return int(getattr(response, "status", 201))
+        except urllib.error.HTTPError as e:
+            # 405/301/302 通常表示目录已存在或服务端自行处理为现有目录。
+            if e.code in (301, 302, 405):
+                return e.code
+            raise
+
+    def _upload(self):
+        data = json.dumps(self.payload, ensure_ascii=False, indent=4).encode("utf-8")
+
+        legacy_url = build_legacy_webdav_file_url(self.url)
+        try:
+            return self._upload_to_url(legacy_url, data)
+        except urllib.error.HTTPError as e:
+            # 某些 WebDAV 服务在根目录下直接 PUT 文件会返回 404，
+            # 回退到应用专用子目录以提升兼容性。
+            if e.code != 404:
+                raise
+
+        self._ensure_app_collection()
+        preferred_url = build_preferred_webdav_file_url(self.url)
+        return self._upload_to_url(preferred_url, data)
+
+    def _download(self):
+        candidate_urls = (
+            build_legacy_webdav_file_url(self.url),
+            build_preferred_webdav_file_url(self.url),
+        )
+        last_error = None
+        for candidate_url in candidate_urls:
+            try:
+                req = urllib.request.Request(candidate_url, method="GET")
+                req.add_header("Authorization", self.auth)
+                with self._open(req) as response:
+                    remote_data = json.loads(response.read().decode("utf-8"))
+                return remote_data
+            except urllib.error.HTTPError as e:
+                last_error = e
+                if e.code == 404:
+                    continue
+                raise
+
+        if last_error is not None:
+            raise last_error
+        raise FileNotFoundError("No WebDAV config candidate URL resolved")
+
     def run(self):
         started_at = time.monotonic()
         try:
             if self.mode == "upload":
-                data = json.dumps(
-                    self.payload, ensure_ascii=False, indent=4
-                ).encode("utf-8")
-                req = urllib.request.Request(self.url, data=data, method="PUT")
-                req.add_header("Authorization", self.auth)
-                req.add_header("Content-Type", "application/json")
-                with urllib.request.urlopen(req, timeout=10) as response:
-                    self.upload_finished.emit(int(response.status))
+                self.upload_finished.emit(self._upload())
                 return
 
-            req = urllib.request.Request(self.url, method="GET")
-            req.add_header("Authorization", self.auth)
-            with urllib.request.urlopen(req, timeout=10) as response:
-                remote_data = json.loads(response.read().decode("utf-8"))
-            self.download_finished.emit(remote_data)
+            self.download_finished.emit(self._download())
         except Exception as e:
             duration_ms = int((time.monotonic() - started_at) * 1000)
             if isinstance(e, urllib.error.HTTPError):
@@ -294,10 +372,7 @@ if QDialog is not None:
             self._job = None
 
         def get_full_url(self):
-            url = self.edit_url.text().strip()
-            if not url.endswith("/"):
-                url += "/"
-            return url + "FlowScroll_config.json"
+            return normalize_webdav_base_url(self.edit_url.text())
 
         def get_auth_header(self):
             user = self.edit_user.text().strip()

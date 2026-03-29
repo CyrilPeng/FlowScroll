@@ -2,6 +2,12 @@
 
 > 2026-03-29 补充记录：全仓 Python 代码注释与部分 docstring 统一整理为中文，并清理多处历史乱码注释，提升维护与协作时的可读性。
 
+## Unreleased
+
+### Fixed
+- 修复部分 WebDAV 服务在根目录地址下直接上传 `FlowScroll_config.json` 返回 404 的兼容性问题；上传失败时会自动回退到 `FlowScroll/FlowScroll_config.json`，并在下载时同时兼容旧路径与新路径
+- 补充 WebDAV 路径规范化与根目录回退上传/下载的回归测试，避免后续修改再次引入同类问题
+
 ## v1.7.3
 
 ### Fixed
