@@ -59,6 +59,8 @@ Typical use cases:
 
 Get the latest build from [Releases](https://github.com/CyrilPeng/FlowScroll/releases).
 
+Official release builds are packaged with `Nuitka`. Compared with common packagers such as `PyInstaller`, this generally gives this project better startup/runtime efficiency and lower packaging overhead.
+
 | Platform | File | Installation |
 | :--- | :--- | :--- |
 | **Windows** | `FlowScroll_Win_v*.exe` | Double-click to run |
@@ -90,6 +92,22 @@ FlowScroll supports two activation modes. Each mode has its own activation hotke
 2. Crosshair appears and scrolling mode activates.
 3. Keep holding while moving mouse to scroll.
 4. Release to exit automatically.
+
+### Delayed Activation
+
+If you want to preserve the native behavior of a middle-button click, enable **Delayed activation** in Work Mode.
+
+- A short middle-button click will not start FlowScroll immediately
+- FlowScroll activates only after the button is held for the configured delay
+- This helps avoid conflicts between native middle-click actions and FlowScroll activation
+
+Typical cases include:
+
+- Browser native middle-button features
+- Middle-click to close a tab
+- Other app-specific middle-click actions
+
+`150~250ms` is usually a practical range for balancing responsiveness and conflict avoidance.
 
 ---
 
@@ -191,6 +209,8 @@ No. Password is kept in local secure storage and excluded from sync payload.
 ## Build from Source
 
 If you run directly from `main`, you may be using an in-progress development build rather than the latest stable release.
+
+Stable release artifacts are packaged separately with `Nuitka`; running from source is mainly intended for development, debugging, and testing.
 
 ```bash
 git clone https://github.com/CyrilPeng/FlowScroll.git
