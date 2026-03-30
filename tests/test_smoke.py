@@ -676,6 +676,9 @@ class TestWindowsPlatform:
         logged = []
 
         class DummyLogger:
+            def warning(self, message, *args):
+                logged.append(message % args if args else message)
+
             def debug(self, message, *args):
                 logged.append(message % args if args else message)
 
@@ -696,7 +699,7 @@ class TestWindowsPlatform:
             lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError(2, "not found")),
         )
 
-        platform = windows_module.WindowsPlatform()
+        platform = windows_module.WindowsPlatform.__new__(windows_module.WindowsPlatform)
 
         assert platform.is_autostart_enabled("FlowScroll", "C:\\FlowScroll.exe") is False
         assert logged == []
@@ -1250,12 +1253,12 @@ class TestLoggingService:
 
 class TestAdvancedTab:
     def test_build_advanced_tab_smoke(self, monkeypatch):
-        pytest.importorskip("PySide6", exc_type=ImportError)
+        qtwidgets = pytest.importorskip("PySide6.QtWidgets", exc_type=ImportError)
         monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
 
-        from PySide6.QtWidgets import QApplication
         from FlowScroll.ui.tabs_builder import build_advanced_tab
 
+        QApplication = qtwidgets.QApplication
         app = QApplication.instance() or QApplication([])
 
         class DummyAutoStart:
