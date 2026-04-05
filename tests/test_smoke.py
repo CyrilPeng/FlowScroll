@@ -720,6 +720,51 @@ class TestAutoStartManager:
 
         assert manager.app_path == "/usr/bin/python3 '/tmp/Flow Scroll/main.py'"
 
+    def test_windows_source_run_uses_python_for_script(self, monkeypatch):
+        import FlowScroll.services.autostart as autostart_module
+
+        monkeypatch.setattr(autostart_module, "OS_NAME", "Windows")
+        monkeypatch.setattr(autostart_module.os.path, "abspath", lambda value: value)
+        monkeypatch.setattr(sys, "executable", "C:\\Python312\\python.exe")
+        monkeypatch.setattr(sys, "argv", ["D:\\FlowScroll\\main.py"])
+        monkeypatch.setattr(sys, "frozen", False, raising=False)
+
+        manager = autostart_module.AutoStartManager()
+
+        assert manager.app_path == '"C:\\Python312\\python.exe" "D:\\FlowScroll\\main.py"'
+
+    def test_windows_non_frozen_exe_uses_executable_directly(self, monkeypatch):
+        import FlowScroll.services.autostart as autostart_module
+
+        monkeypatch.setattr(autostart_module, "OS_NAME", "Windows")
+        monkeypatch.setattr(autostart_module.os.path, "abspath", lambda value: value)
+        monkeypatch.setattr(
+            sys, "executable", "C:\\Temp\\onefile-runtime\\python.exe"
+        )
+        monkeypatch.setattr(
+            sys, "argv", ["C:\\Program Files\\FlowScroll\\FlowScroll.exe"]
+        )
+        monkeypatch.setattr(sys, "frozen", False, raising=False)
+
+        manager = autostart_module.AutoStartManager()
+
+        assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe"'
+
+    def test_windows_frozen_exe_path_with_spaces_is_quoted(self, monkeypatch):
+        import FlowScroll.services.autostart as autostart_module
+
+        monkeypatch.setattr(autostart_module, "OS_NAME", "Windows")
+        monkeypatch.setattr(autostart_module.os.path, "abspath", lambda value: value)
+        monkeypatch.setattr(
+            sys, "executable", "C:\\Program Files\\FlowScroll\\FlowScroll.exe"
+        )
+        monkeypatch.setattr(sys, "argv", ["C:\\Program Files\\FlowScroll\\FlowScroll.exe"])
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+
+        manager = autostart_module.AutoStartManager()
+
+        assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe"'
+
 
 class TestKeyboardManagerHotkeyNormalization:
     def _patch_keyboard_types(self, monkeypatch, listeners_module):

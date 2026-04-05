@@ -10,11 +10,19 @@ class AutoStartManager:
 
     def __init__(self) -> None:
         self.app_name: str = "FlowScroll"
+        script_path = os.path.abspath(sys.argv[0])
+        self.app_path: str = self._build_launch_command(script_path)
+
+    def _build_launch_command(self, script_path: str) -> str:
         if getattr(sys, "frozen", False):
-            self.app_path: str = os.path.abspath(sys.executable)
-        else:
-            script_path = os.path.abspath(sys.argv[0])
-            self.app_path = self._build_source_launch_command(script_path)
+            executable_path = os.path.abspath(sys.executable)
+            if OS_NAME == "Windows":
+                return self._quote_path(executable_path)
+            return executable_path
+
+        if OS_NAME == "Windows" and script_path.lower().endswith(".exe"):
+            return self._quote_path(script_path)
+        return self._build_source_launch_command(script_path)
 
     @staticmethod
     def _build_source_launch_command(script_path: str) -> str:
@@ -22,6 +30,10 @@ class AutoStartManager:
         if OS_NAME == "Windows":
             return f'"{python_path}" "{script_path}"'
         return f"{shlex.quote(python_path)} {shlex.quote(script_path)}"
+
+    @staticmethod
+    def _quote_path(path: str) -> str:
+        return f'"{path}"'
 
     def is_autorun(self) -> bool:
         return system_platform.is_autostart_enabled(self.app_name, self.app_path)
