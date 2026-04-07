@@ -80,7 +80,7 @@ def _fetch_gitee():
 class UpdateCheckerThread(QThread):
     update_available = Signal(str, str)  # 版本号、发布地址
 
-    def run(self):
+    def run(self) -> None:
         # 优先检查 GitHub，失败后再回退到 Gitee。
         for name, fetcher in [("GitHub", _fetch_github), ("Gitee", _fetch_gitee)]:
             try:

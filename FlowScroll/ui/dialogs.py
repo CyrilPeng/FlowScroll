@@ -96,7 +96,7 @@ class ReverseModeDialog(QDialog):
         adaptive_height = max(REVERSE_DIALOG_HEIGHT, self.sizeHint().height())
         self.resize(REVERSE_DIALOG_WIDTH, adaptive_height)
 
-    def save_and_close(self):
+    def save_and_close(self) -> None:
         cfg.reverse_y = self.chk_reverse_y.isChecked()
         cfg.reverse_x = self.chk_reverse_x.isChecked()
         self.accept()
@@ -260,7 +260,7 @@ class WorkModeDialog(QDialog):
         self.delay_value_label.setEnabled(checked)
         self.compat_hint.setEnabled(checked)
 
-    def save_and_close(self):
+    def save_and_close(self) -> None:
         cfg.activation_mode = self.activation_group.checkedId()
         cfg.activation_hotkey_click = self.activation_hotkey_edit_click.hotkey_text()
         cfg.activation_hotkey_hold = self.activation_hotkey_edit_hold.hotkey_text()
@@ -528,7 +528,7 @@ class AppFilterDialog(QDialog):
 
         target_edit.setPlainText("\n".join(self._parse_keywords(content)))
 
-    def save_and_close(self):
+    def save_and_close(self) -> None:
         if self.chk_use_regex.isChecked():
             invalid_rules = self._collect_invalid_regex_rules()
             if invalid_rules:
@@ -689,7 +689,7 @@ class InertiaSettingsDialog(QDialog):
     def _on_threshold_changed(self, _value):
         self._update_threshold_label()
 
-    def save_and_close(self):
+    def save_and_close(self) -> None:
         cfg.inertia_friction_ms = self.friction_slider.value()
         cfg.inertia_threshold = float(self.threshold_slider.value())
         self.accept()
@@ -789,7 +789,7 @@ class ConfigStorageDialog(QDialog):
         self._save_parent_config()
         self.refresh_state()
 
-    def refresh_state(self):
+    def refresh_state(self) -> None:
         source = get_config_override_source()
         env_override = source.startswith("env_")
 
@@ -801,7 +801,7 @@ class ConfigStorageDialog(QDialog):
         self.btn_reset.setEnabled(source == "custom")
         self.btn_copy_path.setEnabled(True)
 
-    def choose_path(self):
+    def choose_path(self) -> None:
         selected_path, _ = QFileDialog.getSaveFileName(
             self,
             tr("tab.advanced.config_path_dialog_title"),
@@ -818,7 +818,7 @@ class ConfigStorageDialog(QDialog):
             tr("tab.advanced.config_path_changed", path=get_config_file()),
         )
 
-    def apply_path_from_input(self):
+    def apply_path_from_input(self) -> bool:
         text = self.path_edit.text().strip()
         if not text or text == self._last_applied_path:
             self.path_edit.setText(self._last_applied_path)
@@ -826,7 +826,7 @@ class ConfigStorageDialog(QDialog):
         self._apply_path(text)
         return True
 
-    def apply_path_from_input_with_notice(self):
+    def apply_path_from_input_with_notice(self) -> None:
         if not self.apply_path_from_input():
             return
         QMessageBox.information(
@@ -835,7 +835,7 @@ class ConfigStorageDialog(QDialog):
             tr("tab.advanced.config_path_changed", path=get_config_file()),
         )
 
-    def reset_to_default(self):
+    def reset_to_default(self) -> None:
         if get_config_override_source() != "custom":
             return
 
@@ -846,7 +846,7 @@ class ConfigStorageDialog(QDialog):
             tr("tab.advanced.config_path_reset_done", path=get_config_file()),
         )
 
-    def copy_current_path(self):
+    def copy_current_path(self) -> None:
         QApplication.clipboard().setText(self.path_edit.text().strip() or get_config_file())
         QMessageBox.information(
             self,

@@ -27,7 +27,7 @@ def _show_already_running_message():
     )
 
 
-def main():
+def main() -> None:
     try:
         # 必须在 QApplication 实例化之前设置高分屏缩放策略
         QApplication.setHighDpiScaleFactorRoundingPolicy(

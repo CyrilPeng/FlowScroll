@@ -30,7 +30,7 @@ def create_h_line():
 
 
 def add_slider_row(
-    layout, key, icon_name, label_text, val, min_v, max_v, callback, decimals=1
+    layout, key, icon_name, label_text, val, min_v, max_v, callback, decimals: int=1
 ):
     row = QWidget()
     row_layout = QVBoxLayout(row)

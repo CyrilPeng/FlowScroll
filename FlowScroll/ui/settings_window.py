@@ -128,10 +128,10 @@ class MainWindow(QMainWindow):
         return self.preset_manager.current_preset_name
 
     @current_preset_name.setter
-    def current_preset_name(self, value):
+    def current_preset_name(self, value) -> None:
         self.preset_manager.current_preset_name = value
 
-    def check_for_updates(self):
+    def check_for_updates(self) -> None:
         from FlowScroll.services.update_checker import UpdateCheckerThread
 
         self.update_checker = UpdateCheckerThread(self)
@@ -158,7 +158,7 @@ class MainWindow(QMainWindow):
 
         return tr("main.input_hook_failure_detail.generic")
 
-    def refresh_input_hook_status_ui(self):
+    def refresh_input_hook_status_ui(self) -> None:
         keyboard_ok = getattr(self, "keyboard_hook_available", True)
         mouse_ok = getattr(self, "mouse_hook_available", True)
 
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
             if widget is not None:
                 widget.setEnabled(not disable_input_controls)
 
-    def on_update_available(self, latest_version, html_url):
+    def on_update_available(self, latest_version, html_url) -> None:
         self.latest_release_version = latest_version
         self.github_url = html_url
         if is_prerelease_version(self.current_version):
@@ -199,7 +199,7 @@ class MainWindow(QMainWindow):
             self.update_badge_mode = "hidden"
         self._refresh_update_indicator()
 
-    def save_presets_to_file(self):
+    def save_presets_to_file(self) -> None:
         self.preset_manager.save_to_file()
 
     def get_config_storage_summary(self):
@@ -213,12 +213,12 @@ class MainWindow(QMainWindow):
         }.get(source, "tab.advanced.config_path_source_default")
         return tr("tab.advanced.config_path_summary", source=tr(source_key), path=current_path)
 
-    def refresh_config_storage_ui(self):
+    def refresh_config_storage_ui(self) -> None:
         btn = self.ui_widgets.get("config_path_button")
         if btn is not None:
             btn.setToolTip(self.get_config_storage_summary())
 
-    def open_config_storage_dialog(self):
+    def open_config_storage_dialog(self) -> None:
         from FlowScroll.ui.dialogs import ConfigStorageDialog
 
         dialog = ConfigStorageDialog(self)
@@ -235,20 +235,20 @@ class MainWindow(QMainWindow):
         self.combo_presets.setCurrentText(select_name)
         self.combo_presets.blockSignals(False)
 
-    def show_normal_window(self):
+    def show_normal_window(self) -> None:
         self.show()
         self.setWindowState(Qt.WindowNoState)
         self.raise_()
         self.activateWindow()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         if cfg.minimize_to_tray and self.tray_manager.is_visible():
             self.hide()
             event.ignore()
         else:
             event.accept()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         self.setStyleSheet(get_main_stylesheet())
 
         central = QWidget()
@@ -336,7 +336,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(scroll_area)
         self._build_language_menu()
 
-    def update_tab_height(self, index):
+    def update_tab_height(self, index) -> None:
         for i in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(i)
             if i == index:
@@ -366,7 +366,7 @@ class MainWindow(QMainWindow):
         self.action_lang_zh.setChecked(configured == "zh-CN")
         self.action_lang_en.setChecked(configured == "en-US")
 
-    def show_language_menu(self):
+    def show_language_menu(self) -> None:
         if not hasattr(self, "language_menu"):
             self._build_language_menu()
         self._sync_language_menu_checks()
@@ -432,7 +432,7 @@ class MainWindow(QMainWindow):
         self.btn_new_badge.setToolTip("")
         self.btn_github.setText(f" {tr('tab.author')}")
 
-    def retranslate_ui(self):
+    def retranslate_ui(self) -> None:
         self.setWindowTitle(f"FlowScroll v{self.version_label}")
         self.header_subtitle.setText(tr("main.subtitle"))
         self.btn_language.setText(tr("main.language.button"))
@@ -441,13 +441,13 @@ class MainWindow(QMainWindow):
         self._rebuild_tabs()
         self.refresh_input_hook_status_ui()
 
-    def update_hotkey_label(self):
+    def update_hotkey_label(self) -> None:
         if cfg.horizontal_hotkey:
             self.lbl_hotkey.setText(hotkey_to_display(cfg.horizontal_hotkey))
         else:
             self.lbl_hotkey.setText(tr("main.hotkey.not_set"))
 
-    def open_hotkey_dialog(self):
+    def open_hotkey_dialog(self) -> None:
         dialog = QDialog(self)
         dialog.setWindowTitle(tr("main.hotkey_dialog.title"))
         dialog.setMinimumWidth(300)
@@ -492,7 +492,7 @@ class MainWindow(QMainWindow):
             self.update_hotkey_label()
             self.save_presets_to_file()
 
-    def show_help_dialog(self):
+    def show_help_dialog(self) -> None:
         dialog = QDialog(self)
         dialog.setWindowTitle(tr("main.help.title"))
         dialog.setMinimumSize(520, 420)
@@ -536,7 +536,7 @@ class MainWindow(QMainWindow):
 
         dialog.exec()
 
-    def on_toggle_horizontal_hotkey(self):
+    def on_toggle_horizontal_hotkey(self) -> None:
         new_state = not cfg.enable_horizontal
         setattr(cfg, "enable_horizontal", new_state)
         self.ui_widgets["enable_horizontal"].setChecked(new_state)
@@ -549,19 +549,19 @@ class MainWindow(QMainWindow):
             ),
         )
 
-    def open_webdav_settings(self):
+    def open_webdav_settings(self) -> None:
         dialog = WebDAVSyncDialog(self)
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
-    def open_work_mode_dialog(self):
+    def open_work_mode_dialog(self) -> None:
         from FlowScroll.ui.dialogs import WorkModeDialog
 
         dialog = WorkModeDialog(self)
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
-    def open_filter_mode_dialog(self):
+    def open_filter_mode_dialog(self) -> None:
         from FlowScroll.ui.dialogs import AppFilterDialog
 
         with STATE_LOCK:
@@ -577,14 +577,14 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
-    def open_reverse_mode_dialog(self):
+    def open_reverse_mode_dialog(self) -> None:
         from FlowScroll.ui.dialogs import ReverseModeDialog
 
         dialog = ReverseModeDialog(self)
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
-    def open_inertia_settings_dialog(self):
+    def open_inertia_settings_dialog(self) -> None:
         from FlowScroll.ui.dialogs import InertiaSettingsDialog
 
         dialog = InertiaSettingsDialog(self)
@@ -593,7 +593,7 @@ class MainWindow(QMainWindow):
                 self.scroller.update_friction()
             self.save_presets_to_file()
 
-    def toggle_autorun(self, checked):
+    def toggle_autorun(self, checked) -> None:
         if not self.autostart.set_autorun(checked):
             self.sender().blockSignals(True)
             self.sender().setChecked(not checked)
@@ -612,7 +612,7 @@ class MainWindow(QMainWindow):
         )
         return reply == QMessageBox.Yes
 
-    def save_new_preset(self):
+    def save_new_preset(self) -> None:
         suggested = self.current_preset_name
         if suggested in BUILTIN_PRESETS:
             suggested = ""
@@ -638,7 +638,7 @@ class MainWindow(QMainWindow):
             self.preset_manager.save_preset(text)
             self._refresh_combo(text)
 
-    def delete_preset(self):
+    def delete_preset(self) -> None:
         name = self.combo_presets.currentText()
         if name in BUILTIN_PRESETS:
             QMessageBox.warning(
@@ -658,7 +658,7 @@ class MainWindow(QMainWindow):
         self._refresh_combo(DEFAULT_PRESET_NAME)
         self.load_selected_preset(DEFAULT_PRESET_NAME)
 
-    def load_selected_preset(self, name):
+    def load_selected_preset(self, name) -> None:
         if not self.preset_manager.load_preset(name):
             return
         self.sync_ui_from_config()
@@ -668,7 +668,7 @@ class MainWindow(QMainWindow):
 
         self.save_presets_to_file()
 
-    def sync_ui_from_config(self):
+    def sync_ui_from_config(self) -> None:
         self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
         self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
         self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
@@ -682,7 +682,7 @@ class MainWindow(QMainWindow):
         self.update_hotkey_label()
         self.refresh_config_storage_ui()
 
-    def on_show_overlay(self):
+    def on_show_overlay(self) -> None:
         if cfg.hide_overlay:
             return
         self.overlay.set_direction("neutral")
@@ -693,10 +693,10 @@ class MainWindow(QMainWindow):
         self.overlay.show()
         self.overlay.raise_()
 
-    def on_hide_overlay(self):
+    def on_hide_overlay(self) -> None:
         self.overlay.hide()
 
-    def start_threads(self):
+    def start_threads(self) -> None:
         self.window_monitor = None
         self.scroller = None
         self.input_listener = None

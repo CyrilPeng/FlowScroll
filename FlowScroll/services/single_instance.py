@@ -17,10 +17,10 @@ except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境
         def __init__(self, *_args, **_kwargs):
             self._callbacks = []
 
-        def connect(self, callback):
+        def connect(self, callback) -> None:
             self._callbacks.append(callback)
 
-        def emit(self, *args, **kwargs):
+        def emit(self, *args, **kwargs) -> None:
             for callback in list(self._callbacks):
                 callback(*args, **kwargs)
 
@@ -29,44 +29,44 @@ except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境
             self.newConnection = Signal()
 
         @staticmethod
-        def removeServer(_name):
+        def removeServer(_name) -> None:
             return None
 
-        def listen(self, _name):
+        def listen(self, _name) -> bool:
             return False
 
-        def errorString(self):
+        def errorString(self) -> str:
             return "QtNetwork unavailable"
 
-        def hasPendingConnections(self):
+        def hasPendingConnections(self) -> bool:
             return False
 
-        def nextPendingConnection(self):
+        def nextPendingConnection(self) -> None:
             return None
 
     class QLocalSocket:
         def __init__(self, *_args, **_kwargs):
             pass
 
-        def connectToServer(self, _name):
+        def connectToServer(self, _name) -> None:
             return None
 
-        def waitForConnected(self, _timeout):
+        def waitForConnected(self, _timeout) -> bool:
             return False
 
-        def write(self, _payload):
+        def write(self, _payload) -> int:
             return 0
 
-        def flush(self):
+        def flush(self) -> None:
             return None
 
-        def waitForBytesWritten(self, _timeout):
+        def waitForBytesWritten(self, _timeout) -> bool:
             return False
 
-        def disconnectFromServer(self):
+        def disconnectFromServer(self) -> None:
             return None
 
-        def waitForDisconnected(self, _timeout):
+        def waitForDisconnected(self, _timeout) -> bool:
             return False
 
 from FlowScroll.services.logging_service import logger

@@ -15,7 +15,7 @@ class WindowMonitor(threading.Thread):
     def __init__(self):
         super().__init__(daemon=True)
 
-    def run(self):
+    def run(self) -> None:
         time.sleep(WINDOW_MONITOR_START_DELAY)
         while True:
             try:

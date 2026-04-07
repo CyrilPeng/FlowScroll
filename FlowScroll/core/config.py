@@ -399,7 +399,7 @@ class GlobalConfig:
             "inertia_threshold": self.inertia_threshold,
         }
 
-    def from_dict(self, data):
+    def from_dict(self, data) -> None:
         self.sensitivity = data.get("sensitivity", 2.0)
         self.speed_factor = data.get("speed_factor", 2.0)
         self.dead_zone = data.get("dead_zone", 20.0)
@@ -445,7 +445,7 @@ class GlobalConfig:
         self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
         self.inertia_threshold = data.get("inertia_threshold", 80.0)
 
-    def from_webdav_dict(self, data):
+    def from_webdav_dict(self, data) -> None:
         if not isinstance(data, dict):
             self.webdav_url = ""
             self.webdav_username = ""

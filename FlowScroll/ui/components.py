@@ -27,7 +27,7 @@ class HotkeyEdit(QKeySequenceEdit):
         self._mouse_hotkey = ""
         self._placeholder_set = False
 
-    def showEvent(self, event):
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if not self._placeholder_set:
             editor = self.findChild(QLineEdit)
@@ -35,18 +35,18 @@ class HotkeyEdit(QKeySequenceEdit):
                 editor.setPlaceholderText(tr("main.hotkey.input_placeholder"))
                 self._placeholder_set = True
 
-    def set_hotkey(self, hotkey):
+    def set_hotkey(self, hotkey) -> None:
         self._mouse_hotkey = normalize_hotkey_string(hotkey)
         self._set_display_text(hotkey_to_display(self._mouse_hotkey))
 
     def hotkey_text(self):
         return self._mouse_hotkey
 
-    def clear(self):
+    def clear(self) -> None:
         self._mouse_hotkey = ""
         super().clear()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         if (
             event.key() in (Qt.Key_Backspace, Qt.Key_Delete)
             and event.modifiers() == Qt.NoModifier
@@ -61,7 +61,7 @@ class HotkeyEdit(QKeySequenceEdit):
                 return
             super().keyPressEvent(event)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         mouse_hotkey = self.MOUSE_HOTKEYS.get(event.button())
         if mouse_hotkey:
             self._mouse_hotkey = mouse_hotkey
@@ -85,11 +85,11 @@ class UpwardComboBox(QComboBox):
         self._popup_window.installEventFilter(self)
         self._popup_visible = False
 
-    def showPopup(self):
+    def showPopup(self) -> None:
         self._popup_visible = True
         super().showPopup()
 
-    def hidePopup(self):
+    def hidePopup(self) -> None:
         self._popup_visible = False
         super().hidePopup()
 
@@ -115,12 +115,12 @@ class UpwardComboBox(QComboBox):
 class NoWheelSlider(QSlider):
     """禁用滚轮调整的滑块。"""
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event) -> None:
         event.ignore()
 
 
 class NoWheelSpinBox(QDoubleSpinBox):
     """禁用滚轮调整的数值框。"""
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event) -> None:
         event.ignore()

@@ -35,10 +35,10 @@ except ImportError:
         def __init__(self):
             self._callbacks = []
 
-        def connect(self, callback):
+        def connect(self, callback) -> None:
             self._callbacks.append(callback)
 
-        def emit(self, *args, **kwargs):
+        def emit(self, *args, **kwargs) -> None:
             for callback in list(self._callbacks):
                 callback(*args, **kwargs)
 
@@ -64,13 +64,13 @@ except ImportError:
         def __init__(self, *_args, **_kwargs):
             pass
 
-        def start(self):
+        def start(self) -> None:
             try:
                 self.run()
             finally:
                 self.finished.emit()
 
-        def deleteLater(self):
+        def deleteLater(self) -> None:
             pass
 
     QDialog = None
@@ -272,7 +272,7 @@ class WebDAVJobThread(QThread):
             raise last_error
         raise FileNotFoundError("No WebDAV config candidate URL resolved")
 
-    def run(self):
+    def run(self) -> None:
         started_at = time.monotonic()
         try:
             if self.mode == "upload":
@@ -384,7 +384,7 @@ if QDialog is not None:
         def get_username(self):
             return self.edit_user.text().strip()
 
-        def save_config(self):
+        def save_config(self) -> None:
             cfg.webdav_url = self.edit_url.text().strip()
             cfg.webdav_username = self.edit_user.text().strip()
             password = self.edit_pwd.text().strip()
@@ -407,7 +407,7 @@ if QDialog is not None:
             )
             self.accept()
 
-        def upload_config(self):
+        def upload_config(self) -> None:
             invalid = validate_webdav_url(self.edit_url.text())
             if invalid:
                 log_webdav_event(
@@ -429,7 +429,7 @@ if QDialog is not None:
                 )
             )
 
-        def download_config(self):
+        def download_config(self) -> None:
             invalid = validate_webdav_url(self.edit_url.text())
             if invalid:
                 log_webdav_event(

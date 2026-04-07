@@ -43,12 +43,12 @@ class ScrollEngine(threading.Thread):
         ticks = half_life_ms / 4.0  # 每帧按 4ms 计算。
         return math.pow(0.5, 1.0 / ticks)
 
-    def update_friction(self):
+    def update_friction(self) -> None:
         """配置变化后重新计算摩擦系数。"""
         with STATE_LOCK:
             self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
-    def interrupt_inertia(self):
+    def interrupt_inertia(self) -> None:
         """立即中断惯性滚动。"""
         if self.inertia_active:
             self.inertia_active = False
@@ -121,7 +121,7 @@ class ScrollEngine(threading.Thread):
         self._scroll_history.clear()
         self._mouse_pos_history.clear()
 
-    def run(self):
+    def run(self) -> None:
         last_dir = "neutral"
         platform_multiplier = system_platform.get_scroll_multiplier()
         was_active = False

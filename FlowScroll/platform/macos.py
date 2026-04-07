@@ -27,7 +27,7 @@ class MacOSPlatform(PlatformInterface):
             logger.debug(f"获取 macOS 前台窗口失败: {e}")
             return ("", "", "", False)
 
-    def set_autostart(self, app_name, app_path, enable):
+    def set_autostart(self, app_name, app_path, enable) -> bool:
         if enable:
             try:
                 os.makedirs(os.path.dirname(self.plist_path), exist_ok=True)
@@ -66,7 +66,7 @@ class MacOSPlatform(PlatformInterface):
     def get_scroll_multiplier(self):
         return MACOS_SCROLL_MULTIPLIER
 
-    def get_font_name(self):
+    def get_font_name(self) -> str:
         return ".AppleSystemUIFont"
 
     def get_icon_name(self):

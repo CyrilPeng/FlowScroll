@@ -29,18 +29,18 @@ class ResizableOverlay(QWidget):
         self.preview_timer.setSingleShot(True)
         self.preview_timer.timeout.connect(self.hide)
 
-    def update_geometry(self, size):
+    def update_geometry(self, size) -> None:
         self._overlay_size = size
         size = max(size, self.MIN_RENDER_SIZE)
         self.setFixedSize(size, size)
         self.update()
 
-    def set_direction(self, direction):
+    def set_direction(self, direction) -> None:
         if self.direction != direction:
             self.direction = direction
             self.update()
 
-    def show_preview(self):
+    def show_preview(self) -> None:
         screen = QApplication.primaryScreen().geometry()
         self.set_direction("neutral")
         self.move(
@@ -51,7 +51,7 @@ class ResizableOverlay(QWidget):
         self.raise_()
         self.preview_timer.start(800)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event) -> None:
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         p.translate(self.width() / 2, self.height() / 2)
