@@ -334,9 +334,29 @@ uv run main.py
 
 ---
 
-## 📝 许可协议
+## 🤝 协助者
 
-本项目采用 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0) 协议开源。
+感谢所有提交 PR、反馈问题、参与讨论并帮助打磨 FlowScroll 的朋友。
+
+下面的贡献者展示会随仓库贡献情况自动更新：
+
+<div align="center">
+  <a href="https://github.com/CyrilPeng/FlowScroll/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=CyrilPeng/FlowScroll" alt="FlowScroll contributors" />
+  </a>
+</div>
+
+如果你也愿意一起完善它，欢迎继续提交 issue 或 PR。
+
+<div align="center">
+  <sub>Made with ❤️ by 某不科学的高数</sub>
+</div>
+
+---
+
+## 🔗 社区友情链接
+
+- [Linux.do](https://linux.do/)：通用技术社区，聚焦开源、效率工具、开发与 AI 等话题讨论。
 
 ---
 
@@ -357,20 +377,6 @@ FlowScroll 首先是一个为真实使用场景服务的小工具。
 
 ---
 
-## 🤝 协助者
+## 📝 许可协议
 
-感谢所有提交 PR、反馈问题、参与讨论并帮助打磨 FlowScroll 的朋友。
-
-下面的贡献者展示会随仓库贡献情况自动更新：
-
-<div align="center">
-  <a href="https://github.com/CyrilPeng/FlowScroll/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=CyrilPeng/FlowScroll" alt="FlowScroll contributors" />
-  </a>
-</div>
-
-如果你也愿意一起完善它，欢迎继续提交 issue 或 PR。
-
-<div align="center">
-  <sub>Made with ❤️ by 某不科学的高数</sub>
-</div>
+本项目采用 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0) 协议开源。

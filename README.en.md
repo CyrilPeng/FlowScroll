@@ -227,9 +227,25 @@ uv run python -m pytest tests/ -v
 
 ---
 
-## License
+## Contributors
 
-GPL-3.0. See [LICENSE](LICENSE).
+Thanks to everyone who has contributed pull requests, bug reports, discussion, and concrete improvements to FlowScroll.
+
+This contributor graph updates automatically with the repository:
+
+<div align="center">
+  <a href="https://github.com/CyrilPeng/FlowScroll/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=CyrilPeng/FlowScroll" alt="FlowScroll contributors" />
+  </a>
+</div>
+
+If you want to help improve it too, issues and pull requests are welcome.
+
+---
+
+## Community Links
+
+- [Linux.do](https://linux.do/): A general tech community focused on open source, productivity tools, development, and AI discussions.
 
 ---
 
@@ -250,16 +266,6 @@ It may not be perfect, but it will keep evolving.
 
 ---
 
-## Contributors
+## License
 
-Thanks to everyone who has contributed pull requests, bug reports, discussion, and concrete improvements to FlowScroll.
-
-This contributor graph updates automatically with the repository:
-
-<div align="center">
-  <a href="https://github.com/CyrilPeng/FlowScroll/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=CyrilPeng/FlowScroll" alt="FlowScroll contributors" />
-  </a>
-</div>
-
-If you want to help improve it too, issues and pull requests are welcome.
+GPL-3.0. See [LICENSE](LICENSE).
