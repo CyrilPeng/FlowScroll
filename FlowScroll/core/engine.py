@@ -1,6 +1,7 @@
 import math
 import time
 import threading
+from collections import deque
 from types import SimpleNamespace
 from FlowScroll.core.config import STATE_LOCK, cfg, runtime
 from FlowScroll.core.scroller import default_scroll_strategy
@@ -29,11 +30,15 @@ class ScrollEngine(threading.Thread):
             self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
         # 滚动速度历史，用于估算惯性初速度。
-        self._scroll_history = []  # 格式: [(时间戳秒, 横向滚动, 纵向滚动), ...]
+        self._scroll_history: deque = deque()
         self._scroll_history_window = SCROLL_HISTORY_WINDOW
 
         # 鼠标位置历史，用于计算触发惯性的速度阈值。
-        self._mouse_pos_history = []  # 格式: [(时间戳秒, x, y), ...]
+        self._mouse_pos_history: deque = deque()
+
+        # 保护历史记录的专用锁，避免 engine 线程追加/裁剪与
+        # interrupt_inertia 的 clear 产生竞态。
+        self._history_lock = threading.Lock()
 
     @staticmethod
     def _compute_friction(half_life_ms):
@@ -49,17 +54,20 @@ class ScrollEngine(threading.Thread):
             self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
     def interrupt_inertia(self) -> None:
-        """立即中断惯性滚动。"""
+        """立即中断惯性滚动，并清空速度与位置历史。"""
         if self.inertia_active:
             self.inertia_active = False
             self.inertia_vx = 0.0
             self.inertia_vy = 0.0
+        with self._history_lock:
+            self._scroll_history.clear()
+            self._mouse_pos_history.clear()
 
     def _prune_history(self, history, now):
-        """清理超出时间窗口的历史记录。"""
+        """清理超出时间窗口的历史记录，使用 deque.popleft 实现 O(1) 裁剪。"""
         cutoff = now - self._scroll_history_window
         while history and history[0][0] < cutoff:
-            history.pop(0)
+            history.popleft()
 
     def _get_max_speed_from_history(self):
         """从滚动历史中取出模长最大的速度向量。"""
@@ -91,35 +99,35 @@ class ScrollEngine(threading.Thread):
         return dist / dt
 
     def _try_enter_inertia(self):
-        """尝试从激活状态切换到惯性模式。"""
+        """尝试从激活状态切换到惯性模式。所有历史读写均在 _history_lock 下原子执行。"""
         with STATE_LOCK:
             enable_inertia = cfg.enable_inertia
             inertia_threshold = cfg.inertia_threshold
         if not enable_inertia:
-            self._scroll_history.clear()
-            self._mouse_pos_history.clear()
+            with self._history_lock:
+                self._scroll_history.clear()
+                self._mouse_pos_history.clear()
             return
 
-        # 先检查鼠标速度是否达到进入惯性的阈值。
-        mouse_speed = self._get_mouse_speed_px_per_s()
-        if mouse_speed < inertia_threshold:
+        with self._history_lock:
+            mouse_speed = self._get_mouse_speed_px_per_s()
+            if mouse_speed < inertia_threshold:
+                self._scroll_history.clear()
+                self._mouse_pos_history.clear()
+                return
+
+            vx, vy = self._get_max_speed_from_history()
+            speed_sq = vx * vx + vy * vy
+            if speed_sq < 0.01:
+                self._scroll_history.clear()
+                self._mouse_pos_history.clear()
+                return
+
+            self.inertia_vx = vx
+            self.inertia_vy = vy
+            self.inertia_active = True
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
-            return
-
-        # 从最近滚动历史中提取惯性初速度。
-        vx, vy = self._get_max_speed_from_history()
-        speed_sq = vx * vx + vy * vy
-        if speed_sq < 0.01:
-            self._scroll_history.clear()
-            self._mouse_pos_history.clear()
-            return
-
-        self.inertia_vx = vx
-        self.inertia_vy = vy
-        self.inertia_active = True
-        self._scroll_history.clear()
-        self._mouse_pos_history.clear()
 
     def run(self) -> None:
         last_dir = "neutral"
@@ -182,14 +190,14 @@ class ScrollEngine(threading.Thread):
                     if scroll_x != 0 or scroll_y != 0:
                         self.mouse_controller.scroll(scroll_x, scroll_y)
 
-                        # 记录滚动速度历史。
+                        # 记录滚动速度与鼠标位置历史，供惯性初速度估算使用。
                         now = time.monotonic()
-                        self._scroll_history.append((now, scroll_x, scroll_y))
-                        self._prune_history(self._scroll_history, now)
+                        with self._history_lock:
+                            self._scroll_history.append((now, scroll_x, scroll_y))
+                            self._prune_history(self._scroll_history, now)
 
-                        # 记录鼠标位置历史。
-                        self._mouse_pos_history.append((now, curr_x, curr_y))
-                        self._prune_history(self._mouse_pos_history, now)
+                            self._mouse_pos_history.append((now, curr_x, curr_y))
+                            self._prune_history(self._mouse_pos_history, now)
 
                     was_active = True
                     time.sleep(ENGINE_TICK_INTERVAL)

@@ -1,4 +1,5 @@
-﻿import time
+import platform
+import time
 from threading import Timer
 
 from pynput import keyboard, mouse
@@ -29,7 +30,7 @@ class KeyboardManager:
                 if len(key.char) == 1 and 1 <= ord(key.char) <= 26:
                     return chr(ord(key.char) + 96)
                 return key.char.lower()
-            vk = getattr(key, 'vk', None)
+            vk = getattr(key, "vk", None)
             if isinstance(vk, int):
                 # 大写字母 A-Z。
                 if 65 <= vk <= 90:
@@ -43,14 +44,14 @@ class KeyboardManager:
         return None
 
     def _normalize_key_name(self, key_name):
-        if 'ctrl' in key_name:
-            key_name = 'ctrl'
-        elif 'alt' in key_name:
-            key_name = 'alt'
-        elif 'shift' in key_name:
-            key_name = 'shift'
-        elif 'cmd' in key_name:
-            key_name = 'meta'
+        if "ctrl" in key_name:
+            key_name = "ctrl"
+        elif "alt" in key_name:
+            key_name = "alt"
+        elif "shift" in key_name:
+            key_name = "shift"
+        elif "cmd" in key_name:
+            key_name = "meta"
         return normalize_hotkey_part(key_name)
 
     def on_press(self, key):
@@ -85,9 +86,9 @@ class GlobalInputListener:
         self.mouse_hook_available = True
         self.last_activation_press_time = 0.0
         self.mouse_hotkey_map = {
-            'mouse_middle': mouse.Button.middle,
-            'mouse_x1': mouse.Button.x1,
-            'mouse_x2': mouse.Button.x2,
+            "mouse_middle": mouse.Button.middle,
+            "mouse_x1": mouse.Button.x1,
+            "mouse_x2": mouse.Button.x2,
         }
         self.horizontal_hotkey_active = False
         self.activation_hotkey_active = False
@@ -96,19 +97,21 @@ class GlobalInputListener:
         # 延迟启动模式：按键或鼠标按住达到阈值后才真正启用。
         self._pending_activation_timer = None
         self._pending_activation_source = None
-        self._pressed_activation_sources = {'mouse': False, 'keyboard': False}
+        self._pressed_activation_sources = {"mouse": False, "keyboard": False}
+        # 复用单个鼠标控制器实例，避免每次读取位置时重新创建。
+        self._mouse_controller = mouse.Controller()
 
     def _get_keyboard_hotkey_parts(self, hotkey):
         hotkey = normalize_hotkey_string(hotkey)
-        if not hotkey or hotkey.startswith('mouse_'):
+        if not hotkey or hotkey.startswith("mouse_"):
             return set()
         alias_fallback = {
-            'capslock': 'caps_lock',
-            'numlock': 'num_lock',
-            'scrolllock': 'scroll_lock',
+            "capslock": "caps_lock",
+            "numlock": "num_lock",
+            "scrolllock": "scroll_lock",
         }
         normalized_parts = []
-        for raw_part in hotkey.split('+'):
+        for raw_part in hotkey.split("+"):
             part = normalize_hotkey_part(raw_part)
             part = alias_fallback.get(part, part)
             if part:
@@ -207,7 +210,7 @@ class GlobalInputListener:
             self._pending_activation_source = None
             if not self._pressed_activation_sources.get(source, False):
                 return
-            current_x, current_y = mouse.Controller().position
+            current_x, current_y = self._mouse_controller.position
             self._activate_now(current_x, current_y, source)
 
         self._pending_activation_timer = Timer(delay_s, _fire)
@@ -248,7 +251,7 @@ class GlobalInputListener:
     def _on_key_press(self, key_name, current_keys):
         # 惯性运行中，按下非修饰键时直接打断惯性。
         if self.scroll_engine and self.scroll_engine.inertia_active:
-            modifier_only = {'ctrl', 'alt', 'shift', 'meta'}
+            modifier_only = {"ctrl", "alt", "shift", "meta"}
             if key_name not in modifier_only:
                 self.scroll_engine.interrupt_inertia()
 
@@ -266,11 +269,11 @@ class GlobalInputListener:
             if self.activation_hotkey_active:
                 return
             self.activation_hotkey_active = True
-            x, y = mouse.Controller().position
-            self._handle_activation_press(x, y, 'keyboard')
+            x, y = self._mouse_controller.position
+            self._handle_activation_press(x, y, "keyboard")
         else:
-            self._pressed_activation_sources['keyboard'] = False
-            self._cancel_pending_activation('keyboard')
+            self._pressed_activation_sources["keyboard"] = False
+            self._cancel_pending_activation("keyboard")
             self.activation_hotkey_active = False
 
     def _on_key_release(self, _key_name, current_keys):
@@ -281,9 +284,9 @@ class GlobalInputListener:
 
         activation_hotkey = self._get_activation_hotkey()
         if not self._is_keyboard_hotkey_active(activation_hotkey, current_keys):
-            self._pressed_activation_sources['keyboard'] = False
+            self._pressed_activation_sources["keyboard"] = False
             if self.activation_hotkey_active:
-                self._handle_activation_release('keyboard')
+                self._handle_activation_release("keyboard")
             self.activation_hotkey_active = False
 
     def start(self):
@@ -292,20 +295,19 @@ class GlobalInputListener:
             self.key_manager.start()
         except Exception as e:
             self.keyboard_hook_available = False
-            logger.error(f'键盘钩子失败: {e}')
+            logger.error(f"键盘钩子失败: {e}")
 
-        kwargs = {'on_click': self.on_click}
-        import platform
+        kwargs = {"on_click": self.on_click}
 
-        if platform.system() == 'Windows':
-            kwargs['win32_event_filter'] = self.win32_event_filter
+        if platform.system() == "Windows":
+            kwargs["win32_event_filter"] = self.win32_event_filter
 
         try:
             self.mouse_listener = mouse.Listener(**kwargs)
             self.mouse_listener.start()
         except Exception as e:
             self.mouse_hook_available = False
-            logger.error(f'鼠标钩子失败: {e}')
+            logger.error(f"鼠标钩子失败: {e}")
 
     def win32_event_filter(self, msg, _data):
         # WM_MBUTTONDOWN = 0x0207，WM_MBUTTONUP = 0x0208，WM_MBUTTONDBLCLK = 0x0209
@@ -314,16 +316,23 @@ class GlobalInputListener:
             if self.scroll_engine and self.scroll_engine.inertia_active:
                 if msg == 0x0207:  # 中键按下
                     self.scroll_engine.interrupt_inertia()
-                if self.mouse_listener and hasattr(self.mouse_listener, 'suppress_event'):
+                if self.mouse_listener and hasattr(
+                    self.mouse_listener, "suppress_event"
+                ):
                     self.mouse_listener.suppress_event()
                 return False
 
-            if self.is_app_allowed_callback() and self._uses_default_middle_activation():
-                x, y = mouse.Controller().position
+            if (
+                self.is_app_allowed_callback()
+                and self._uses_default_middle_activation()
+            ):
+                x, y = self._mouse_controller.position
                 pressed = msg in (0x0207, 0x0209)
                 self.on_click(x, y, mouse.Button.middle, pressed)
 
-                if self.mouse_listener and hasattr(self.mouse_listener, 'suppress_event'):
+                if self.mouse_listener and hasattr(
+                    self.mouse_listener, "suppress_event"
+                ):
                     self.mouse_listener.suppress_event()
                 return False
         return True
@@ -341,7 +350,7 @@ class GlobalInputListener:
         activation_button = self._get_activation_mouse_button()
         if activation_button and button == activation_button:
             if pressed:
-                self._handle_activation_press(x, y, 'mouse')
+                self._handle_activation_press(x, y, "mouse")
             else:
-                self._handle_activation_release('mouse')
+                self._handle_activation_release("mouse")
             return

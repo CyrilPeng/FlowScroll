@@ -348,10 +348,6 @@ uv run main.py
 
 如果你也愿意一起完善它，欢迎继续提交 issue 或 PR。
 
-<div align="center">
-  <sub>Made with ❤️ by 某不科学的高数</sub>
-</div>
-
 ---
 
 ## 🔗 社区友情链接
@@ -380,3 +376,9 @@ FlowScroll 首先是一个为真实使用场景服务的小工具。
 ## 📝 许可协议
 
 本项目采用 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0) 协议开源。
+
+---
+
+<div align="center">
+  <sub>Made with ❤️ by 某不科学的高数</sub>
+</div>

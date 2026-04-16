@@ -181,6 +181,7 @@ def ensure_config_dir(path: str | None = None) -> str:
         os.makedirs(config_dir, exist_ok=True)
     return config_path
 
+
 BUILTIN_PRESETS = {
     "网页阅读": {
         "sensitivity": 1.5,
@@ -464,3 +465,9 @@ class GlobalConfig:
 cfg = GlobalConfig()
 runtime = RuntimeState()
 STATE_LOCK = threading.RLock()
+
+
+def set_config_attr(name: str, value) -> None:
+    """线程安全地设置 cfg 属性，所有 UI 侧对 cfg 的写操作应通过此函数。"""
+    with STATE_LOCK:
+        setattr(cfg, name, value)

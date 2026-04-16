@@ -20,11 +20,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 
-from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+from FlowScroll.core.config import STATE_LOCK, cfg, runtime, set_config_attr
 from FlowScroll.core.config import (
     get_config_file,
     get_config_override_source,
     set_persisted_config_file,
+    set_config_attr,
 )
 from FlowScroll.core.filter_validation import collect_invalid_regex_lines
 from FlowScroll.i18n import tr
@@ -97,8 +98,8 @@ class ReverseModeDialog(QDialog):
         self.resize(REVERSE_DIALOG_WIDTH, adaptive_height)
 
     def save_and_close(self) -> None:
-        cfg.reverse_y = self.chk_reverse_y.isChecked()
-        cfg.reverse_x = self.chk_reverse_x.isChecked()
+        set_config_attr("reverse_y", self.chk_reverse_y.isChecked())
+        set_config_attr("reverse_x", self.chk_reverse_x.isChecked())
         self.accept()
 
 
@@ -261,11 +262,19 @@ class WorkModeDialog(QDialog):
         self.compat_hint.setEnabled(checked)
 
     def save_and_close(self) -> None:
-        cfg.activation_mode = self.activation_group.checkedId()
-        cfg.activation_hotkey_click = self.activation_hotkey_edit_click.hotkey_text()
-        cfg.activation_hotkey_hold = self.activation_hotkey_edit_hold.hotkey_text()
-        cfg.activation_compat_mode = self.chk_activation_compat_mode.isChecked()
-        cfg.activation_delay_ms = int(self.activation_delay_slider.value())
+        set_config_attr("activation_mode", self.activation_group.checkedId())
+        set_config_attr(
+            "activation_hotkey_click", self.activation_hotkey_edit_click.hotkey_text()
+        )
+        set_config_attr(
+            "activation_hotkey_hold", self.activation_hotkey_edit_hold.hotkey_text()
+        )
+        set_config_attr(
+            "activation_compat_mode", self.chk_activation_compat_mode.isChecked()
+        )
+        set_config_attr(
+            "activation_delay_ms", int(self.activation_delay_slider.value())
+        )
         self.accept()
 
 
@@ -482,8 +491,14 @@ class AppFilterDialog(QDialog):
     def _collect_invalid_regex_rules(self):
         invalid_rules = []
         rule_groups = [
-            (tr("dialog.filter.blacklist_name"), self.text_edit_blacklist.toPlainText()),
-            (tr("dialog.filter.whitelist_name"), self.text_edit_whitelist.toPlainText()),
+            (
+                tr("dialog.filter.blacklist_name"),
+                self.text_edit_blacklist.toPlainText(),
+            ),
+            (
+                tr("dialog.filter.whitelist_name"),
+                self.text_edit_whitelist.toPlainText(),
+            ),
         ]
         for list_name, raw_text in rule_groups:
             for line_no, keyword in collect_invalid_regex_lines(raw_text):
@@ -541,14 +556,16 @@ class AppFilterDialog(QDialog):
                     ),
                 )
                 return
-        cfg.filter_mode = self.button_group.checkedId()
-        cfg.filter_blacklist = self._parse_keywords(
-            self.text_edit_blacklist.toPlainText()
+        set_config_attr("filter_mode", self.button_group.checkedId())
+        set_config_attr(
+            "filter_blacklist",
+            self._parse_keywords(self.text_edit_blacklist.toPlainText()),
         )
-        cfg.filter_whitelist = self._parse_keywords(
-            self.text_edit_whitelist.toPlainText()
+        set_config_attr(
+            "filter_whitelist",
+            self._parse_keywords(self.text_edit_whitelist.toPlainText()),
         )
-        cfg.filter_use_regex = self.chk_use_regex.isChecked()
+        set_config_attr("filter_use_regex", self.chk_use_regex.isChecked())
         self.accept()
 
 
@@ -690,8 +707,8 @@ class InertiaSettingsDialog(QDialog):
         self._update_threshold_label()
 
     def save_and_close(self) -> None:
-        cfg.inertia_friction_ms = self.friction_slider.value()
-        cfg.inertia_threshold = float(self.threshold_slider.value())
+        set_config_attr("inertia_friction_ms", self.friction_slider.value())
+        set_config_attr("inertia_threshold", float(self.threshold_slider.value()))
         self.accept()
 
 
@@ -847,7 +864,9 @@ class ConfigStorageDialog(QDialog):
         )
 
     def copy_current_path(self) -> None:
-        QApplication.clipboard().setText(self.path_edit.text().strip() or get_config_file())
+        QApplication.clipboard().setText(
+            self.path_edit.text().strip() or get_config_file()
+        )
         QMessageBox.information(
             self,
             tr("webdav.success_title"),

@@ -12,7 +12,12 @@ from FlowScroll.constants import (
     WEBDAV_DIALOG_MIN_HEIGHT,
     WEBDAV_DIALOG_MIN_WIDTH,
 )
-from FlowScroll.core.config import cfg, ensure_config_dir, get_config_file
+from FlowScroll.core.config import (
+    cfg,
+    ensure_config_dir,
+    get_config_file,
+    set_config_attr,
+)
 from FlowScroll.i18n import tr
 from FlowScroll.services.credential_service import credential_service
 from FlowScroll.services.logging_service import logger
@@ -307,6 +312,7 @@ class WebDAVJobThread(QThread):
 
 
 if QDialog is not None:
+
     class WebDAVSyncDialog(QDialog):
         def __init__(self, parent=None):
             super().__init__(parent)
@@ -367,7 +373,9 @@ if QDialog is not None:
             layout.addStretch()
             layout.addLayout(btn_layout)
 
-            adaptive_height = max(WEBDAV_DIALOG_DEFAULT_HEIGHT, self.sizeHint().height())
+            adaptive_height = max(
+                WEBDAV_DIALOG_DEFAULT_HEIGHT, self.sizeHint().height()
+            )
             self.resize(WEBDAV_DIALOG_DEFAULT_WIDTH, adaptive_height)
             self._job = None
 
@@ -385,8 +393,8 @@ if QDialog is not None:
             return self.edit_user.text().strip()
 
         def save_config(self) -> None:
-            cfg.webdav_url = self.edit_url.text().strip()
-            cfg.webdav_username = self.edit_user.text().strip()
+            set_config_attr("webdav_url", self.edit_url.text().strip())
+            set_config_attr("webdav_username", self.edit_user.text().strip())
             password = self.edit_pwd.text().strip()
 
             if password:
@@ -481,9 +489,7 @@ if QDialog is not None:
                 "unexpected_status",
                 mode="upload",
                 url=self._job.url if self._job else "<unknown>",
-                username=mask_webdav_username(
-                    self._job.username if self._job else ""
-                ),
+                username=mask_webdav_username(self._job.username if self._job else ""),
                 status=status,
             )
             QMessageBox.warning(
@@ -497,14 +503,16 @@ if QDialog is not None:
             local_webdav_username = cfg.webdav_username
 
             cfg.from_dict(remote_data)
-            cfg.webdav_url = local_webdav_url
-            cfg.webdav_username = local_webdav_username
+            set_config_attr("webdav_url", local_webdav_url)
+            set_config_attr("webdav_username", local_webdav_username)
 
             parent = self.parent()
             if parent is not None and hasattr(parent, "save_presets_to_file"):
                 parent.save_presets_to_file()
             else:
-                with open(ensure_config_dir(get_config_file()), "w", encoding="utf-8") as f:
+                with open(
+                    ensure_config_dir(get_config_file()), "w", encoding="utf-8"
+                ) as f:
                     json.dump(
                         {
                             "presets": {},
@@ -541,6 +549,9 @@ if QDialog is not None:
                 self._job = None
             self._set_busy(False)
 else:
+
     class WebDAVSyncDialog:
         def __init__(self, *_args, **_kwargs):
-            raise RuntimeError("WebDAVSyncDialog requires PySide6 with GUI dependencies")
+            raise RuntimeError(
+                "WebDAVSyncDialog requires PySide6 with GUI dependencies"
+            )

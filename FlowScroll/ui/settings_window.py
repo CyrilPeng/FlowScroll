@@ -33,6 +33,7 @@ from FlowScroll.core.config import (
     DEFAULT_PRESET_NAME,
     get_config_file,
     get_config_override_source,
+    set_config_attr,
 )
 from FlowScroll.core.engine import ScrollEngine
 from FlowScroll.core.rules import is_current_app_allowed
@@ -211,7 +212,9 @@ class MainWindow(QMainWindow):
             "env_file": "tab.advanced.config_path_source_env_file",
             "env_dir": "tab.advanced.config_path_source_env_dir",
         }.get(source, "tab.advanced.config_path_source_default")
-        return tr("tab.advanced.config_path_summary", source=tr(source_key), path=current_path)
+        return tr(
+            "tab.advanced.config_path_summary", source=tr(source_key), path=current_path
+        )
 
     def refresh_config_storage_ui(self) -> None:
         btn = self.ui_widgets.get("config_path_button")
@@ -488,7 +491,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(btn_layout)
 
         if dialog.exec() == QDialog.Accepted:
-            cfg.horizontal_hotkey = hotkey_edit.hotkey_text()
+            set_config_attr("horizontal_hotkey", hotkey_edit.hotkey_text())
             self.update_hotkey_label()
             self.save_presets_to_file()
 
@@ -538,7 +541,7 @@ class MainWindow(QMainWindow):
 
     def on_toggle_horizontal_hotkey(self) -> None:
         new_state = not cfg.enable_horizontal
-        setattr(cfg, "enable_horizontal", new_state)
+        set_config_attr("enable_horizontal", new_state)
         self.ui_widgets["enable_horizontal"].setChecked(new_state)
         self.tray_manager.show_message(
             tr("main.toggle_horizontal.title"),

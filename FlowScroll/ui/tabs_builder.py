@@ -1,4 +1,4 @@
-from FlowScroll.core.config import cfg
+from FlowScroll.core.config import cfg, set_config_attr
 import os
 import webbrowser
 
@@ -6,7 +6,8 @@ from FlowScroll.i18n import tr
 
 
 def _persist_config_change(main_window, attr_name, value, after_change=None):
-    setattr(cfg, attr_name, value)
+    """线程安全地更新配置属性并持久化到文件。通过 set_config_attr 加锁写入 cfg。"""
+    set_config_attr(attr_name, value)
     if after_change is not None:
         after_change(value)
     main_window.save_presets_to_file()
@@ -381,7 +382,9 @@ def build_advanced_tab(main_window):
     btn_storage = QPushButton(tr("tab.advanced.config_path_btn"))
     btn_storage.setObjectName("BtnAdv")
     btn_storage.setCursor(Qt.PointingHandCursor)
-    storage_path = resource_path(os.path.join("FlowScroll", "resources", "ic_folder.svg"))
+    storage_path = resource_path(
+        os.path.join("FlowScroll", "resources", "ic_folder.svg")
+    )
     if os.path.exists(storage_path):
         btn_storage.setIcon(QIcon(storage_path))
         btn_storage.setIconSize(QSize(18, 18))

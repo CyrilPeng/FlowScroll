@@ -4,6 +4,20 @@
 
 ## Unreleased
 
+### Fixed
+- 修复 `ScrollEngine` 中 `_scroll_history` / `_mouse_pos_history` 的并发安全问题：`interrupt_inertia` 从其他线程清空历史时可能与引擎线程的追加/裁剪产生竞态。改为 `collections.deque` + 专用 `_history_lock`，所有历史读写均在锁下原子执行；`_prune_history` 改用 `popleft()` 实现 O(1) 裁剪
+- 修复 UI 代码中对 `cfg` 全局单例的裸赋值竞态问题：`tabs_builder`、`settings_window`、`dialogs`、`webdav_dialog` 中的 `cfg.xxx = ...` 统一替换为 `set_config_attr()`，在 `STATE_LOCK` 下安全写入
+- 修复 `GlobalInputListener` 中延迟激活和快捷键触发时反复创建 `mouse.Controller()` 实例的问题，改为复用单个实例
+
+### Improved
+- 新增 `set_config_attr(name, value)` 辅助函数，集中管理 UI 侧对 `cfg` 的写操作，避免绕过线程锁的直接赋值
+- `listeners.py` 中 `import platform` 移至文件顶部，消除函数内部延迟导入
+
+### Added
+- 新增 `tests/test_engine.py` 测试模块（33 条用例），覆盖 `PowerCurveStrategy` 滚动计算与 `ScrollEngine` 惯性逻辑：
+  - `PowerCurveStrategy`：死区边界、方向判定、反转、指数曲线、对角线分配、平台倍率
+  - `ScrollEngine`：摩擦力换算、惯性中断/清空、历史裁剪、速度计算、惯性进入条件、并发安全性验证
+
 ### Changed
 - `flowscroll-homepage` 官网重构为更正式的产品官网：重写首屏、演示、能力、下载与页脚信息架构，清理半成品文案、路线图式说明和重复的下载/安装引导
 - 官网头部改为桌面优先布局：移除移动端抽屉导航，小屏仅保留品牌、语言和下载入口；桌面端头部新增 GitHub / Gitee 入口

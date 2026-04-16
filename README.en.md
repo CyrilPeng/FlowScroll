@@ -269,3 +269,8 @@ It may not be perfect, but it will keep evolving.
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE).
+
+---
+<div align="center">
+  <sub>Made with ❤️ by 某不科学的高数</sub>
+</div>
