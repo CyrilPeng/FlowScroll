@@ -187,83 +187,48 @@ BUILTIN_PRESETS = {
         "sensitivity": 1.5,
         "speed_factor": 3.0,
         "dead_zone": 25.0,
-        "overlay_size": 60.0,
-        "enable_horizontal": False,
-        "minimize_to_tray": True,
-        "horizontal_hotkey": "",
-        "activation_hotkey_click": "",
-        "activation_hotkey_hold": "",
-        "activation_mode": 0,
-        "activation_compat_mode": False,
-        "activation_delay_ms": 0,
-        "filter_mode": 0,
-        "filter_blacklist": [],
-        "filter_whitelist": [],
-        "filter_use_regex": False,
-        "disable_fullscreen": True,
-        "disable_desktop": True,
     },
     "代码办公": {
         "sensitivity": 2.5,
         "speed_factor": 2.5,
         "dead_zone": 15.0,
-        "overlay_size": 60.0,
-        "enable_horizontal": False,
-        "minimize_to_tray": True,
-        "horizontal_hotkey": "",
-        "activation_hotkey_click": "",
-        "activation_hotkey_hold": "",
-        "activation_mode": 0,
-        "activation_compat_mode": False,
-        "activation_delay_ms": 0,
-        "filter_mode": 0,
-        "filter_blacklist": [],
-        "filter_whitelist": [],
-        "filter_use_regex": False,
-        "disable_fullscreen": True,
-        "disable_desktop": True,
     },
     "长文档/表格": {
         "sensitivity": 2.0,
         "speed_factor": 2.0,
         "dead_zone": 20.0,
-        "overlay_size": 60.0,
         "enable_horizontal": True,
-        "minimize_to_tray": True,
-        "horizontal_hotkey": "",
-        "activation_hotkey_click": "",
-        "activation_hotkey_hold": "",
-        "activation_mode": 0,
-        "activation_compat_mode": False,
-        "activation_delay_ms": 0,
-        "filter_mode": 0,
-        "filter_blacklist": [],
-        "filter_whitelist": [],
-        "filter_use_regex": False,
-        "disable_fullscreen": True,
-        "disable_desktop": True,
     },
     "轻柔/接近触控板": {
         "sensitivity": 1.2,
         "speed_factor": 1.5,
         "dead_zone": 10.0,
-        "overlay_size": 60.0,
-        "enable_horizontal": False,
-        "minimize_to_tray": True,
-        "horizontal_hotkey": "",
-        "activation_hotkey_click": "",
-        "activation_hotkey_hold": "",
-        "activation_mode": 0,
-        "activation_compat_mode": False,
-        "activation_delay_ms": 0,
-        "filter_mode": 0,
-        "filter_blacklist": [],
-        "filter_whitelist": [],
-        "filter_use_regex": False,
-        "disable_fullscreen": True,
-        "disable_desktop": True,
     },
 }
+
+# 预设共享的默认值，每个预设只需覆盖差异字段。
+_PRESET_DEFAULTS = {
+    "overlay_size": 60.0,
+    "enable_horizontal": False,
+    "minimize_to_tray": True,
+    "horizontal_hotkey": "",
+    "activation_hotkey_click": "",
+    "activation_hotkey_hold": "",
+    "activation_mode": 0,
+    "activation_compat_mode": False,
+    "activation_delay_ms": 0,
+    "filter_mode": 0,
+    "filter_blacklist": [],
+    "filter_whitelist": [],
+    "filter_use_regex": False,
+    "disable_fullscreen": True,
+    "disable_desktop": True,
+}
+
+# 将共享默认值合并到各预设中，避免重复定义。
+for _name, _preset in BUILTIN_PRESETS.items():
+    for _key, _value in _PRESET_DEFAULTS.items():
+        _preset.setdefault(_key, _value)
 
 DEFAULT_PRESET_NAME = "长文档/表格"
 
@@ -331,7 +296,8 @@ class GlobalConfig:
         self.webdav_url = ""
         self.webdav_username = ""
 
-    def to_dict(self):
+    def _to_dict_common(self) -> dict:
+        """生成配置字典的公共部分，供 to_dict 和 to_dict_for_sync 复用。"""
         return {
             "config_version": self.config_version,
             "sensitivity": self.sensitivity,
@@ -361,6 +327,9 @@ class GlobalConfig:
             "inertia_friction_ms": self.inertia_friction_ms,
             "inertia_threshold": self.inertia_threshold,
         }
+
+    def to_dict(self):
+        return self._to_dict_common()
 
     def to_webdav_dict(self) -> dict:
         return {
@@ -370,35 +339,7 @@ class GlobalConfig:
 
     def to_dict_for_sync(self) -> dict:
         """生成用于 WebDAV 同步的配置字典，不包含 WebDAV 凭据。"""
-        return {
-            "config_version": self.config_version,
-            "sensitivity": self.sensitivity,
-            "speed_factor": self.speed_factor,
-            "dead_zone": self.dead_zone,
-            "overlay_size": self.overlay_size,
-            "enable_horizontal": self.enable_horizontal,
-            "minimize_to_tray": self.minimize_to_tray,
-            "horizontal_hotkey": self.horizontal_hotkey,
-            "activation_hotkey_click": self.activation_hotkey_click,
-            "activation_hotkey_hold": self.activation_hotkey_hold,
-            "reverse_y": self.reverse_y,
-            "reverse_x": self.reverse_x,
-            "hide_overlay": self.hide_overlay,
-            "filter_mode": self.filter_mode,
-            "filter_blacklist": self.filter_blacklist,
-            "filter_whitelist": self.filter_whitelist,
-            "filter_use_regex": self.filter_use_regex,
-            "filter_list": self._get_active_filter_list(),
-            "disable_fullscreen": self.disable_fullscreen,
-            "disable_desktop": self.disable_desktop,
-            "activation_mode": self.activation_mode,
-            "activation_compat_mode": self.activation_compat_mode,
-            "activation_delay_ms": self.activation_delay_ms,
-            "ui_language": self.ui_language,
-            "enable_inertia": self.enable_inertia,
-            "inertia_friction_ms": self.inertia_friction_ms,
-            "inertia_threshold": self.inertia_threshold,
-        }
+        return self._to_dict_common()
 
     def from_dict(self, data) -> None:
         self.sensitivity = data.get("sensitivity", 2.0)

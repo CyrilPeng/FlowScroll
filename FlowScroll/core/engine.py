@@ -129,21 +129,36 @@ class ScrollEngine(threading.Thread):
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
 
+    def _snapshot_config(self):
+        """一次性快照配置与运行时状态，避免在主循环中反复加锁。"""
+        with STATE_LOCK:
+            return (
+                runtime.active,
+                runtime.origin_pos,
+                cfg.enable_horizontal,
+                cfg.dead_zone,
+                cfg.sensitivity,
+                cfg.speed_factor,
+                cfg.reverse_x,
+                cfg.reverse_y,
+            )
+
     def run(self) -> None:
         last_dir = "neutral"
         platform_multiplier = system_platform.get_scroll_multiplier()
         was_active = False
 
         while True:
-            with STATE_LOCK:
-                active = runtime.active
-                origin_pos = runtime.origin_pos
-                enable_horizontal = cfg.enable_horizontal
-                dead_zone = cfg.dead_zone
-                sensitivity = cfg.sensitivity
-                speed_factor = cfg.speed_factor
-                reverse_x = cfg.reverse_x
-                reverse_y = cfg.reverse_y
+            (
+                active,
+                origin_pos,
+                enable_horizontal,
+                dead_zone,
+                sensitivity,
+                speed_factor,
+                reverse_x,
+                reverse_y,
+            ) = self._snapshot_config()
 
             if active:
                 # 如果惯性还在运行但用户重新激活滚动，则立即中断惯性。

@@ -393,7 +393,14 @@ if QDialog is not None:
             return self.edit_user.text().strip()
 
         def save_config(self) -> None:
-            set_config_attr("webdav_url", self.edit_url.text().strip())
+            url = self.edit_url.text().strip()
+            if url.startswith("http://"):
+                QMessageBox.warning(
+                    self,
+                    tr("webdav.notice_title"),
+                    tr("webdav.insecure_http_warning"),
+                )
+            set_config_attr("webdav_url", url)
             set_config_attr("webdav_username", self.edit_user.text().strip())
             password = self.edit_pwd.text().strip()
 

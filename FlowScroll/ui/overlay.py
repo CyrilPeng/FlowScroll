@@ -41,11 +41,12 @@ class ResizableOverlay(QWidget):
             self.update()
 
     def show_preview(self) -> None:
-        screen = QApplication.primaryScreen().geometry()
+        screen = QApplication.primaryScreen()
+        available = screen.availableGeometry() if screen else screen.geometry()
         self.set_direction("neutral")
         self.move(
-            int(screen.center().x() - self.width() / 2),
-            int(screen.center().y() - self.height() / 2),
+            int(available.center().x() - self.width() / 2),
+            int(available.center().y() - self.height() / 2),
         )
         self.show()
         self.raise_()

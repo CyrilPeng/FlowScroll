@@ -6,7 +6,7 @@ from FlowScroll.platform import OS_NAME, system_platform
 
 
 class AutoStartManager:
-    """璺ㄥ钩鍙板紑鏈鸿嚜鍚姩绠＄悊灏佽銆?"""
+    """跨平台开机自启动管理封装。"""
 
     def __init__(self) -> None:
         self.app_name: str = "FlowScroll"

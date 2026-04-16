@@ -4,8 +4,6 @@ import os
 import sys
 from pathlib import Path
 
-from FlowScroll.core.config import STATE_LOCK, cfg
-
 SUPPORTED_LANGUAGES = ("zh-CN", "en-US")
 DEFAULT_LANGUAGE = "en-US"
 AUTO_LANGUAGE = "auto"
@@ -123,6 +121,8 @@ def get_system_language() -> str:
 
 
 def get_active_language() -> str:
+    from FlowScroll.core.config import STATE_LOCK, cfg
+
     with STATE_LOCK:
         config_language = normalize_language(getattr(cfg, "ui_language", AUTO_LANGUAGE))
     if config_language == AUTO_LANGUAGE:
@@ -131,6 +131,8 @@ def get_active_language() -> str:
 
 
 def set_ui_language(value: str) -> str:
+    from FlowScroll.core.config import STATE_LOCK, cfg
+
     normalized = normalize_language(value)
     with STATE_LOCK:
         cfg.ui_language = normalized

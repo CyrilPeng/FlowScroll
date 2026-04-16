@@ -173,8 +173,8 @@
   "webdav.url_error_hint": "无法访问 WebDAV 地址：{error}",
   "webdav.connect_failed": "连接 WebDAV 失败:\n{error}",
   "webdav.download_success": "配置已从云端下载成功！重启程序或重新加载预设生效。",
-  "webdav.download_failed": "下载配置失败，可能云端尚无配置文件:\n{error}"
-  ,
+  "webdav.download_failed": "下载配置失败，可能云端尚无配置文件:\n{error}",
+  "webdav.insecure_http_warning": "当前使用的是 HTTP 明文连接，密码将以未加密方式传输，存在安全风险。建议改用 HTTPS 地址。",
   "main.scroll_engine_failed.title": "滚动引擎启动失败",
   "main.scroll_engine_failed.body": "无法启动滚动引擎，本次会话将无法输出滚动动作。",
   "dialog.filter.process_name_unavailable_title": "无法识别进程名",

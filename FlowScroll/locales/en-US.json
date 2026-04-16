@@ -177,5 +177,6 @@
   "webdav.url_error_hint": "Could not access the WebDAV URL: {error}",
   "webdav.connect_failed": "Failed to connect to WebDAV:\n{error}",
   "webdav.download_success": "Configuration downloaded successfully. Restart the app or reload the preset to apply it.",
-  "webdav.download_failed": "Download failed. There may be no remote config file yet:\n{error}"
+  "webdav.download_failed": "Download failed. There may be no remote config file yet:\n{error}",
+  "webdav.insecure_http_warning": "You are using an insecure HTTP connection. Your password will be transmitted in cleartext. Consider switching to an HTTPS URL."
 }

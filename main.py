@@ -63,7 +63,7 @@ def main() -> None:
 
         sys.exit(app.exec())
     except Exception as e:
-        # 发生致命崩溃时，记录日志并弹窗提示
+        # 发生致命崩溃时，记录日志并弹窗提示。
         logger.critical(f"Fatal error: {e}", exc_info=True)
         log_path = log_crash(e)
         if log_path:
@@ -71,10 +71,15 @@ def main() -> None:
                 if OS_NAME == "Windows":
                     ctypes.windll.user32.MessageBoxW(
                         0,
-                        f"程序遇到致命错误，日志已保存至:\\n{log_path}",
+                        f"程序遇到致命错误，日志已保存至:\n{log_path}",
                         "FlowScroll 崩溃",
                         16,
                     )
+                else:
+                    # 非 Windows 环境回退到标准错误输出，避免依赖 QApplication。
+                    import traceback
+
+                    traceback.print_exc()
             except Exception:
                 pass
         sys.exit(1)

@@ -1,5 +1,4 @@
 import os
-from pynput import mouse
 
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -31,16 +30,11 @@ from FlowScroll.core.config import (
     runtime,
     BUILTIN_PRESETS,
     DEFAULT_PRESET_NAME,
-    get_config_file,
-    get_config_override_source,
     set_config_attr,
 )
-from FlowScroll.core.engine import ScrollEngine
-from FlowScroll.core.rules import is_current_app_allowed
-from FlowScroll.input.listeners import GlobalInputListener
-from FlowScroll.services.autostart import AutoStartManager
 from FlowScroll.i18n import set_ui_language, tr
 
+from FlowScroll.ui.app_controller import ApplicationController
 from FlowScroll.ui.overlay import ResizableOverlay
 from FlowScroll.ui.webdav_dialog import WebDAVSyncDialog
 from FlowScroll.ui.components import HotkeyEdit
@@ -52,55 +46,32 @@ from FlowScroll.ui.styles import (
     get_help_button_style,
     get_textedit_style,
 )
-from FlowScroll.ui.bridge import LogicBridge
-from FlowScroll.ui.preset_manager import PresetManager
 from FlowScroll.ui.tray_manager import TrayManager
-from FlowScroll.services.window_monitor import WindowMonitor
-from FlowScroll.services.logging_service import logger
 from FlowScroll.services.update_checker import (
     is_newer_version,
     is_prerelease_version,
 )
-
-mouse_controller = mouse.Controller()
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # 业务逻辑委托给 ApplicationController。
+        self.ctrl = ApplicationController()
+
         icon_name = system_platform.get_icon_name()
         if os.path.exists(resource_path(icon_name)):
             self.setWindowIcon(QIcon(resource_path(icon_name)))
 
-        from FlowScroll import __version__
-
-        self.current_version = __version__
-        self.version_label = (
-            f"{self.current_version} (Dev)"
-            if is_prerelease_version(self.current_version)
-            else self.current_version
-        )
-
-        self.setWindowTitle(f"FlowScroll v{self.version_label}")
+        self.setWindowTitle(f"FlowScroll v{self.ctrl.version_label}")
         self.setMinimumSize(420, 680)
         self.resize(650, 720)
 
-        self.bridge = LogicBridge()
         self.overlay = ResizableOverlay()
-        self.autostart = AutoStartManager()
-        self.preset_manager = PresetManager()
-        self.window_monitor = None
-        self.scroller = None
-        self.input_listener = None
 
         self.ui_widgets = {}
         self.ui_text_widgets = {}
-        self.github_url = "https://github.com/CyrilPeng/FlowScroll"
-        self.latest_release_version = None
-        self.update_badge_mode = "hidden"
-
-        self.preset_manager.load_from_file()
 
         # 确保窗口图标已经设置好，再初始化系统托盘。
         if self.windowIcon().isNull() and os.path.exists(resource_path(icon_name)):
@@ -109,59 +80,111 @@ class MainWindow(QMainWindow):
         self.tray_manager = TrayManager(self, icon_name)
         self.tray_manager.show_window.connect(self.show_normal_window)
 
-        self.bridge.show_overlay.connect(self.on_show_overlay)
-        self.bridge.hide_overlay.connect(self.on_hide_overlay)
-        self.bridge.update_direction.connect(self.overlay.set_direction)
-        self.bridge.update_size.connect(self.overlay.update_geometry)
-        self.bridge.preview_size.connect(self.overlay.show_preview)
-        self.bridge.toggle_horizontal.connect(self.on_toggle_horizontal_hotkey)
+        self.ctrl.bridge.show_overlay.connect(self.on_show_overlay)
+        self.ctrl.bridge.hide_overlay.connect(self.on_hide_overlay)
+        self.ctrl.bridge.update_direction.connect(self.overlay.set_direction)
+        self.ctrl.bridge.update_size.connect(self.overlay.update_geometry)
+        self.ctrl.bridge.preview_size.connect(self.overlay.show_preview)
+        self.ctrl.bridge.toggle_horizontal.connect(self.on_toggle_horizontal_hotkey)
 
         self.init_ui()
-        self.start_threads()
-        self.check_for_updates()
+        self._start_threads()
+        self.ctrl.check_for_updates(self._refresh_update_indicator)
+
+    # ---- 代理属性：向后兼容 tabs_builder / dialogs 等 ----
 
     @property
     def presets(self):
-        return self.preset_manager.presets
+        return self.ctrl.presets
 
     @property
     def current_preset_name(self):
-        return self.preset_manager.current_preset_name
+        return self.ctrl.current_preset_name
 
     @current_preset_name.setter
     def current_preset_name(self, value) -> None:
-        self.preset_manager.current_preset_name = value
+        self.ctrl.current_preset_name = value
 
-    def check_for_updates(self) -> None:
-        from FlowScroll.services.update_checker import UpdateCheckerThread
+    @property
+    def bridge(self):
+        return self.ctrl.bridge
 
-        self.update_checker = UpdateCheckerThread(self)
-        self.update_checker.update_available.connect(self.on_update_available)
-        self.update_checker.start()
+    @property
+    def autostart(self):
+        return self.ctrl.autostart
 
-    def _get_input_hook_failure_detail(self):
-        if OS_NAME == "Darwin":
-            return tr("main.input_hook_failure_detail.macos")
+    @property
+    def preset_manager(self):
+        return self.ctrl.preset_manager
 
-        if OS_NAME == "Windows":
-            return tr("main.input_hook_failure_detail.windows")
+    @property
+    def scroller(self):
+        return self.ctrl.scroller
 
-        session_type = os.environ.get("XDG_SESSION_TYPE", "").strip().lower()
-        has_wayland = bool(os.environ.get("WAYLAND_DISPLAY"))
-        has_x11 = bool(os.environ.get("DISPLAY"))
+    @property
+    def keyboard_hook_available(self):
+        return self.ctrl.keyboard_hook_available
 
-        if session_type == "wayland" or has_wayland:
-            return tr("main.input_hook_failure_detail.linux_wayland")
-        if session_type == "x11" or has_x11:
-            return tr("main.input_hook_failure_detail.linux_x11")
-        if OS_NAME == "Linux":
-            return tr("main.input_hook_failure_detail.linux_generic")
+    @keyboard_hook_available.setter
+    def keyboard_hook_available(self, value):
+        self.ctrl.keyboard_hook_available = value
 
-        return tr("main.input_hook_failure_detail.generic")
+    @property
+    def mouse_hook_available(self):
+        return self.ctrl.mouse_hook_available
+
+    @mouse_hook_available.setter
+    def mouse_hook_available(self, value):
+        self.ctrl.mouse_hook_available = value
+
+    @property
+    def github_url(self):
+        return self.ctrl.github_url
+
+    @github_url.setter
+    def github_url(self, value):
+        self.ctrl.github_url = value
+
+    @property
+    def latest_release_version(self):
+        return self.ctrl.latest_release_version
+
+    @latest_release_version.setter
+    def latest_release_version(self, value):
+        self.ctrl.latest_release_version = value
+
+    @property
+    def update_badge_mode(self):
+        return self.ctrl.update_badge_mode
+
+    @update_badge_mode.setter
+    def update_badge_mode(self, value):
+        self.ctrl.update_badge_mode = value
+
+    # ---- 线程启动 ----
+
+    def _start_threads(self) -> None:
+        """通过 ApplicationController 启动后台线程，处理 UI 侧的错误提示。"""
+        messages = self.ctrl.start_threads(self.overlay)
+        if messages:
+            for level, title, body in messages:
+                if level == "critical":
+                    QMessageBox.critical(self, title, body)
+                else:
+                    QMessageBox.warning(self, title, body)
+
+        # 输入监听完全失败时，禁用相关控件。
+        if not self.ctrl.keyboard_hook_available and not self.ctrl.mouse_hook_available:
+            if "enable_horizontal" in self.ui_widgets:
+                self.ui_widgets["enable_horizontal"].setChecked(False)
+
+        self.refresh_input_hook_status_ui()
+
+    # ---- UI 状态刷新 ----
 
     def refresh_input_hook_status_ui(self) -> None:
-        keyboard_ok = getattr(self, "keyboard_hook_available", True)
-        mouse_ok = getattr(self, "mouse_hook_available", True)
+        keyboard_ok = self.ctrl.keyboard_hook_available
+        mouse_ok = self.ctrl.mouse_hook_available
 
         if hasattr(self, "input_hook_status_label"):
             if keyboard_ok and mouse_ok:
@@ -175,7 +198,7 @@ class MainWindow(QMainWindow):
                 else:
                     text = tr("main.input_status.all_unavailable")
                 self.input_hook_status_label.setText(
-                    f"{text}\n\n{self._get_input_hook_failure_detail()}"
+                    f"{text}\n\n{self.ctrl._get_input_hook_failure_detail()}"
                 )
                 self.input_hook_status_label.setVisible(True)
 
@@ -189,32 +212,40 @@ class MainWindow(QMainWindow):
             if widget is not None:
                 widget.setEnabled(not disable_input_controls)
 
-    def on_update_available(self, latest_version, html_url) -> None:
-        self.latest_release_version = latest_version
-        self.github_url = html_url
-        if is_prerelease_version(self.current_version):
-            self.update_badge_mode = "dev"
-        elif is_newer_version(latest_version, self.current_version):
-            self.update_badge_mode = "update"
-        else:
-            self.update_badge_mode = "hidden"
-        self._refresh_update_indicator()
+    def _refresh_update_indicator(self):
+        if not hasattr(self, "btn_new_badge") or not hasattr(self, "btn_github"):
+            return
+
+        badge_mode = self.ctrl.update_badge_mode
+        latest = self.ctrl.latest_release_version or tr("main.update.unknown")
+
+        if badge_mode == "dev":
+            self.btn_new_badge.setText(tr("main.update.dev_badge"))
+            self.btn_new_badge.setToolTip(tr("main.update.dev_tooltip", version=latest))
+            self.btn_new_badge.setVisible(True)
+            self.btn_github.setText(f" {tr('tab.author_dev', version=latest)}")
+            return
+
+        if badge_mode == "update":
+            self.btn_new_badge.setText(tr("main.update.release_badge"))
+            self.btn_new_badge.setToolTip(
+                tr("main.update.release_tooltip", version=latest)
+            )
+            self.btn_new_badge.setVisible(True)
+            self.btn_github.setText(f" {tr('tab.author')}")
+            return
+
+        self.btn_new_badge.setVisible(False)
+        self.btn_new_badge.setToolTip("")
+        self.btn_github.setText(f" {tr('tab.author')}")
+
+    # ---- 配置持久化 ----
 
     def save_presets_to_file(self) -> None:
-        self.preset_manager.save_to_file()
+        self.ctrl.save_presets_to_file()
 
     def get_config_storage_summary(self):
-        current_path = get_config_file()
-        source = get_config_override_source()
-        source_key = {
-            "default": "tab.advanced.config_path_source_default",
-            "custom": "tab.advanced.config_path_source_custom",
-            "env_file": "tab.advanced.config_path_source_env_file",
-            "env_dir": "tab.advanced.config_path_source_env_dir",
-        }.get(source, "tab.advanced.config_path_source_default")
-        return tr(
-            "tab.advanced.config_path_summary", source=tr(source_key), path=current_path
-        )
+        return self.ctrl.get_config_storage_summary()
 
     def refresh_config_storage_ui(self) -> None:
         btn = self.ui_widgets.get("config_path_button")
@@ -228,8 +259,10 @@ class MainWindow(QMainWindow):
         dialog.exec()
         self.refresh_config_storage_ui()
 
+    # ---- 预设管理 ----
+
     def _all_preset_names(self):
-        return self.preset_manager.get_all_names()
+        return self.ctrl.preset_manager.get_all_names()
 
     def _refresh_combo(self, select_name):
         self.combo_presets.blockSignals(True)
@@ -237,6 +270,68 @@ class MainWindow(QMainWindow):
         self.combo_presets.addItems(self._all_preset_names())
         self.combo_presets.setCurrentText(select_name)
         self.combo_presets.blockSignals(False)
+
+    def save_new_preset(self) -> None:
+        suggested = self.current_preset_name
+        if suggested in BUILTIN_PRESETS:
+            suggested = ""
+        text, ok = QInputDialog.getText(
+            self,
+            tr("main.preset.save_title"),
+            tr("main.preset.save_prompt"),
+            text=suggested,
+        )
+        if ok and text:
+            if text in BUILTIN_PRESETS:
+                QMessageBox.warning(
+                    self,
+                    tr("main.preset.builtin_warning_title"),
+                    tr("main.preset.builtin_warning_body"),
+                )
+                return
+            if text in self.presets and not self._confirm_preset_action(
+                tr("main.preset.overwrite_title"),
+                tr("main.preset.overwrite_body", name=text),
+            ):
+                return
+            self.ctrl.save_new_preset(text)
+            self._refresh_combo(text)
+
+    def delete_preset(self) -> None:
+        name = self.combo_presets.currentText()
+        if name in BUILTIN_PRESETS:
+            QMessageBox.warning(
+                self,
+                tr("main.preset.delete_builtin_title"),
+                tr("main.preset.delete_builtin_body"),
+            )
+            return
+        if name not in self.presets:
+            return
+        if not self._confirm_preset_action(
+            tr("main.preset.delete_confirm_title"),
+            tr("main.preset.delete_confirm_body", name=name),
+        ):
+            return
+        self.ctrl.delete_preset(name)
+        self._refresh_combo(DEFAULT_PRESET_NAME)
+        self.load_selected_preset(DEFAULT_PRESET_NAME)
+
+    def load_selected_preset(self, name) -> None:
+        self.ctrl.load_selected_preset(name)
+        self.sync_ui_from_config()
+
+    def _confirm_preset_action(self, title, text):
+        reply = QMessageBox.question(
+            self,
+            title,
+            text,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        return reply == QMessageBox.Yes
+
+    # ---- 窗口事件 ----
 
     def show_normal_window(self) -> None:
         self.show()
@@ -250,6 +345,8 @@ class MainWindow(QMainWindow):
             event.ignore()
         else:
             event.accept()
+
+    # ---- UI 初始化 ----
 
     def init_ui(self) -> None:
         self.setStyleSheet(get_main_stylesheet())
@@ -348,6 +445,8 @@ class MainWindow(QMainWindow):
                 widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.tab_widget.adjustSize()
 
+    # ---- 语言切换 ----
+
     def _build_language_menu(self):
         self.language_menu = QMenu(self)
         self.action_lang_auto = QAction(tr("main.language.auto"), self)
@@ -401,42 +500,8 @@ class MainWindow(QMainWindow):
         self.sync_ui_from_config()
         self._refresh_update_indicator()
 
-    def _refresh_update_indicator(self):
-        if not hasattr(self, "btn_new_badge") or not hasattr(self, "btn_github"):
-            return
-
-        if self.update_badge_mode == "dev":
-            self.btn_new_badge.setText(tr("main.update.dev_badge"))
-            self.btn_new_badge.setToolTip(
-                tr(
-                    "main.update.dev_tooltip",
-                    version=self.latest_release_version or tr("main.update.unknown"),
-                )
-            )
-            self.btn_new_badge.setVisible(True)
-            self.btn_github.setText(
-                f" {tr('tab.author_dev', version=self.latest_release_version or tr('main.update.unknown'))}"
-            )
-            return
-
-        if self.update_badge_mode == "update":
-            self.btn_new_badge.setText(tr("main.update.release_badge"))
-            self.btn_new_badge.setToolTip(
-                tr(
-                    "main.update.release_tooltip",
-                    version=self.latest_release_version or tr("main.update.unknown"),
-                )
-            )
-            self.btn_new_badge.setVisible(True)
-            self.btn_github.setText(f" {tr('tab.author')}")
-            return
-
-        self.btn_new_badge.setVisible(False)
-        self.btn_new_badge.setToolTip("")
-        self.btn_github.setText(f" {tr('tab.author')}")
-
     def retranslate_ui(self) -> None:
-        self.setWindowTitle(f"FlowScroll v{self.version_label}")
+        self.setWindowTitle(f"FlowScroll v{self.ctrl.version_label}")
         self.header_subtitle.setText(tr("main.subtitle"))
         self.btn_language.setText(tr("main.language.button"))
         self.tray_manager.retranslate_ui()
@@ -444,11 +509,45 @@ class MainWindow(QMainWindow):
         self._rebuild_tabs()
         self.refresh_input_hook_status_ui()
 
+    # ---- UI 同步 ----
+
+    def sync_ui_from_config(self) -> None:
+        self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
+        self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
+        self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
+        self.ui_widgets["overlay_size"].setValue(cfg.overlay_size)
+        self.ui_widgets["enable_horizontal"].setChecked(cfg.enable_horizontal)
+        self.ui_widgets["minimize_to_tray"].setChecked(cfg.minimize_to_tray)
+        self.ui_widgets["enable_inertia"].setChecked(cfg.enable_inertia)
+        if "disable_fullscreen" in self.ui_widgets:
+            self.ui_widgets["disable_fullscreen"].setChecked(cfg.disable_fullscreen)
+
+        self.update_hotkey_label()
+        self.refresh_config_storage_ui()
+
     def update_hotkey_label(self) -> None:
         if cfg.horizontal_hotkey:
             self.lbl_hotkey.setText(hotkey_to_display(cfg.horizontal_hotkey))
         else:
             self.lbl_hotkey.setText(tr("main.hotkey.not_set"))
+
+    # ---- Overlay 事件 ----
+
+    def on_show_overlay(self) -> None:
+        if cfg.hide_overlay:
+            return
+        self.overlay.set_direction("neutral")
+        self.overlay.move(
+            int(QCursor.pos().x() - cfg.overlay_size / 2),
+            int(QCursor.pos().y() - cfg.overlay_size / 2),
+        )
+        self.overlay.show()
+        self.overlay.raise_()
+
+    def on_hide_overlay(self) -> None:
+        self.overlay.hide()
+
+    # ---- 对话框 ----
 
     def open_hotkey_dialog(self) -> None:
         dialog = QDialog(self)
@@ -592,9 +691,7 @@ class MainWindow(QMainWindow):
 
         dialog = InertiaSettingsDialog(self)
         if dialog.exec() == QDialog.Accepted:
-            if hasattr(self, "scroller") and self.scroller:
-                self.scroller.update_friction()
-            self.save_presets_to_file()
+            self.ctrl.on_inertia_settings_accepted()
 
     def toggle_autorun(self, checked) -> None:
         if not self.autostart.set_autorun(checked):
@@ -604,159 +701,3 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self, tr("main.settings_failed.title"), tr("main.settings_failed.body")
             )
-
-    def _confirm_preset_action(self, title, text):
-        reply = QMessageBox.question(
-            self,
-            title,
-            text,
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        return reply == QMessageBox.Yes
-
-    def save_new_preset(self) -> None:
-        suggested = self.current_preset_name
-        if suggested in BUILTIN_PRESETS:
-            suggested = ""
-        text, ok = QInputDialog.getText(
-            self,
-            tr("main.preset.save_title"),
-            tr("main.preset.save_prompt"),
-            text=suggested,
-        )
-        if ok and text:
-            if text in BUILTIN_PRESETS:
-                QMessageBox.warning(
-                    self,
-                    tr("main.preset.builtin_warning_title"),
-                    tr("main.preset.builtin_warning_body"),
-                )
-                return
-            if text in self.presets and not self._confirm_preset_action(
-                tr("main.preset.overwrite_title"),
-                tr("main.preset.overwrite_body", name=text),
-            ):
-                return
-            self.preset_manager.save_preset(text)
-            self._refresh_combo(text)
-
-    def delete_preset(self) -> None:
-        name = self.combo_presets.currentText()
-        if name in BUILTIN_PRESETS:
-            QMessageBox.warning(
-                self,
-                tr("main.preset.delete_builtin_title"),
-                tr("main.preset.delete_builtin_body"),
-            )
-            return
-        if name not in self.presets:
-            return
-        if not self._confirm_preset_action(
-            tr("main.preset.delete_confirm_title"),
-            tr("main.preset.delete_confirm_body", name=name),
-        ):
-            return
-        self.preset_manager.delete_preset(name)
-        self._refresh_combo(DEFAULT_PRESET_NAME)
-        self.load_selected_preset(DEFAULT_PRESET_NAME)
-
-    def load_selected_preset(self, name) -> None:
-        if not self.preset_manager.load_preset(name):
-            return
-        self.sync_ui_from_config()
-
-        if hasattr(self, "scroller") and self.scroller:
-            self.scroller.update_friction()
-
-        self.save_presets_to_file()
-
-    def sync_ui_from_config(self) -> None:
-        self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
-        self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
-        self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
-        self.ui_widgets["overlay_size"].setValue(cfg.overlay_size)
-        self.ui_widgets["enable_horizontal"].setChecked(cfg.enable_horizontal)
-        self.ui_widgets["minimize_to_tray"].setChecked(cfg.minimize_to_tray)
-        self.ui_widgets["enable_inertia"].setChecked(cfg.enable_inertia)
-        if "disable_fullscreen" in self.ui_widgets:
-            self.ui_widgets["disable_fullscreen"].setChecked(cfg.disable_fullscreen)
-
-        self.update_hotkey_label()
-        self.refresh_config_storage_ui()
-
-    def on_show_overlay(self) -> None:
-        if cfg.hide_overlay:
-            return
-        self.overlay.set_direction("neutral")
-        self.overlay.move(
-            int(QCursor.pos().x() - cfg.overlay_size / 2),
-            int(QCursor.pos().y() - cfg.overlay_size / 2),
-        )
-        self.overlay.show()
-        self.overlay.raise_()
-
-    def on_hide_overlay(self) -> None:
-        self.overlay.hide()
-
-    def start_threads(self) -> None:
-        self.window_monitor = None
-        self.scroller = None
-        self.input_listener = None
-        self.keyboard_hook_available = True
-        self.mouse_hook_available = True
-
-        try:
-            self.window_monitor = WindowMonitor()
-            self.window_monitor.start()
-        except Exception as e:
-            logger.error(f"Failed to start WindowMonitor: {e}")
-
-        try:
-            self.scroller = ScrollEngine(self.bridge, mouse_controller)
-            self.scroller.start()
-        except Exception as e:
-            logger.error(f"Failed to start ScrollEngine: {e}")
-            QMessageBox.critical(
-                self,
-                tr("main.scroll_engine_failed.title"),
-                tr("main.scroll_engine_failed.body"),
-            )
-
-        try:
-            self.input_listener = GlobalInputListener(
-                self.bridge, is_current_app_allowed, self.scroller
-            )
-            self.input_listener.start()
-            self.keyboard_hook_available = self.input_listener.keyboard_hook_available
-            self.mouse_hook_available = self.input_listener.mouse_hook_available
-            if not self.input_listener.keyboard_hook_available:
-                QMessageBox.warning(
-                    self,
-                    tr("main.keyboard_hook_failed.title"),
-                    tr(
-                        "main.keyboard_hook_failed.body",
-                        detail=self._get_input_hook_failure_detail(),
-                    ),
-                )
-            if not self.input_listener.mouse_hook_available:
-                QMessageBox.warning(
-                    self,
-                    tr("main.mouse_hook_failed.title"),
-                    tr(
-                        "main.mouse_hook_failed.body",
-                        detail=self._get_input_hook_failure_detail(),
-                    ),
-                )
-        except Exception as e:
-            logger.error(f"Failed to start GlobalInputListener: {e}")
-            self.keyboard_hook_available = False
-            self.mouse_hook_available = False
-            if "enable_horizontal" in self.ui_widgets:
-                self.ui_widgets["enable_horizontal"].setChecked(False)
-            QMessageBox.critical(
-                self,
-                tr("main.permission_denied.title"),
-                tr("main.permission_denied.body"),
-            )
-        self.refresh_input_hook_status_ui()

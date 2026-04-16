@@ -69,6 +69,7 @@ except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境
         def waitForDisconnected(self, _timeout) -> bool:
             return False
 
+
 from FlowScroll.services.logging_service import logger
 
 
@@ -84,7 +85,7 @@ class SingleInstanceManager(QObject):
     @staticmethod
     def _build_server_name(app_id: str) -> str:
         user_scope = f"{os.path.expanduser('~')}|{app_id}".encode("utf-8")
-        digest = hashlib.sha1(user_scope).hexdigest()
+        digest = hashlib.sha256(user_scope).hexdigest()
         return f"FlowScroll.{digest}"
 
     def acquire(self) -> bool:
