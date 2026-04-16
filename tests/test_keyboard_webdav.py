@@ -11,6 +11,8 @@ import pytest
 
 
 class TestKeyboardManagerHotkeyNormalization:
+    """测试键盘快捷键归一化（依赖 pynput 环境）。"""
+
     def _patch_keyboard_types(self, monkeypatch, listeners_module):
         class DummyListener:
             def __init__(self, on_press=None, on_release=None):
@@ -64,6 +66,8 @@ class TestKeyboardManagerHotkeyNormalization:
 
 
 class TestKeyboardManagerHotkeyNormalizationPureMock:
+    """测试键盘快捷键归一化（纯 Mock，无 pynput 依赖）。"""
+
     def _import_listeners_with_fake_pynput(self, monkeypatch):
         fake_pynput = types.ModuleType("pynput")
 
@@ -171,6 +175,8 @@ class TestKeyboardManagerHotkeyNormalizationPureMock:
 
 
 class TestLockKeyAliasNormalization:
+    """测试 CapsLock/NumLock 等别名键的归一化。"""
+
     def test_capslock_alias_normalized(self):
         pytest.importorskip("PySide6", exc_type=ImportError)
         from FlowScroll.core.hotkeys import normalize_hotkey_string
@@ -188,6 +194,8 @@ class TestLockKeyAliasNormalization:
 
 
 class TestWebDAVErrorFormatting:
+    """测试 WebDAV 错误格式化与用户名脱敏。"""
+
     def test_mask_webdav_username(self):
         from FlowScroll.ui.webdav_dialog import mask_webdav_username
 
@@ -513,6 +521,8 @@ class TestWebDAVErrorFormatting:
 
 
 class TestAdvancedTab:
+    """测试高级标签页的构建与持久化。"""
+
     def test_build_advanced_tab_smoke(self, monkeypatch):
         qtwidgets = pytest.importorskip("PySide6.QtWidgets", exc_type=ImportError)
         monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")

@@ -36,6 +36,7 @@ class ApplicationController:
     """管理应用的业务逻辑：后台线程、预设、更新检测与配置持久化。"""
 
     def __init__(self):
+        """初始化应用控制器，创建桥接器、自启动管理器、预设管理器等核心组件。"""
         self.bridge = LogicBridge()
         self.autostart = AutoStartManager()
         self.preset_manager = PresetManager()
@@ -67,14 +68,17 @@ class ApplicationController:
 
     @property
     def presets(self):
+        """返回当前预设字典。"""
         return self.preset_manager.presets
 
     @property
     def current_preset_name(self):
+        """返回当前使用的预设名称。"""
         return self.preset_manager.current_preset_name
 
     @current_preset_name.setter
     def current_preset_name(self, value) -> None:
+        """设置当前预设名称并持久化。"""
         self.preset_manager.current_preset_name = value
 
     def save_presets_to_file(self) -> None:

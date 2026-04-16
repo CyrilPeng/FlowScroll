@@ -16,7 +16,10 @@ from FlowScroll.constants import (
 
 
 class ScrollEngine(threading.Thread):
+    """滚动引擎线程：根据鼠标偏移计算滚动速度，支持惯性衰减。"""
+
     def __init__(self, bridge, mouse_controller):
+        """初始化滚动引擎，绑定桥接器与鼠标控制器，设置惯性参数和历史记录。"""
         super().__init__(daemon=True)
         self.bridge = bridge
         self.mouse_controller = mouse_controller
@@ -144,6 +147,7 @@ class ScrollEngine(threading.Thread):
             )
 
     def run(self) -> None:
+        """主循环：根据 active/inertia/idle 三种状态分别处理滚动逻辑。"""
         last_dir = "neutral"
         platform_multiplier = system_platform.get_scroll_multiplier()
         was_active = False

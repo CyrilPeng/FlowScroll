@@ -7,9 +7,12 @@ from FlowScroll.core.config import cfg
 
 
 class ResizableOverlay(QWidget):
+    """可缩放的准星覆盖层，显示当前滚动方向指示箭头。"""
+
     MIN_RENDER_SIZE = 20  # 最小渲染尺寸，避免渲染异常
 
     def __init__(self):
+        """初始化覆盖层窗口，设置为无边框、置顶、透明背景。"""
         super().__init__()
         flags = (
             Qt.FramelessWindowHint
@@ -30,17 +33,20 @@ class ResizableOverlay(QWidget):
         self.preview_timer.timeout.connect(self.hide)
 
     def update_geometry(self, size) -> None:
+        """更新覆盖层尺寸并触发重绘。"""
         self._overlay_size = size
         size = max(size, self.MIN_RENDER_SIZE)
         self.setFixedSize(size, size)
         self.update()
 
     def set_direction(self, direction) -> None:
+        """设置当前方向（neutral/up/down/left/right），方向变化时触发重绘。"""
         if self.direction != direction:
             self.direction = direction
             self.update()
 
     def show_preview(self) -> None:
+        """在屏幕可用区域中心短暂显示预览，800ms 后自动隐藏。"""
         screen = QApplication.primaryScreen()
         available = screen.availableGeometry() if screen else screen.geometry()
         self.set_direction("neutral")
@@ -53,6 +59,7 @@ class ResizableOverlay(QWidget):
         self.preview_timer.start(800)
 
     def paintEvent(self, event) -> None:
+        """绘制准星：中心圆点 + 根据方向显示的箭头。"""
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         p.translate(self.width() / 2, self.height() / 2)

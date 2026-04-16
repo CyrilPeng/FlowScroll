@@ -8,6 +8,8 @@ import pytest
 
 
 class TestGlobalConfig:
+    """测试 GlobalConfig 的路径解析、默认值、序列化与迁移逻辑。"""
+
     def test_default_windows_config_dir_uses_appdata(self, monkeypatch):
         import FlowScroll.core.config as config_module
 
@@ -169,6 +171,8 @@ class TestGlobalConfig:
 
 
 class TestRuntimeState:
+    """测试 RuntimeState 的默认值与窗口信息过期判定。"""
+
     def test_defaults(self):
         from FlowScroll.core.config import RuntimeState
 
@@ -195,6 +199,8 @@ class TestRuntimeState:
 
 
 class TestBuiltinPresets:
+    """测试内置预设的完整性与共享默认值。"""
+
     def test_all_presets_have_required_keys(self):
         from FlowScroll.core.config import BUILTIN_PRESETS
 
@@ -219,6 +225,8 @@ class TestBuiltinPresets:
 
 
 class TestPresetManager:
+    """测试 PresetManager 的保存、加载、删除与序列化逻辑。"""
+
     def _make_temp_config(self, data):
         fd, path = tempfile.mkstemp(suffix=".json")
         with os.fdopen(fd, "w", encoding="utf-8") as f:

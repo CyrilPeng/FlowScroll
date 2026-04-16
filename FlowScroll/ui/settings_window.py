@@ -54,7 +54,10 @@ from FlowScroll.services.update_checker import (
 
 
 class MainWindow(QMainWindow):
+    """主设置窗口：负责 UI 展示、用户交互，业务逻辑委托给 ApplicationController。"""
+
     def __init__(self):
+        """初始化主窗口：创建控制器、overlay、托盘、UI 和后台线程。"""
         super().__init__()
 
         # 业务逻辑委托给 ApplicationController。
@@ -95,70 +98,87 @@ class MainWindow(QMainWindow):
 
     @property
     def presets(self):
+        """代理属性：返回当前预设字典。"""
         return self.ctrl.presets
 
     @property
     def current_preset_name(self):
+        """代理属性：返回当前预设名称。"""
         return self.ctrl.current_preset_name
 
     @current_preset_name.setter
     def current_preset_name(self, value) -> None:
+        """代理属性：设置当前预设名称。"""
         self.ctrl.current_preset_name = value
 
     @property
     def bridge(self):
+        """代理属性：返回 LogicBridge 实例。"""
         return self.ctrl.bridge
 
     @property
     def autostart(self):
+        """代理属性：返回 AutoStartManager 实例。"""
         return self.ctrl.autostart
 
     @property
     def preset_manager(self):
+        """代理属性：返回 PresetManager 实例。"""
         return self.ctrl.preset_manager
 
     @property
     def scroller(self):
+        """代理属性：返回 ScrollEngine 实例。"""
         return self.ctrl.scroller
 
     @property
     def keyboard_hook_available(self):
+        """代理属性：返回键盘钩子是否可用。"""
         return self.ctrl.keyboard_hook_available
 
     @keyboard_hook_available.setter
     def keyboard_hook_available(self, value):
+        """代理属性：设置键盘钩子可用状态。"""
         self.ctrl.keyboard_hook_available = value
 
     @property
     def mouse_hook_available(self):
+        """代理属性：返回鼠标钩子是否可用。"""
         return self.ctrl.mouse_hook_available
 
     @mouse_hook_available.setter
     def mouse_hook_available(self, value):
+        """代理属性：设置鼠标钩子可用状态。"""
         self.ctrl.mouse_hook_available = value
 
     @property
     def github_url(self):
+        """代理属性：返回 GitHub 仓库 URL。"""
         return self.ctrl.github_url
 
     @github_url.setter
     def github_url(self, value):
+        """代理属性：设置 GitHub 仓库 URL。"""
         self.ctrl.github_url = value
 
     @property
     def latest_release_version(self):
+        """代理属性：返回最新发布版本号。"""
         return self.ctrl.latest_release_version
 
     @latest_release_version.setter
     def latest_release_version(self, value):
+        """代理属性：设置最新发布版本号。"""
         self.ctrl.latest_release_version = value
 
     @property
     def update_badge_mode(self):
+        """代理属性：返回更新徽章模式。"""
         return self.ctrl.update_badge_mode
 
     @update_badge_mode.setter
     def update_badge_mode(self, value):
+        """代理属性：设置更新徽章模式。"""
         self.ctrl.update_badge_mode = value
 
     # ---- 线程启动 ----
@@ -183,6 +203,7 @@ class MainWindow(QMainWindow):
     # ---- UI 状态刷新 ----
 
     def refresh_input_hook_status_ui(self) -> None:
+        """根据键盘/鼠标钩子可用状态刷新 UI 提示和控件启用状态。"""
         keyboard_ok = self.ctrl.keyboard_hook_available
         mouse_ok = self.ctrl.mouse_hook_available
 
@@ -213,6 +234,7 @@ class MainWindow(QMainWindow):
                 widget.setEnabled(not disable_input_controls)
 
     def _refresh_update_indicator(self):
+        """更新版本徽章和 GitHub 按钮的显示状态。"""
         if not hasattr(self, "btn_new_badge") or not hasattr(self, "btn_github"):
             return
 
@@ -242,17 +264,21 @@ class MainWindow(QMainWindow):
     # ---- 配置持久化 ----
 
     def save_presets_to_file(self) -> None:
+        """将当前预设和配置持久化到磁盘。"""
         self.ctrl.save_presets_to_file()
 
     def get_config_storage_summary(self):
+        """返回配置存储位置的可读摘要文本。"""
         return self.ctrl.get_config_storage_summary()
 
     def refresh_config_storage_ui(self) -> None:
+        """刷新配置路径按钮的工具提示。"""
         btn = self.ui_widgets.get("config_path_button")
         if btn is not None:
             btn.setToolTip(self.get_config_storage_summary())
 
     def open_config_storage_dialog(self) -> None:
+        """打开配置存储位置设置对话框。"""
         from FlowScroll.ui.dialogs import ConfigStorageDialog
 
         dialog = ConfigStorageDialog(self)
@@ -262,9 +288,11 @@ class MainWindow(QMainWindow):
     # ---- 预设管理 ----
 
     def _all_preset_names(self):
+        """返回所有预设名称列表（内置 + 自定义）。"""
         return self.ctrl.preset_manager.get_all_names()
 
     def _refresh_combo(self, select_name):
+        """刷新预设下拉框，选中指定名称。"""
         self.combo_presets.blockSignals(True)
         self.combo_presets.clear()
         self.combo_presets.addItems(self._all_preset_names())
@@ -272,6 +300,7 @@ class MainWindow(QMainWindow):
         self.combo_presets.blockSignals(False)
 
     def save_new_preset(self) -> None:
+        """保存新预设：弹出输入框，校验名称后持久化。"""
         suggested = self.current_preset_name
         if suggested in BUILTIN_PRESETS:
             suggested = ""
@@ -298,6 +327,7 @@ class MainWindow(QMainWindow):
             self._refresh_combo(text)
 
     def delete_preset(self) -> None:
+        """删除自定义预设：确认后删除并回退到默认预设。"""
         name = self.combo_presets.currentText()
         if name in BUILTIN_PRESETS:
             QMessageBox.warning(
@@ -318,10 +348,12 @@ class MainWindow(QMainWindow):
         self.load_selected_preset(DEFAULT_PRESET_NAME)
 
     def load_selected_preset(self, name) -> None:
+        """加载指定预设并同步 UI 控件。"""
         self.ctrl.load_selected_preset(name)
         self.sync_ui_from_config()
 
     def _confirm_preset_action(self, title, text):
+        """弹出确认对话框，返回用户是否选择"是"。"""
         reply = QMessageBox.question(
             self,
             title,
@@ -334,12 +366,14 @@ class MainWindow(QMainWindow):
     # ---- 窗口事件 ----
 
     def show_normal_window(self) -> None:
+        """显示并激活主窗口（从托盘恢复时调用）。"""
         self.show()
         self.setWindowState(Qt.WindowNoState)
         self.raise_()
         self.activateWindow()
 
     def closeEvent(self, event) -> None:
+        """关闭事件：配置了最小化到托盘时隐藏而非退出。"""
         if cfg.minimize_to_tray and self.tray_manager.is_visible():
             self.hide()
             event.ignore()
@@ -349,6 +383,7 @@ class MainWindow(QMainWindow):
     # ---- UI 初始化 ----
 
     def init_ui(self) -> None:
+        """构建主界面：头部区域 + 参数/高级标签页。"""
         self.setStyleSheet(get_main_stylesheet())
 
         central = QWidget()
@@ -437,6 +472,7 @@ class MainWindow(QMainWindow):
         self._build_language_menu()
 
     def update_tab_height(self, index) -> None:
+        """切换标签页时更新各页的尺寸策略，确保当前页正常显示。"""
         for i in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(i)
             if i == index:
@@ -448,6 +484,7 @@ class MainWindow(QMainWindow):
     # ---- 语言切换 ----
 
     def _build_language_menu(self):
+        """构建语言切换菜单（自动/中文/英文）。"""
         self.language_menu = QMenu(self)
         self.action_lang_auto = QAction(tr("main.language.auto"), self)
         self.action_lang_zh = QAction(tr("main.language.zh"), self)
@@ -462,6 +499,7 @@ class MainWindow(QMainWindow):
         self._sync_language_menu_checks()
 
     def _sync_language_menu_checks(self):
+        """根据配置同步语言菜单的选中状态。"""
         with STATE_LOCK:
             configured = getattr(cfg, "ui_language", "auto")
         self.action_lang_auto.setChecked(configured == "auto")
@@ -469,6 +507,7 @@ class MainWindow(QMainWindow):
         self.action_lang_en.setChecked(configured == "en-US")
 
     def show_language_menu(self) -> None:
+        """在语言按钮下方弹出语言选择菜单。"""
         if not hasattr(self, "language_menu"):
             self._build_language_menu()
         self._sync_language_menu_checks()
@@ -477,11 +516,13 @@ class MainWindow(QMainWindow):
         )
 
     def _apply_language(self, language_code: str):
+        """切换 UI 语言并持久化配置。"""
         set_ui_language(language_code)
         self.save_presets_to_file()
         self.retranslate_ui()
 
     def _rebuild_tabs(self):
+        """重建标签页内容（语言切换后调用）。"""
         from FlowScroll.ui.tabs_builder import build_parameter_tab, build_advanced_tab
 
         index = self.tab_widget.currentIndex()
@@ -501,6 +542,7 @@ class MainWindow(QMainWindow):
         self._refresh_update_indicator()
 
     def retranslate_ui(self) -> None:
+        """重新翻译所有 UI 文本（语言切换后调用）。"""
         self.setWindowTitle(f"FlowScroll v{self.ctrl.version_label}")
         self.header_subtitle.setText(tr("main.subtitle"))
         self.btn_language.setText(tr("main.language.button"))
@@ -512,6 +554,7 @@ class MainWindow(QMainWindow):
     # ---- UI 同步 ----
 
     def sync_ui_from_config(self) -> None:
+        """将 cfg 中的值同步到 UI 控件。"""
         self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
         self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
         self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
@@ -526,6 +569,7 @@ class MainWindow(QMainWindow):
         self.refresh_config_storage_ui()
 
     def update_hotkey_label(self) -> None:
+        """更新横向滚动快捷键的显示标签。"""
         if cfg.horizontal_hotkey:
             self.lbl_hotkey.setText(hotkey_to_display(cfg.horizontal_hotkey))
         else:
@@ -534,6 +578,7 @@ class MainWindow(QMainWindow):
     # ---- Overlay 事件 ----
 
     def on_show_overlay(self) -> None:
+        """显示准星覆盖层（在鼠标当前位置居中）。"""
         if cfg.hide_overlay:
             return
         self.overlay.set_direction("neutral")
@@ -545,11 +590,13 @@ class MainWindow(QMainWindow):
         self.overlay.raise_()
 
     def on_hide_overlay(self) -> None:
+        """隐藏准星覆盖层。"""
         self.overlay.hide()
 
     # ---- 对话框 ----
 
     def open_hotkey_dialog(self) -> None:
+        """打开横向滚动快捷键设置对话框。"""
         dialog = QDialog(self)
         dialog.setWindowTitle(tr("main.hotkey_dialog.title"))
         dialog.setMinimumWidth(300)
@@ -595,6 +642,7 @@ class MainWindow(QMainWindow):
             self.save_presets_to_file()
 
     def show_help_dialog(self) -> None:
+        """显示帮助对话框（含参数说明和图标）。"""
         dialog = QDialog(self)
         dialog.setWindowTitle(tr("main.help.title"))
         dialog.setMinimumSize(520, 420)
@@ -607,6 +655,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(14)
 
         def img(name):
+            """辅助函数：构建资源图片的 HTML img 标签。"""
             path = resource_path(os.path.join("FlowScroll", "resources", name)).replace(
                 "\\", "/"
             )
@@ -639,6 +688,7 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def on_toggle_horizontal_hotkey(self) -> None:
+        """切换横向滚动开关，并显示托盘通知。"""
         new_state = not cfg.enable_horizontal
         set_config_attr("enable_horizontal", new_state)
         self.ui_widgets["enable_horizontal"].setChecked(new_state)
@@ -652,11 +702,13 @@ class MainWindow(QMainWindow):
         )
 
     def open_webdav_settings(self) -> None:
+        """打开 WebDAV 云同步设置对话框。"""
         dialog = WebDAVSyncDialog(self)
         if dialog.exec() == QDialog.Accepted:
             self.save_presets_to_file()
 
     def open_work_mode_dialog(self) -> None:
+        """打开工作模式设置对话框。"""
         from FlowScroll.ui.dialogs import WorkModeDialog
 
         dialog = WorkModeDialog(self)
@@ -664,6 +716,7 @@ class MainWindow(QMainWindow):
             self.save_presets_to_file()
 
     def open_filter_mode_dialog(self) -> None:
+        """打开应用过滤模式设置对话框，进程名不可用时给出提示。"""
         from FlowScroll.ui.dialogs import AppFilterDialog
 
         with STATE_LOCK:
@@ -680,6 +733,7 @@ class MainWindow(QMainWindow):
             self.save_presets_to_file()
 
     def open_reverse_mode_dialog(self) -> None:
+        """打开滚轮方向反转设置对话框。"""
         from FlowScroll.ui.dialogs import ReverseModeDialog
 
         dialog = ReverseModeDialog(self)
@@ -687,6 +741,7 @@ class MainWindow(QMainWindow):
             self.save_presets_to_file()
 
     def open_inertia_settings_dialog(self) -> None:
+        """打开惯性滚动设置对话框。"""
         from FlowScroll.ui.dialogs import InertiaSettingsDialog
 
         dialog = InertiaSettingsDialog(self)
@@ -694,6 +749,7 @@ class MainWindow(QMainWindow):
             self.ctrl.on_inertia_settings_accepted()
 
     def toggle_autorun(self, checked) -> None:
+        """切换开机自启动开关，失败时回滚 UI 状态。"""
         if not self.autostart.set_autorun(checked):
             self.sender().blockSignals(True)
             self.sender().setChecked(not checked)

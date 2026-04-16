@@ -11,7 +11,10 @@ from FlowScroll.constants import DOUBLE_CLICK_THRESHOLD
 
 
 class KeyboardManager:
+    """键盘监听管理器：捕获按键按下/释放事件并分发回调。"""
+
     def __init__(self, on_press_callback, on_release_callback):
+        """初始化键盘管理器，绑定按下和释放回调。"""
         self.listener = keyboard.Listener(
             on_press=self.on_press, on_release=self.on_release
         )
@@ -20,9 +23,11 @@ class KeyboardManager:
         self.on_release_callback = on_release_callback
 
     def start(self):
+        """启动键盘监听线程。"""
         self.listener.start()
 
     def _get_key_name(self, key):
+        """将 pynput 的 KeyCode / Key 转换为标准化的键名字符串。"""
         if isinstance(key, keyboard.KeyCode):
             if key.char:
                 # 某些平台上，Ctrl+字母可能会产生控制字符，
@@ -44,6 +49,7 @@ class KeyboardManager:
         return None
 
     def _normalize_key_name(self, key_name):
+        """将修饰键别名统一为 ctrl/alt/shift/meta，再通过 hotkey 模块归一化。"""
         if "ctrl" in key_name:
             key_name = "ctrl"
         elif "alt" in key_name:
@@ -55,6 +61,7 @@ class KeyboardManager:
         return normalize_hotkey_part(key_name)
 
     def on_press(self, key):
+        """按键按下回调：归一化键名后添加到当前按键集合并分发。"""
         key_name = self._get_key_name(key)
         if not key_name:
             return
@@ -64,6 +71,7 @@ class KeyboardManager:
         self.on_press_callback(normalized, set(self.current_keys))
 
     def on_release(self, key):
+        """按键释放回调：归一化键名后从当前按键集合移除并分发。"""
         key_name = self._get_key_name(key)
         if not key_name:
             return
@@ -77,6 +85,7 @@ class GlobalInputListener:
     """统一管理鼠标和键盘的输入拦截与分发。"""
 
     def __init__(self, bridge, is_app_allowed_callback, scroll_engine=None):
+        """初始化全局输入监听器，配置热键映射和延迟启动参数。"""
         self.bridge = bridge
         self.is_app_allowed_callback = is_app_allowed_callback
         self.scroll_engine = scroll_engine
@@ -102,6 +111,7 @@ class GlobalInputListener:
         self._mouse_controller = mouse.Controller()
 
     def _get_keyboard_hotkey_parts(self, hotkey):
+        """解析键盘快捷键字符串为标准化按键集合，鼠标热键返回空集。"""
         hotkey = normalize_hotkey_string(hotkey)
         if not hotkey or hotkey.startswith("mouse_"):
             return set()
@@ -119,30 +129,36 @@ class GlobalInputListener:
         return set(normalized_parts)
 
     def _is_keyboard_hotkey_active(self, hotkey, current_keys):
+        """判断指定键盘快捷键组合是否全部处于按下状态。"""
         target_keys = self._get_keyboard_hotkey_parts(hotkey)
         return bool(target_keys) and target_keys.issubset(current_keys)
 
     def _get_horizontal_mouse_button(self):
+        """获取横向滚动热键对应的鼠标按钮，非鼠标热键时返回 None。"""
         with STATE_LOCK:
             hotkey = normalize_hotkey_string(cfg.horizontal_hotkey)
         return self.mouse_hotkey_map.get(hotkey)
 
     def _get_activation_hotkey(self):
+        """根据激活模式（点击/长按）返回当前启用的快捷键字符串。"""
         with STATE_LOCK:
             if cfg.activation_mode == 1:
                 return normalize_hotkey_string(cfg.activation_hotkey_hold)
             return normalize_hotkey_string(cfg.activation_hotkey_click)
 
     def _get_activation_mouse_button(self):
+        """获取激活热键对应的鼠标按钮，默认为中键。"""
         hotkey = self._get_activation_hotkey()
         if not hotkey:
             return mouse.Button.middle
         return self.mouse_hotkey_map.get(hotkey)
 
     def _uses_default_middle_activation(self):
+        """判断是否使用默认的中键激活（即未自定义激活快捷键）。"""
         return not self._get_activation_hotkey()
 
     def _set_active(self, active, x=None, y=None, source=None):
+        """设置滚动激活/关闭状态，更新 origin_pos 并触发 overlay 显示/隐藏。"""
         if active:
             with STATE_LOCK:
                 if x is not None and y is not None:
@@ -161,6 +177,7 @@ class GlobalInputListener:
             self.bridge.hide_overlay.emit()
 
     def _toggle_active(self, x, y, source):
+        """切换滚动激活状态：当前激活则关闭，否则激活。"""
         with STATE_LOCK:
             currently_active = runtime.active
         if currently_active:
@@ -169,10 +186,12 @@ class GlobalInputListener:
             self._set_active(True, x, y, source)
 
     def _should_delay_activation(self):
+        """判断是否应使用延迟启动模式（compat_mode 且 delay_ms > 0）。"""
         with STATE_LOCK:
             return bool(cfg.activation_compat_mode) and int(cfg.activation_delay_ms) > 0
 
     def _cancel_pending_activation(self, source=None):
+        """取消待执行的延迟激活定时器，可限定仅取消特定来源。"""
         if source is not None and self._pending_activation_source != source:
             return
         if self._pending_activation_timer:
@@ -181,6 +200,7 @@ class GlobalInputListener:
             self._pending_activation_source = None
 
     def _activate_now(self, x, y, source):
+        """立即执行激活逻辑：长按模式直接激活，点击模式还需防止双击误触。"""
         if not self.is_app_allowed_callback():
             return
 
@@ -198,6 +218,7 @@ class GlobalInputListener:
         self._toggle_active(x, y, source)
 
     def _schedule_activation(self, x, y, source):
+        """安排延迟激活：在指定延迟后检查按键仍按住才真正激活。"""
         self._cancel_pending_activation()
         self._pending_activation_source = source
         with STATE_LOCK:
@@ -218,6 +239,7 @@ class GlobalInputListener:
         self._pending_activation_timer.start()
 
     def _handle_activation_press(self, x, y, source):
+        """处理激活键按下事件：惯性中只打断不激活；点击模式下再次按下则关闭；支持延迟启动。"""
         # 惯性运行中只负责打断，不应再次激活滚动。
         if self.scroll_engine and self.scroll_engine.inertia_active:
             self.scroll_engine.interrupt_inertia()
@@ -240,6 +262,7 @@ class GlobalInputListener:
         self._activate_now(x, y, source)
 
     def _handle_activation_release(self, source):
+        """处理激活键释放事件：长按模式下松开即关闭滚动；取消待执行的延迟激活。"""
         self._pressed_activation_sources[source] = False
         self._cancel_pending_activation(source)
 
@@ -249,6 +272,7 @@ class GlobalInputListener:
             self._set_active(False)
 
     def _on_key_press(self, key_name, current_keys):
+        """键盘按下事件：检查横向热键和激活热键状态，打断惯性。"""
         # 惯性运行中，按下非修饰键时直接打断惯性。
         if self.scroll_engine and self.scroll_engine.inertia_active:
             modifier_only = {"ctrl", "alt", "shift", "meta"}
@@ -277,6 +301,7 @@ class GlobalInputListener:
             self.activation_hotkey_active = False
 
     def _on_key_release(self, _key_name, current_keys):
+        """键盘释放事件：更新热键激活状态，处理激活键释放。"""
         with STATE_LOCK:
             horizontal_hotkey = cfg.horizontal_hotkey
         if not self._is_keyboard_hotkey_active(horizontal_hotkey, current_keys):
@@ -290,6 +315,7 @@ class GlobalInputListener:
             self.activation_hotkey_active = False
 
     def start(self):
+        """启动键盘和鼠标监听器，Windows 下额外注册 win32 事件过滤器。"""
         try:
             self.key_manager = KeyboardManager(self._on_key_press, self._on_key_release)
             self.key_manager.start()
@@ -310,6 +336,7 @@ class GlobalInputListener:
             logger.error(f"鼠标钩子失败: {e}")
 
     def win32_event_filter(self, msg, _data):
+        """Windows 低级鼠标钩子过滤器：拦截中键事件以实现自定义激活行为。"""
         # WM_MBUTTONDOWN = 0x0207，WM_MBUTTONUP = 0x0208，WM_MBUTTONDBLCLK = 0x0209
         if msg in (0x0207, 0x0208, 0x0209):
             # 惯性运行中，中键只用于打断惯性。
@@ -338,6 +365,7 @@ class GlobalInputListener:
         return True
 
     def on_click(self, x, y, button, pressed):
+        """鼠标点击回调：惯性中任意点击打断；检查横向按钮和激活按钮。"""
         # 惯性运行中，任意鼠标点击都会打断惯性。
         if pressed and self.scroll_engine and self.scroll_engine.inertia_active:
             self.scroll_engine.interrupt_inertia()

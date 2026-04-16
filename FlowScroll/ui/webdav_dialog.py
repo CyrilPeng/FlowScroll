@@ -106,6 +106,7 @@ WEBDAV_APP_DIRNAME = "FlowScroll"
 
 
 def mask_webdav_username(username: str) -> str:
+    """将 WebDAV 用户名脱敏：保留首尾字符，中间用星号替代。"""
     value = (username or "").strip()
     if not value:
         return "<empty>"
@@ -117,6 +118,7 @@ def mask_webdav_username(username: str) -> str:
 
 
 def log_webdav_event(level: str, event: str, **fields) -> None:
+    """按标准字段顺序记录 WebDAV 操作日志。"""
     normalized_fields = {"event": event, **fields}
     parts = []
     for key in WEBDAV_LOG_FIELD_ORDER:
@@ -135,6 +137,7 @@ def log_webdav_event(level: str, event: str, **fields) -> None:
 
 
 def validate_webdav_url(url: str) -> str | None:
+    """验证 WebDAV URL 格式，返回错误信息或 None 表示合法。"""
     parsed = urlparse(url.strip())
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         return tr("webdav.invalid_url")
@@ -142,6 +145,7 @@ def validate_webdav_url(url: str) -> str | None:
 
 
 def normalize_webdav_base_url(url: str) -> str:
+    """确保 WebDAV 基础 URL 以斜杠结尾。"""
     value = (url or "").strip()
     if not value:
         return value
@@ -149,10 +153,12 @@ def normalize_webdav_base_url(url: str) -> str:
 
 
 def build_legacy_webdav_file_url(base_url: str) -> str:
+    """构建旧版 WebDAV 文件 URL（直接存放在根目录下）。"""
     return normalize_webdav_base_url(base_url) + WEBDAV_CONFIG_FILENAME
 
 
 def build_preferred_webdav_file_url(base_url: str) -> str:
+    """构建新版 WebDAV 文件 URL（存放在应用专用子目录 FlowScroll/ 下）。"""
     return (
         normalize_webdav_base_url(base_url)
         + WEBDAV_APP_DIRNAME
@@ -162,10 +168,12 @@ def build_preferred_webdav_file_url(base_url: str) -> str:
 
 
 def build_webdav_collection_url(base_url: str) -> str:
+    """构建 WebDAV 集合（目录）URL。"""
     return normalize_webdav_base_url(base_url) + WEBDAV_APP_DIRNAME + "/"
 
 
 def format_webdav_error(error: Exception) -> str:
+    """将 WebDAV 异常转换为用户可读的本地化错误信息。"""
     if isinstance(error, urllib.error.HTTPError):
         return tr(
             "webdav.http_error",
@@ -196,6 +204,8 @@ def format_webdav_error(error: Exception) -> str:
 
 
 class WebDAVJobThread(QThread):
+    """WebDAV 上传/下载工作线程，通过信号通知 UI 层操作结果。"""
+
     upload_finished = Signal(int)
     download_finished = Signal(dict)
     failed = Signal(str)
@@ -208,6 +218,7 @@ class WebDAVJobThread(QThread):
         username: str,
         payload: dict | None = None,
     ):
+        """初始化 WebDAV 任务线程。mode 为 'upload' 或 'download'。"""
         super().__init__()
         self.mode = mode
         self.url = url
@@ -216,9 +227,11 @@ class WebDAVJobThread(QThread):
         self.payload = payload or {}
 
     def _open(self, request: urllib.request.Request):
+        """发送 HTTP 请求并返回响应，超时 10 秒。"""
         return urllib.request.urlopen(request, timeout=10)
 
     def _upload_to_url(self, target_url: str, data: bytes):
+        """向指定 URL 发送 PUT 请求上传数据，返回 HTTP 状态码。"""
         req = urllib.request.Request(target_url, data=data, method="PUT")
         req.add_header("Authorization", self.auth)
         req.add_header("Content-Type", "application/json")
@@ -226,6 +239,7 @@ class WebDAVJobThread(QThread):
             return int(response.status)
 
     def _ensure_app_collection(self):
+        """确保 WebDAV 服务器上存在应用专用目录（MKCOL 请求）。"""
         collection_url = build_webdav_collection_url(self.url)
         req = urllib.request.Request(collection_url, method="MKCOL")
         req.add_header("Authorization", self.auth)
@@ -239,6 +253,7 @@ class WebDAVJobThread(QThread):
             raise
 
     def _upload(self):
+        """执行上传：先尝试旧版 URL，404 时回退到应用子目录。"""
         data = json.dumps(self.payload, ensure_ascii=False, indent=4).encode("utf-8")
 
         legacy_url = build_legacy_webdav_file_url(self.url)
@@ -255,6 +270,7 @@ class WebDAVJobThread(QThread):
         return self._upload_to_url(preferred_url, data)
 
     def _download(self):
+        """执行下载：依次尝试新版和旧版 URL，均 404 则抛出异常。"""
         candidate_urls = (
             build_legacy_webdav_file_url(self.url),
             build_preferred_webdav_file_url(self.url),
@@ -278,6 +294,7 @@ class WebDAVJobThread(QThread):
         raise FileNotFoundError("No WebDAV config candidate URL resolved")
 
     def run(self) -> None:
+        """线程入口：根据 mode 执行上传或下载，失败时通过 failed 信号报告错误。"""
         started_at = time.monotonic()
         try:
             if self.mode == "upload":
@@ -314,7 +331,10 @@ class WebDAVJobThread(QThread):
 if QDialog is not None:
 
     class WebDAVSyncDialog(QDialog):
+        """WebDAV 云同步配置对话框：管理服务器地址、凭据和上传/下载操作。"""
+
         def __init__(self, parent=None):
+            """初始化对话框 UI，加载已保存的 WebDAV 配置。"""
             super().__init__(parent)
             self.setWindowTitle(tr("webdav.title"))
             self.setMinimumSize(WEBDAV_DIALOG_MIN_WIDTH, WEBDAV_DIALOG_MIN_HEIGHT)
@@ -380,9 +400,11 @@ if QDialog is not None:
             self._job = None
 
         def get_full_url(self):
+            """返回归一化后的 WebDAV 基础 URL。"""
             return normalize_webdav_base_url(self.edit_url.text())
 
         def get_auth_header(self):
+            """生成 Basic Authentication 请求头。"""
             user = self.edit_user.text().strip()
             pwd = self.edit_pwd.text().strip()
             auth_str = f"{user}:{pwd}"
@@ -390,9 +412,11 @@ if QDialog is not None:
             return f"Basic {encoded}"
 
         def get_username(self):
+            """返回当前输入的用户名。"""
             return self.edit_user.text().strip()
 
         def save_config(self) -> None:
+            """保存 WebDAV 配置：写入 URL、用户名到 cfg，密码通过 keyring 存储。"""
             url = self.edit_url.text().strip()
             if url.startswith("http://"):
                 QMessageBox.warning(
@@ -423,6 +447,7 @@ if QDialog is not None:
             self.accept()
 
         def upload_config(self) -> None:
+            """校验 URL 后启动上传任务线程。"""
             invalid = validate_webdav_url(self.edit_url.text())
             if invalid:
                 log_webdav_event(
@@ -445,6 +470,7 @@ if QDialog is not None:
             )
 
         def download_config(self) -> None:
+            """校验 URL 后启动下载任务线程。"""
             invalid = validate_webdav_url(self.edit_url.text())
             if invalid:
                 log_webdav_event(
@@ -466,11 +492,13 @@ if QDialog is not None:
             )
 
         def _set_busy(self, busy: bool):
+            """设置按钮的启用/禁用状态，防止操作进行中重复点击。"""
             self.btn_save.setEnabled(not busy)
             self.btn_upload.setEnabled(not busy)
             self.btn_download.setEnabled(not busy)
 
         def _start_job(self, job: WebDAVJobThread):
+            """启动 WebDAV 任务线程，连接信号并锁定按钮。"""
             if self._job is not None:
                 return
 
@@ -483,6 +511,7 @@ if QDialog is not None:
             job.start()
 
         def _on_upload_finished(self, status: int):
+            """上传完成回调：200/201/204 为成功，其余记录错误日志。"""
             if status in (200, 201, 204):
                 QMessageBox.information(
                     self,
@@ -506,6 +535,7 @@ if QDialog is not None:
             )
 
         def _on_download_finished(self, remote_data: dict):
+            """下载完成回调：用远程数据覆盖本地配置，保留 WebDAV 凭据不变。"""
             local_webdav_url = cfg.webdav_url
             local_webdav_username = cfg.webdav_username
 
@@ -539,6 +569,7 @@ if QDialog is not None:
             )
 
         def _on_job_failed(self, error: str):
+            """任务失败回调：显示本地化错误消息。"""
             message_key = (
                 "webdav.connect_failed"
                 if self._job and self._job.mode == "upload"
@@ -551,6 +582,7 @@ if QDialog is not None:
             )
 
         def _on_job_complete(self):
+            """任务结束回调：清理线程引用并恢复按钮状态。"""
             if self._job is not None:
                 self._job.deleteLater()
                 self._job = None

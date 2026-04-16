@@ -24,6 +24,8 @@
 - 修复 `main.py` 崩溃提示中 Windows `MessageBoxW` 的换行符由 `\\n` 误写为字面量的问题
 
 ### Improved
+- 为所有修改过的源码文件补全缺失的 docstring 和注释：`app_controller.py`、`settings_window.py`、`engine.py`、`config.py`、`listeners.py`、`webdav_dialog.py`、`i18n.py`、`single_instance.py`、`overlay.py`、`main.py`
+- 为测试文件中的所有测试类补全 docstring：`test_engine.py`、`test_config.py`、`test_services.py`、`test_keyboard_webdav.py`
 - 新增 `set_config_attr(name, value)` 辅助函数，集中管理 UI 侧对 `cfg` 的写操作，避免绕过线程锁的直接赋值
 - `listeners.py` 中 `import platform` 移至文件顶部，消除函数内部延迟导入
 

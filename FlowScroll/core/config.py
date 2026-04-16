@@ -23,10 +23,12 @@ LEGACY_CONFIG_FILE = os.path.join(os.path.expanduser("~"), f".{CONFIG_FILENAME}"
 
 
 def _is_windows_target() -> bool:
+    """判断当前目标平台是否为 Windows。"""
     return os.name == "nt" or os.sys.platform == "win32"
 
 
 def _path_module_for(path: str | None = None):
+    """根据路径特征或当前平台选择 ntpath / posixpath 模块。"""
     if path and re.match(r"^[A-Za-z]:[\\/]", path):
         return ntpath
     if path and path.startswith("\\\\"):
@@ -35,20 +37,24 @@ def _path_module_for(path: str | None = None):
 
 
 def _join_path(*parts: str) -> str:
+    """使用目标平台对应的路径模块拼接路径。"""
     return _path_module_for().join(*parts)
 
 
 def _dirname_path(path: str) -> str:
+    """使用目标平台对应的路径模块获取目录名。"""
     return _path_module_for(path).dirname(path)
 
 
 def _normalize_path(path: str) -> str:
+    """展开环境变量和用户主目录，返回绝对路径。"""
     path_module = _path_module_for(path)
     expanded = path_module.expandvars(path_module.expanduser(path))
     return path_module.abspath(expanded)
 
 
 def _paths_equal(path_a: str, path_b: str) -> bool:
+    """比较两条路径在归一化后是否相等，兼容跨平台路径格式。"""
     module_a = _path_module_for(path_a)
     module_b = _path_module_for(path_b)
     normalized_a = module_a.normcase(module_a.normpath(_normalize_path(path_a)))
@@ -57,6 +63,7 @@ def _paths_equal(path_a: str, path_b: str) -> bool:
 
 
 def get_default_config_dir() -> str:
+    """按平台返回 FlowScroll 默认配置目录路径。"""
     if os.name == "nt":
         appdata = os.environ.get("APPDATA")
         if appdata:
@@ -86,10 +93,12 @@ CONFIG_FILE = _join_path(get_default_config_dir(), CONFIG_FILENAME)
 
 
 def get_config_pointer_file() -> str:
+    """返回配置指针文件路径（用于存储自定义配置文件位置）。"""
     return _join_path(get_default_config_dir(), CONFIG_POINTER_FILENAME)
 
 
 def get_config_override_source() -> str:
+    """判断配置路径来源：env_file / env_dir / custom / default。"""
     if os.environ.get(CONFIG_FILE_ENV_VAR, "").strip():
         return "env_file"
     if os.environ.get(CONFIG_DIR_ENV_VAR, "").strip():
@@ -100,6 +109,7 @@ def get_config_override_source() -> str:
 
 
 def get_persisted_config_file() -> str:
+    """从指针文件中读取已持久化的自定义配置文件路径，未设置时返回空字符串。"""
     pointer_file = get_config_pointer_file()
     try:
         with open(pointer_file, "r", encoding="utf-8") as f:
@@ -121,6 +131,7 @@ def get_persisted_config_file() -> str:
 
 
 def set_persisted_config_file(path: str | None) -> None:
+    """将自定义配置文件路径写入指针文件，或清除指针（路径为空/默认时删除文件）。"""
     normalized_default = _normalize_path(CONFIG_FILE)
     normalized_path = _normalize_path(path) if path else ""
     pointer_file = get_config_pointer_file()
@@ -138,6 +149,7 @@ def set_persisted_config_file(path: str | None) -> None:
 
 
 def get_config_file() -> str:
+    """解析当前生效的配置文件路径，优先级：环境变量 > 指针文件 > 默认。"""
     explicit_file = os.environ.get(CONFIG_FILE_ENV_VAR, "").strip()
     if explicit_file:
         return _normalize_path(explicit_file)
@@ -157,6 +169,7 @@ def get_config_file() -> str:
 
 
 def get_config_load_candidates() -> list[str]:
+    """返回按优先级排列的配置文件候选列表（主路径 + 默认路径 + 旧版路径）。"""
     primary_path = get_config_file()
     candidates = [primary_path]
 
@@ -175,6 +188,7 @@ def get_config_load_candidates() -> list[str]:
 
 
 def ensure_config_dir(path: str | None = None) -> str:
+    """确保配置目录存在，返回配置文件路径。"""
     config_path = path or get_config_file()
     config_dir = _dirname_path(config_path)
     if config_dir:
@@ -329,9 +343,11 @@ class GlobalConfig:
         }
 
     def to_dict(self):
+        """返回配置字典（运行时 + 持久化字段的合集）。"""
         return self._to_dict_common()
 
     def to_webdav_dict(self) -> dict:
+        """返回 WebDAV 相关配置字典（仅 URL 和用户名，不含密码）。"""
         return {
             "url": self.webdav_url,
             "username": self.webdav_username,
@@ -342,6 +358,7 @@ class GlobalConfig:
         return self._to_dict_common()
 
     def from_dict(self, data) -> None:
+        """从字典中恢复配置值，处理旧版 filter_list 到 blacklist/whitelist 的迁移。"""
         self.sensitivity = data.get("sensitivity", 2.0)
         self.speed_factor = data.get("speed_factor", 2.0)
         self.dead_zone = data.get("dead_zone", 20.0)
@@ -388,6 +405,7 @@ class GlobalConfig:
         self.inertia_threshold = data.get("inertia_threshold", 80.0)
 
     def from_webdav_dict(self, data) -> None:
+        """从字典中恢复 WebDAV URL 和用户名。"""
         if not isinstance(data, dict):
             self.webdav_url = ""
             self.webdav_username = ""
@@ -396,6 +414,7 @@ class GlobalConfig:
         self.webdav_username = str(data.get("username", "")).strip()
 
     def _get_active_filter_list(self):
+        """根据 filter_mode 返回当前生效的过滤列表（黑名单或白名单）。"""
         if self.filter_mode == 1:
             return list(self.filter_blacklist)
         if self.filter_mode == 2:

@@ -20,6 +20,7 @@ from FlowScroll.ui.settings_window import MainWindow
 
 
 def _show_already_running_message():
+    """检测到已有实例运行时，弹窗提示用户。"""
     QMessageBox.information(
         None,
         tr("main.single_instance.title"),
@@ -28,6 +29,7 @@ def _show_already_running_message():
 
 
 def main() -> None:
+    """应用入口：初始化 QApplication、单实例检查、主窗口与事件循环。"""
     try:
         # 必须在 QApplication 实例化之前设置高分屏缩放策略
         QApplication.setHighDpiScaleFactorRoundingPolicy(

@@ -19,6 +19,8 @@ from FlowScroll.constants import (
 
 
 class TestPowerCurveStrategy:
+    """测试 PowerCurveStrategy 的滚动速度计算：死区、方向、反转、对角线分配。"""
+
     def _make_config(self, **overrides):
         defaults = {
             "dead_zone": 20.0,
@@ -129,6 +131,8 @@ class TestPowerCurveStrategy:
 
 
 class TestScrollEngineInertia:
+    """测试 ScrollEngine 惯性逻辑：摩擦力计算、速度衰减、进入/中断条件。"""
+
     def _make_engine(self):
         from FlowScroll.core.engine import ScrollEngine
 
@@ -359,6 +363,8 @@ class TestScrollEngineInertia:
 
 
 class TestScrollEngineIntegration:
+    """测试 ScrollEngine 的线程属性与端到端滚动流程。"""
+
     def test_engine_starts_as_daemon_thread(self):
         from FlowScroll.core.engine import ScrollEngine
 

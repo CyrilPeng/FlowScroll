@@ -15,6 +15,8 @@ import pytest
 
 
 class TestCredentialService:
+    """测试凭据服务的内存回退机制。"""
+
     def test_memory_fallback(self):
         from FlowScroll.services.credential_service import CredentialService
 
@@ -34,6 +36,8 @@ class TestCredentialService:
 
 
 class TestRules:
+    """测试应用过滤规则：全局模式、黑名单、白名单与全屏检测。"""
+
     def test_global_mode_allows_everything(self):
         from FlowScroll.core.config import cfg, runtime
         from FlowScroll.core.rules import is_current_app_allowed
@@ -155,6 +159,8 @@ class TestRules:
 
 
 class TestUpdateChecker:
+    """测试版本比较逻辑。"""
+
     def test_newer_version_detection(self):
         from FlowScroll.services.update_checker import is_newer_version
 
@@ -187,6 +193,8 @@ class TestUpdateChecker:
 
 
 class TestConstants:
+    """测试常量定义的完整性。"""
+
     def test_config_version_is_int(self):
         from FlowScroll.constants import CONFIG_VERSION
 
@@ -195,6 +203,8 @@ class TestConstants:
 
 
 class TestSingleInstanceManager:
+    """测试单实例管理器的服务名生成与 IPC 逻辑。"""
+
     def test_server_name_is_stable_for_same_app_id(self):
         from FlowScroll.services.single_instance import SingleInstanceManager
 
@@ -228,6 +238,8 @@ class TestSingleInstanceManager:
 
 
 class TestResourcePath:
+    """测试资源路径解析。"""
+
     def test_resource_path_does_not_depend_on_cwd(self, monkeypatch):
         from FlowScroll.ui.utils import resource_path
 
@@ -242,6 +254,8 @@ class TestResourcePath:
 
 
 class TestLinuxPlatform:
+    """测试 Linux 平台的窗口信息解析。"""
+
     def test_frontmost_window_info_parsing(self, monkeypatch):
         from FlowScroll.platform.linux import LinuxPlatform
 
@@ -328,6 +342,8 @@ class TestLinuxPlatform:
 
 
 class TestWindowsPlatform:
+    """测试 Windows 平台的自启动与窗口检测。"""
+
     def test_is_autostart_enabled_missing_value_is_silent(self, monkeypatch):
         fake_winreg = types.SimpleNamespace(
             HKEY_CURRENT_USER=object(),
@@ -380,6 +396,8 @@ class TestWindowsPlatform:
 
 
 class TestAutoStartManager:
+    """测试自启动管理器。"""
+
     @pytest.mark.parametrize("os_name", ["Linux", "Darwin"])
     def test_source_run_uses_python_interpreter_on_posix(self, monkeypatch, os_name):
         import FlowScroll.services.autostart as autostart_module
@@ -443,6 +461,8 @@ class TestAutoStartManager:
 
 
 class TestMainTabPersistence:
+    """测试配置持久化与 UI 同步。"""
+
     def test_persist_config_change_updates_cfg_and_saves(self):
         from FlowScroll.core.config import cfg
         from FlowScroll.ui.tabs_builder import _persist_config_change
@@ -467,6 +487,8 @@ class TestMainTabPersistence:
 
 
 class TestLoggingService:
+    """测试日志服务。"""
+
     def test_source_run_uses_debug_console_logging(self, monkeypatch):
         import FlowScroll.services.logging_service as logging_service
 
