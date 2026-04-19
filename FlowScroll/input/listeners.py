@@ -1,9 +1,18 @@
 import platform
 import threading
 import time
+from importlib import import_module
 from threading import Timer
 
-from pynput import keyboard, mouse
+try:
+    keyboard = import_module("pynput.keyboard")
+except ImportError:
+    keyboard = None
+
+try:
+    mouse = import_module("pynput.mouse")
+except ImportError:
+    mouse = None
 
 from FlowScroll.core.config import STATE_LOCK, cfg, runtime
 from FlowScroll.core.hotkeys import normalize_hotkey_part, normalize_hotkey_string
@@ -16,6 +25,8 @@ class KeyboardManager:
 
     def __init__(self, on_press_callback, on_release_callback):
         """初始化键盘管理器，绑定按下和释放回调。"""
+        if keyboard is None:
+            raise ImportError("pynput.keyboard is unavailable")
         self.listener = keyboard.Listener(
             on_press=self.on_press, on_release=self.on_release
         )
@@ -87,6 +98,8 @@ class GlobalInputListener:
 
     def __init__(self, bridge, is_app_allowed_callback, scroll_engine=None):
         """初始化全局输入监听器，配置热键映射和延迟启动参数。"""
+        if mouse is None:
+            raise ImportError("pynput.mouse is unavailable")
         self.bridge = bridge
         self.is_app_allowed_callback = is_app_allowed_callback
         self.scroll_engine = scroll_engine

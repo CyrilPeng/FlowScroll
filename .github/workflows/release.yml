@@ -118,7 +118,7 @@ jobs:
         run: uv python install 3.12
 
       - name: 安装项目依赖
-        run: uv sync
+        run: uv sync --frozen
 
       - name: 安装 Nuitka
         run: uv pip install Nuitka

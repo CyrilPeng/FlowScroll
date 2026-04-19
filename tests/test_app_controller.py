@@ -1,5 +1,6 @@
 import sys
 import types
+import importlib
 from unittest.mock import MagicMock
 
 
@@ -79,3 +80,19 @@ def test_start_threads_returns_message_list_when_scroll_engine_fails(monkeypatch
     assert level == "critical"
     assert title
     assert body
+
+
+def test_hotkeys_module_imports_without_qt(monkeypatch):
+    fake_qtcore = types.ModuleType("PySide6.QtCore")
+    fake_pyside6 = types.ModuleType("PySide6")
+    fake_pyside6.QtCore = fake_qtcore
+
+    monkeypatch.setitem(sys.modules, "PySide6", fake_pyside6)
+    monkeypatch.setitem(sys.modules, "PySide6.QtCore", fake_qtcore)
+    monkeypatch.delitem(sys.modules, "FlowScroll.core.hotkeys", raising=False)
+
+    hotkeys = importlib.import_module("FlowScroll.core.hotkeys")
+
+    assert hotkeys.Qt is None
+    assert hotkeys.MODIFIER_KEYS == set()
+    assert hotkeys.normalize_hotkey_string("Ctrl+K") == "ctrl+k"

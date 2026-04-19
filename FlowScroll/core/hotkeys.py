@@ -1,6 +1,9 @@
 import re
 
-from PySide6.QtCore import Qt
+try:
+    from PySide6.QtCore import Qt
+except ImportError:
+    Qt = None
 
 
 MODIFIER_ORDER = ("ctrl", "alt", "shift", "meta")
@@ -76,12 +79,15 @@ DISPLAY_ALIASES = {
     "media_stop": "Media Stop",
     "media_play_pause": "Toggle Media Play/Pause",
 }
-MODIFIER_KEYS = {
-    Qt.Key.Key_Control,
-    Qt.Key.Key_Shift,
-    Qt.Key.Key_Alt,
-    Qt.Key.Key_Meta,
-}
+if Qt is None:
+    MODIFIER_KEYS = set()
+else:
+    MODIFIER_KEYS = {
+        Qt.Key.Key_Control,
+        Qt.Key.Key_Shift,
+        Qt.Key.Key_Alt,
+        Qt.Key.Key_Meta,
+    }
 
 
 def normalize_hotkey_part(value):
@@ -125,6 +131,8 @@ def hotkey_to_display(value):
 
 
 def hotkey_from_key_event(event):
+    if Qt is None:
+        raise ImportError("PySide6.QtCore.Qt is unavailable")
     from PySide6.QtGui import QKeySequence
 
     modifiers = []
