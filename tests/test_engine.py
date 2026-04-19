@@ -13,6 +13,7 @@ from FlowScroll.core.scroller import PowerCurveStrategy, default_scroll_strategy
 from FlowScroll.core.config import STATE_LOCK, cfg, runtime, GlobalConfig
 from FlowScroll.constants import (
     ENGINE_TICK_INTERVAL,
+    ENGINE_IDLE_POLL_INTERVAL,
     INERTIA_STOP_THRESHOLD,
     SCROLL_HISTORY_WINDOW,
 )
@@ -381,3 +382,36 @@ class TestScrollEngineIntegration:
         engine = ScrollEngine(bridge, mouse_ctrl)
         assert hasattr(engine, "_history_lock")
         assert isinstance(engine._history_lock, type(threading.Lock()))
+
+    def test_active_mode_error_sleeps_before_retry(self, monkeypatch):
+        from FlowScroll.core.engine import ScrollEngine
+
+        bridge = MagicMock()
+        mouse_ctrl = MagicMock()
+        type(mouse_ctrl).position = property(
+            lambda _self: (_ for _ in ()).throw(RuntimeError("mouse failed"))
+        )
+        engine = ScrollEngine(bridge, mouse_ctrl)
+        engine._snapshot_config = lambda: (
+            True,
+            (0, 0),
+            False,
+            0.0,
+            1.0,
+            1.0,
+            False,
+            False,
+        )
+
+        sleep_calls = []
+
+        def fake_sleep(interval):
+            sleep_calls.append(interval)
+            raise StopIteration()
+
+        monkeypatch.setattr(time, "sleep", fake_sleep)
+
+        with pytest.raises(StopIteration):
+            engine.run()
+
+        assert sleep_calls == [ENGINE_IDLE_POLL_INTERVAL]

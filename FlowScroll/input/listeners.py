@@ -1,4 +1,5 @@
 import platform
+import threading
 import time
 from threading import Timer
 
@@ -108,6 +109,7 @@ class GlobalInputListener:
         self._pending_activation_source = None
         self._pressed_activation_sources = {"mouse": False, "keyboard": False}
         # 复用单个鼠标控制器实例，避免每次读取位置时重新创建。
+        self._activation_state_lock = threading.Lock()
         self._mouse_controller = mouse.Controller()
 
     def _get_keyboard_hotkey_parts(self, hotkey):
@@ -192,12 +194,14 @@ class GlobalInputListener:
 
     def _cancel_pending_activation(self, source=None):
         """取消待执行的延迟激活定时器，可限定仅取消特定来源。"""
-        if source is not None and self._pending_activation_source != source:
-            return
-        if self._pending_activation_timer:
-            self._pending_activation_timer.cancel()
+        with self._activation_state_lock:
+            if source is not None and self._pending_activation_source != source:
+                return
+            timer = self._pending_activation_timer
             self._pending_activation_timer = None
             self._pending_activation_source = None
+        if timer:
+            timer.cancel()
 
     def _activate_now(self, x, y, source):
         """立即执行激活逻辑：长按模式直接激活，点击模式还需防止双击误触。"""
@@ -220,23 +224,27 @@ class GlobalInputListener:
     def _schedule_activation(self, x, y, source):
         """安排延迟激活：在指定延迟后检查按键仍按住才真正激活。"""
         self._cancel_pending_activation()
-        self._pending_activation_source = source
         with STATE_LOCK:
             delay_s = max(0, int(cfg.activation_delay_ms)) / 1000.0
 
         def _fire():
-            if self._pending_activation_source != source:
-                return
-            self._pending_activation_timer = None
-            self._pending_activation_source = None
-            if not self._pressed_activation_sources.get(source, False):
+            with self._activation_state_lock:
+                if self._pending_activation_source != source:
+                    return
+                self._pending_activation_timer = None
+                self._pending_activation_source = None
+                pressed = self._pressed_activation_sources.get(source, False)
+            if not pressed:
                 return
             current_x, current_y = self._mouse_controller.position
             self._activate_now(current_x, current_y, source)
 
-        self._pending_activation_timer = Timer(delay_s, _fire)
-        self._pending_activation_timer.daemon = True
-        self._pending_activation_timer.start()
+        timer = Timer(delay_s, _fire)
+        timer.daemon = True
+        with self._activation_state_lock:
+            self._pending_activation_source = source
+            self._pending_activation_timer = timer
+        timer.start()
 
     def _handle_activation_press(self, x, y, source):
         """处理激活键按下事件：惯性中只打断不激活；点击模式下再次按下则关闭；支持延迟启动。"""
@@ -254,7 +262,8 @@ class GlobalInputListener:
             self._set_active(False)
             return
 
-        self._pressed_activation_sources[source] = True
+        with self._activation_state_lock:
+            self._pressed_activation_sources[source] = True
         if self._should_delay_activation():
             self._schedule_activation(x, y, source)
             return
@@ -263,7 +272,8 @@ class GlobalInputListener:
 
     def _handle_activation_release(self, source):
         """处理激活键释放事件：长按模式下松开即关闭滚动；取消待执行的延迟激活。"""
-        self._pressed_activation_sources[source] = False
+        with self._activation_state_lock:
+            self._pressed_activation_sources[source] = False
         self._cancel_pending_activation(source)
 
         with STATE_LOCK:
@@ -296,7 +306,8 @@ class GlobalInputListener:
             x, y = self._mouse_controller.position
             self._handle_activation_press(x, y, "keyboard")
         else:
-            self._pressed_activation_sources["keyboard"] = False
+            with self._activation_state_lock:
+                self._pressed_activation_sources["keyboard"] = False
             self._cancel_pending_activation("keyboard")
             self.activation_hotkey_active = False
 
@@ -309,7 +320,8 @@ class GlobalInputListener:
 
         activation_hotkey = self._get_activation_hotkey()
         if not self._is_keyboard_hotkey_active(activation_hotkey, current_keys):
-            self._pressed_activation_sources["keyboard"] = False
+            with self._activation_state_lock:
+                self._pressed_activation_sources["keyboard"] = False
             if self.activation_hotkey_active:
                 self._handle_activation_release("keyboard")
             self.activation_hotkey_active = False

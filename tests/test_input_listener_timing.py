@@ -172,9 +172,57 @@ def test_click_mode_debounce_uses_monotonic(monkeypatch):
         assert runtime.origin_pos == (1, 1)
     assert bridge.show_overlay.count == 1
 
-    # 阈值时间窗内的第二次触发应被忽略。
     listener._activate_now(2, 2, "mouse")
     with STATE_LOCK:
         assert runtime.active is True
         assert runtime.origin_pos == (1, 1)
     assert bridge.show_overlay.count == 1
+
+
+
+def test_delayed_activation_cancelled_before_timer_fire_does_not_activate(monkeypatch):
+    listeners_module, FakeController = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    class FakeTimer:
+        last_instance = None
+
+        def __init__(self, _delay, callback):
+            self.callback = callback
+            self.daemon = False
+            self.started = False
+            self.cancelled = False
+            FakeTimer.last_instance = self
+
+        def start(self):
+            self.started = True
+
+        def cancel(self):
+            self.cancelled = True
+
+    monkeypatch.setattr(listeners_module, "Timer", FakeTimer)
+
+    with STATE_LOCK:
+        cfg.activation_mode = 1
+        cfg.activation_compat_mode = True
+        cfg.activation_delay_ms = 120
+        runtime.active = False
+        runtime.origin_pos = (0, 0)
+
+    bridge = _DummyBridge()
+    listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
+
+    FakeController.position = (10, 20)
+    listener._handle_activation_press(10, 20, "mouse")
+    listener._handle_activation_release("mouse")
+
+    assert FakeTimer.last_instance is not None
+    assert FakeTimer.last_instance.cancelled is True
+
+    FakeController.position = (200, 300)
+    FakeTimer.last_instance.callback()
+
+    with STATE_LOCK:
+        assert runtime.active is False
+        assert runtime.origin_pos == (0, 0)
+    assert bridge.show_overlay.count == 0

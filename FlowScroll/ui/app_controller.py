@@ -106,11 +106,13 @@ class ApplicationController:
             logger.error(f"Failed to start ScrollEngine: {e}")
             from FlowScroll.i18n import tr
 
-            return (
-                "critical",
-                tr("main.scroll_engine_failed.title"),
-                tr("main.scroll_engine_failed.body"),
-            )
+            return [
+                (
+                    "critical",
+                    tr("main.scroll_engine_failed.title"),
+                    tr("main.scroll_engine_failed.body"),
+                )
+            ]
 
         try:
             self.input_listener = GlobalInputListener(

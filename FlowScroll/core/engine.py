@@ -222,6 +222,7 @@ class ScrollEngine(threading.Thread):
                     time.sleep(ENGINE_TICK_INTERVAL)
                 except Exception as e:
                     logger.debug(f"ScrollEngine active mode error: {e}")
+                    time.sleep(ENGINE_IDLE_POLL_INTERVAL)
 
             elif self.inertia_active:
                 # 惯性衰减阶段。
