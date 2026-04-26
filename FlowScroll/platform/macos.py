@@ -6,6 +6,12 @@ from FlowScroll.platform.base import PlatformInterface
 from FlowScroll.services.logging_service import logger
 from FlowScroll.constants import MACOS_SCROLL_MULTIPLIER
 
+try:
+    from AppKit import NSWorkspace
+    _HAS_APPKIT = True
+except ImportError:
+    _HAS_APPKIT = False
+
 
 class MacOSPlatform(PlatformInterface):
     def __init__(self):
@@ -15,13 +21,31 @@ class MacOSPlatform(PlatformInterface):
         )
 
     def get_frontmost_window_info(self):
+        if _HAS_APPKIT:
+            return self._get_frontmost_via_appkit()
+        return self._get_frontmost_via_osascript()
+
+    @staticmethod
+    def _get_frontmost_via_appkit():
+        try:
+            app = NSWorkspace.sharedWorkspace().frontmostApplication()
+            if app is None:
+                return ("", "", "", False)
+            process_name = app.localizedName() or ""
+            return ("", process_name, "", False)
+        except Exception as e:
+            logger.debug(f"获取 macOS 前台窗口失败 (AppKit): {e}")
+            return ("", "", "", False)
+
+    @staticmethod
+    def _get_frontmost_via_osascript():
         try:
             script = 'tell application "System Events" to get name of first application process whose frontmost is true'
             res = subprocess.run(
-                ["osascript", "-e", script], capture_output=True, text=True
+                ["osascript", "-e", script], capture_output=True, text=True,
+                timeout=2,
             )
             process_name = res.stdout.strip()
-            # macOS暂不实现精确全屏和类名探测
             return ("", process_name, "", False)
         except Exception as e:
             logger.debug(f"获取 macOS 前台窗口失败: {e}")

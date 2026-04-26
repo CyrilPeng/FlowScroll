@@ -151,7 +151,7 @@ class SingleInstanceManager(QObject):
 
     def _process_message(self, socket) -> None:
         """解析 IPC 消息：收到 'show' 时触发激活请求信号。"""
-        payload = bytes(socket.readAll()).decode("utf-8", errors="ignore").strip()
+        payload = bytes(socket.readAll()[:1024]).decode("utf-8", errors="ignore").strip()
         if payload == "show":
             self.pending_activation_request = True
             self.activation_requested.emit()

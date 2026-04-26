@@ -24,18 +24,21 @@ class LinuxPlatform(PlatformInterface):
             return ("", "", "", False)
 
         wid = match.group(1)
-        title = self._parse_xprop_value(
-            self._run_command(["xprop", "-id", wid, "_NET_WM_NAME", "WM_NAME"])
-        )
-        window_class = self._parse_wm_class(
-            self._run_command(["xprop", "-id", wid, "WM_CLASS"])
-        )
-        pid_text = self._run_command(["xprop", "-id", wid, "_NET_WM_PID"])
-        pid_match = re.search(r"=\s*(\d+)", pid_text or "")
+        props = self._run_command([
+            "xprop", "-id", wid,
+            "_NET_WM_NAME", "WM_NAME", "WM_CLASS",
+            "_NET_WM_PID", "_NET_WM_STATE",
+        ])
+        if not props:
+            return ("", "", "", False)
+
+        title = self._parse_xprop_value_from_block(props, "_NET_WM_NAME")
+        if not title:
+            title = self._parse_xprop_value_from_block(props, "WM_NAME")
+        window_class = self._parse_wm_class_from_block(props)
+        pid_match = re.search(r"_NET_WM_PID.*?=\s*(\d+)", props)
         process_name = self._read_process_name(pid_match.group(1)) if pid_match else ""
-        is_fullscreen = "_NET_WM_STATE_FULLSCREEN" in self._run_command(
-            ["xprop", "-id", wid, "_NET_WM_STATE"]
-        )
+        is_fullscreen = "_NET_WM_STATE_FULLSCREEN" in props
         return (title, process_name, window_class, is_fullscreen)
 
     def set_autostart(self, app_name: str, app_path: str, enable: bool) -> bool:
@@ -113,6 +116,16 @@ class LinuxPlatform(PlatformInterface):
         return value
 
     @staticmethod
+    def _parse_xprop_value_from_block(block: str, prop_name: str) -> str:
+        for line in block.splitlines():
+            if line.startswith(prop_name) and "=" in line:
+                value = line.split("=", 1)[1].strip()
+                if value.startswith('"') and value.endswith('"'):
+                    return value[1:-1]
+                return value
+        return ""
+
+    @staticmethod
     def _parse_wm_class(output: str) -> str:
         if not output or "=" not in output:
             return ""
@@ -120,6 +133,16 @@ class LinuxPlatform(PlatformInterface):
         for item in reversed(values):
             if item:
                 return item
+        return ""
+
+    @staticmethod
+    def _parse_wm_class_from_block(block: str) -> str:
+        for line in block.splitlines():
+            if line.startswith("WM_CLASS") and "=" in line:
+                values = [item.strip().strip('"') for item in line.split("=", 1)[1].split(",")]
+                for item in reversed(values):
+                    if item:
+                        return item
         return ""
 
     @staticmethod
