@@ -70,15 +70,18 @@ def main() -> None:
         log_path = log_crash(e)
         if log_path:
             try:
+                crash_title = "FlowScroll Crash"
+                crash_body = f"A fatal error occurred. Log saved to:\n{log_path}"
+                try:
+                    crash_title = tr("main.crash.title")
+                    crash_body = tr("main.crash.body", path=log_path)
+                except Exception:
+                    pass
                 if OS_NAME == "Windows":
                     ctypes.windll.user32.MessageBoxW(
-                        0,
-                        f"程序遇到致命错误，日志已保存至:\n{log_path}",
-                        "FlowScroll 崩溃",
-                        16,
+                        0, crash_body, crash_title, 16,
                     )
                 else:
-                    # 非 Windows 环境回退到标准错误输出，避免依赖 QApplication。
                     import traceback
 
                     traceback.print_exc()

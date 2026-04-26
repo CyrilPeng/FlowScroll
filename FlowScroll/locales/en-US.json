@@ -178,5 +178,11 @@
   "webdav.connect_failed": "Failed to connect to WebDAV:\n{error}",
   "webdav.download_success": "Configuration downloaded successfully. Restart the app or reload the preset to apply it.",
   "webdav.download_failed": "Download failed. There may be no remote config file yet:\n{error}",
-  "webdav.insecure_http_warning": "You are using an insecure HTTP connection. Your password will be transmitted in cleartext. Consider switching to an HTTPS URL."
+  "webdav.insecure_http_warning": "You are using an insecure HTTP connection. Your password will be transmitted in cleartext. Consider switching to an HTTPS URL.",
+  "main.crash.title": "FlowScroll Crash",
+  "main.crash.body": "A fatal error occurred. Log saved to:\n{path}",
+  "preset.web_reading": "Web Reading",
+  "preset.code_office": "Code & Office",
+  "preset.long_doc_table": "Long Doc / Table",
+  "preset.gentle_touchpad": "Gentle / Touchpad"
 }

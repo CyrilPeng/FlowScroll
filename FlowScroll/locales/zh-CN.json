@@ -178,5 +178,11 @@
   "main.scroll_engine_failed.title": "滚动引擎启动失败",
   "main.scroll_engine_failed.body": "无法启动滚动引擎，本次会话将无法输出滚动动作。",
   "dialog.filter.process_name_unavailable_title": "无法识别进程名",
-  "dialog.filter.process_name_unavailable": "当前环境无法识别进程名，FlowScroll 将对当前前台应用回退为窗口标题匹配。"
+  "dialog.filter.process_name_unavailable": "当前环境无法识别进程名，FlowScroll 将对当前前台应用回退为窗口标题匹配。",
+  "main.crash.title": "FlowScroll 崩溃",
+  "main.crash.body": "程序遇到致命错误，日志已保存至:\n{path}",
+  "preset.web_reading": "网页阅读",
+  "preset.code_office": "代码办公",
+  "preset.long_doc_table": "长文档/表格",
+  "preset.gentle_touchpad": "轻柔/接近触控板"
 }
