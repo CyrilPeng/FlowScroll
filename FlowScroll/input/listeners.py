@@ -31,6 +31,7 @@ class KeyboardManager:
             on_press=self.on_press, on_release=self.on_release
         )
         self.current_keys = set()
+        self._keys_lock = threading.Lock()
         self.on_press_callback = on_press_callback
         self.on_release_callback = on_release_callback
 
@@ -79,8 +80,10 @@ class KeyboardManager:
             return
 
         normalized = self._normalize_key_name(key_name)
-        self.current_keys.add(normalized)
-        self.on_press_callback(normalized, set(self.current_keys))
+        with self._keys_lock:
+            self.current_keys.add(normalized)
+            snapshot = set(self.current_keys)
+        self.on_press_callback(normalized, snapshot)
 
     def on_release(self, key):
         """按键释放回调：归一化键名后从当前按键集合移除并分发。"""
@@ -89,8 +92,10 @@ class KeyboardManager:
             return
 
         normalized = self._normalize_key_name(key_name)
-        self.current_keys.discard(normalized)
-        self.on_release_callback(normalized, set(self.current_keys))
+        with self._keys_lock:
+            self.current_keys.discard(normalized)
+            snapshot = set(self.current_keys)
+        self.on_release_callback(normalized, snapshot)
 
 
 class GlobalInputListener:
@@ -262,7 +267,7 @@ class GlobalInputListener:
     def _handle_activation_press(self, x, y, source):
         """处理激活键按下事件：惯性中只打断不激活；点击模式下再次按下则关闭；支持延迟启动。"""
         # 惯性运行中只负责打断，不应再次激活滚动。
-        if self.scroll_engine and self.scroll_engine.inertia_active:
+        if self.scroll_engine and self.scroll_engine._is_inertia_active():
             self.scroll_engine.interrupt_inertia()
             return
 
@@ -297,7 +302,7 @@ class GlobalInputListener:
     def _on_key_press(self, key_name, current_keys):
         """键盘按下事件：检查横向热键和激活热键状态，打断惯性。"""
         # 惯性运行中，按下非修饰键时直接打断惯性。
-        if self.scroll_engine and self.scroll_engine.inertia_active:
+        if self.scroll_engine and self.scroll_engine._is_inertia_active():
             modifier_only = {"ctrl", "alt", "shift", "meta"}
             if key_name not in modifier_only:
                 self.scroll_engine.interrupt_inertia()
@@ -365,34 +370,35 @@ class GlobalInputListener:
         # WM_MBUTTONDOWN = 0x0207，WM_MBUTTONUP = 0x0208，WM_MBUTTONDBLCLK = 0x0209
         if msg in (0x0207, 0x0208, 0x0209):
             # 惯性运行中，中键只用于打断惯性。
-            if self.scroll_engine and self.scroll_engine.inertia_active:
-                if msg == 0x0207:  # 中键按下
+            if self.scroll_engine and self.scroll_engine._is_inertia_active():
+                if msg == 0x0207:
                     self.scroll_engine.interrupt_inertia()
                 if self.mouse_listener and hasattr(
                     self.mouse_listener, "suppress_event"
                 ):
                     self.mouse_listener.suppress_event()
-                return False
+                return None
 
             if (
                 self.is_app_allowed_callback()
                 and self._uses_default_middle_activation()
             ):
                 x, y = self._mouse_controller.position
-                pressed = msg in (0x0207, 0x0209)
-                self.on_click(x, y, mouse.Button.middle, pressed)
+                pressed = msg == 0x0207
+                if msg != 0x0209:
+                    self.on_click(x, y, mouse.Button.middle, pressed)
 
                 if self.mouse_listener and hasattr(
                     self.mouse_listener, "suppress_event"
                 ):
                     self.mouse_listener.suppress_event()
-                return False
+                return None
         return True
 
     def on_click(self, x, y, button, pressed):
         """鼠标点击回调：惯性中任意点击打断；检查横向按钮和激活按钮。"""
         # 惯性运行中，任意鼠标点击都会打断惯性。
-        if pressed and self.scroll_engine and self.scroll_engine.inertia_active:
+        if pressed and self.scroll_engine and self.scroll_engine._is_inertia_active():
             self.scroll_engine.interrupt_inertia()
             return
 

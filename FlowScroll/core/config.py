@@ -3,6 +3,7 @@ import ntpath
 import os
 import posixpath
 import re
+import tempfile
 import threading
 from dataclasses import dataclass
 from typing import Tuple
@@ -144,8 +145,21 @@ def set_persisted_config_file(path: str | None) -> None:
         return
 
     os.makedirs(_dirname_path(pointer_file), exist_ok=True)
-    with open(pointer_file, "w", encoding="utf-8") as f:
-        json.dump({"config_file": normalized_path}, f, ensure_ascii=False, indent=2)
+    fd, tmp_path = tempfile.mkstemp(
+        dir=_dirname_path(pointer_file), suffix=".tmp"
+    )
+    try:
+        if os.name != "nt":
+            os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump({"config_file": normalized_path}, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, pointer_file)
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def get_config_file() -> str:
@@ -246,6 +260,31 @@ for _name, _preset in BUILTIN_PRESETS.items():
 
 DEFAULT_PRESET_NAME = "长文档/表格"
 
+PRESET_DISPLAY_KEYS = {
+    "网页阅读": "preset.web_reading",
+    "代码办公": "preset.code_office",
+    "长文档/表格": "preset.long_doc_table",
+    "轻柔/接近触控板": "preset.gentle_touchpad",
+}
+
+
+def get_preset_display_name(name: str) -> str:
+    """返回预设的本地化显示名称，非内置预设原样返回。"""
+    i18n_key = PRESET_DISPLAY_KEYS.get(name)
+    if not i18n_key:
+        return name
+    from FlowScroll.i18n import tr
+    return tr(i18n_key)
+
+
+def get_preset_internal_name(display_name: str) -> str:
+    """将本地化显示名称反查为内部预设键名，非内置预设原样返回。"""
+    from FlowScroll.i18n import tr
+    for internal_name, i18n_key in PRESET_DISPLAY_KEYS.items():
+        if tr(i18n_key) == display_name:
+            return internal_name
+    return display_name
+
 
 @dataclass
 class RuntimeState:
@@ -327,8 +366,8 @@ class GlobalConfig:
             "reverse_x": self.reverse_x,
             "hide_overlay": self.hide_overlay,
             "filter_mode": self.filter_mode,
-            "filter_blacklist": self.filter_blacklist,
-            "filter_whitelist": self.filter_whitelist,
+            "filter_blacklist": list(self.filter_blacklist),
+            "filter_whitelist": list(self.filter_whitelist),
             "filter_use_regex": self.filter_use_regex,
             "filter_list": self._get_active_filter_list(),
             "disable_fullscreen": self.disable_fullscreen,
@@ -359,59 +398,61 @@ class GlobalConfig:
 
     def from_dict(self, data) -> None:
         """从字典中恢复配置值，处理旧版 filter_list 到 blacklist/whitelist 的迁移。"""
-        self.sensitivity = data.get("sensitivity", 2.0)
-        self.speed_factor = data.get("speed_factor", 2.0)
-        self.dead_zone = data.get("dead_zone", 20.0)
-        self.overlay_size = data.get("overlay_size", 60.0)
-        self.enable_horizontal = data.get("enable_horizontal", True)
-        self.minimize_to_tray = data.get("minimize_to_tray", True)
-        self.horizontal_hotkey = data.get("horizontal_hotkey", "")
-        self.activation_hotkey_click = data.get("activation_hotkey_click", "")
-        self.activation_hotkey_hold = data.get("activation_hotkey_hold", "")
-        self.reverse_y = data.get("reverse_y", False)
-        self.reverse_x = data.get("reverse_x", False)
-        self.hide_overlay = data.get("hide_overlay", False)
-        self.filter_mode = data.get("filter_mode", 0)
-        legacy_list = data.get("filter_list", [])
-        self.filter_blacklist = data.get("filter_blacklist")
-        self.filter_whitelist = data.get("filter_whitelist")
+        with STATE_LOCK:
+            self.sensitivity = data.get("sensitivity", 2.0)
+            self.speed_factor = data.get("speed_factor", 2.0)
+            self.dead_zone = data.get("dead_zone", 20.0)
+            self.overlay_size = data.get("overlay_size", 60.0)
+            self.enable_horizontal = data.get("enable_horizontal", True)
+            self.minimize_to_tray = data.get("minimize_to_tray", True)
+            self.horizontal_hotkey = data.get("horizontal_hotkey", "")
+            self.activation_hotkey_click = data.get("activation_hotkey_click", "")
+            self.activation_hotkey_hold = data.get("activation_hotkey_hold", "")
+            self.reverse_y = data.get("reverse_y", False)
+            self.reverse_x = data.get("reverse_x", False)
+            self.hide_overlay = data.get("hide_overlay", False)
+            self.filter_mode = data.get("filter_mode", 0)
+            legacy_list = data.get("filter_list", [])
+            self.filter_blacklist = data.get("filter_blacklist")
+            self.filter_whitelist = data.get("filter_whitelist")
 
-        if self.filter_blacklist is None:
-            if self.filter_mode in (0, 1):
-                self.filter_blacklist = legacy_list
-            else:
-                self.filter_blacklist = []
-        if self.filter_whitelist is None:
-            if self.filter_mode in (0, 2):
-                self.filter_whitelist = legacy_list
-            else:
-                self.filter_whitelist = []
+            if self.filter_blacklist is None:
+                if self.filter_mode in (0, 1):
+                    self.filter_blacklist = legacy_list
+                else:
+                    self.filter_blacklist = []
+            if self.filter_whitelist is None:
+                if self.filter_mode == 2:
+                    self.filter_whitelist = legacy_list
+                else:
+                    self.filter_whitelist = []
 
-        self.filter_blacklist = [
-            str(v).strip() for v in self.filter_blacklist if str(v).strip()
-        ]
-        self.filter_whitelist = [
-            str(v).strip() for v in self.filter_whitelist if str(v).strip()
-        ]
-        self.filter_use_regex = data.get("filter_use_regex", False)
-        self.disable_fullscreen = data.get("disable_fullscreen", True)
-        self.disable_desktop = data.get("disable_desktop", True)
-        self.activation_mode = data.get("activation_mode", 0)
-        self.activation_compat_mode = data.get("activation_compat_mode", False)
-        self.activation_delay_ms = int(data.get("activation_delay_ms", 0))
-        self.ui_language = data.get("ui_language", "auto")
-        self.enable_inertia = data.get("enable_inertia", False)
-        self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
-        self.inertia_threshold = data.get("inertia_threshold", 80.0)
+            self.filter_blacklist = [
+                str(v).strip() for v in self.filter_blacklist if str(v).strip()
+            ]
+            self.filter_whitelist = [
+                str(v).strip() for v in self.filter_whitelist if str(v).strip()
+            ]
+            self.filter_use_regex = data.get("filter_use_regex", False)
+            self.disable_fullscreen = data.get("disable_fullscreen", True)
+            self.disable_desktop = data.get("disable_desktop", True)
+            self.activation_mode = data.get("activation_mode", 0)
+            self.activation_compat_mode = data.get("activation_compat_mode", False)
+            self.activation_delay_ms = int(data.get("activation_delay_ms", 0))
+            self.ui_language = data.get("ui_language", "auto")
+            self.enable_inertia = data.get("enable_inertia", False)
+            self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
+            self.inertia_threshold = data.get("inertia_threshold", 80.0)
 
     def from_webdav_dict(self, data) -> None:
         """从字典中恢复 WebDAV URL 和用户名。"""
-        if not isinstance(data, dict):
-            self.webdav_url = ""
-            self.webdav_username = ""
-            return
-        self.webdav_url = str(data.get("url", "")).strip()
-        self.webdav_username = str(data.get("username", "")).strip()
+        with STATE_LOCK:
+            if not isinstance(data, dict):
+                self.webdav_url = ""
+                self.webdav_username = ""
+                return
+            self.webdav_url = str(data.get("url", "")).strip()
+            self.webdav_username = str(data.get("username", "")).strip()
 
     def _get_active_filter_list(self):
         """根据 filter_mode 返回当前生效的过滤列表（黑名单或白名单）。"""

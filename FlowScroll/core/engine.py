@@ -24,6 +24,7 @@ class ScrollEngine(threading.Thread):
         self.bridge = bridge
         self.mouse_controller = mouse_controller
         self.strategy = default_scroll_strategy
+        self._stop_event = threading.Event()
 
         # 惯性状态。
         self.inertia_active = False
@@ -33,6 +34,8 @@ class ScrollEngine(threading.Thread):
             self.friction = self._compute_friction(cfg.inertia_friction_ms)
 
         # 滚动速度历史，用于估算惯性初速度。
+        self._inertia_lock = threading.Lock()
+
         self._scroll_history: deque = deque()
         self._scroll_history_window = SCROLL_HISTORY_WINDOW
 
@@ -48,7 +51,7 @@ class ScrollEngine(threading.Thread):
         """将半衰期毫秒值换算为每帧的摩擦系数。"""
         if half_life_ms <= 0:
             return 0.9
-        ticks = half_life_ms / 4.0  # 每帧按 4ms 计算。
+        ticks = half_life_ms / (ENGINE_TICK_INTERVAL * 1000)
         return math.pow(0.5, 1.0 / ticks)
 
     def update_friction(self) -> None:
@@ -58,10 +61,11 @@ class ScrollEngine(threading.Thread):
 
     def interrupt_inertia(self) -> None:
         """立即中断惯性滚动，并清空速度与位置历史。"""
-        if self.inertia_active:
-            self.inertia_active = False
-            self.inertia_vx = 0.0
-            self.inertia_vy = 0.0
+        with self._inertia_lock:
+            if self.inertia_active:
+                self.inertia_active = False
+                self.inertia_vx = 0.0
+                self.inertia_vy = 0.0
         with self._history_lock:
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
@@ -126,11 +130,20 @@ class ScrollEngine(threading.Thread):
                 self._mouse_pos_history.clear()
                 return
 
-            self.inertia_vx = vx
-            self.inertia_vy = vy
-            self.inertia_active = True
+            with self._inertia_lock:
+                self.inertia_vx = vx
+                self.inertia_vy = vy
+                self.inertia_active = True
             self._scroll_history.clear()
             self._mouse_pos_history.clear()
+
+    def _is_inertia_active(self) -> bool:
+        with self._inertia_lock:
+            return self.inertia_active
+
+    def request_stop(self) -> None:
+        """请求引擎线程停止，线程将在下一个 tick 结束后退出。"""
+        self._stop_event.set()
 
     def _snapshot_config(self):
         """一次性快照配置与运行时状态，避免在主循环中反复加锁。"""
@@ -152,7 +165,7 @@ class ScrollEngine(threading.Thread):
         platform_multiplier = system_platform.get_scroll_multiplier()
         was_active = False
 
-        while True:
+        while not self._stop_event.is_set():
             (
                 active,
                 origin_pos,
@@ -166,7 +179,9 @@ class ScrollEngine(threading.Thread):
 
             if active:
                 # 如果惯性还在运行但用户重新激活滚动，则立即中断惯性。
-                if self.inertia_active:
+                with self._inertia_lock:
+                    inertia_running = self.inertia_active
+                if inertia_running:
                     self.interrupt_inertia()
 
                 try:
@@ -224,7 +239,7 @@ class ScrollEngine(threading.Thread):
                     logger.debug(f"ScrollEngine active mode error: {e}")
                     time.sleep(ENGINE_IDLE_POLL_INTERVAL)
 
-            elif self.inertia_active:
+            elif self._is_inertia_active():
                 # 惯性衰减阶段。
                 try:
                     with STATE_LOCK:
@@ -232,20 +247,25 @@ class ScrollEngine(threading.Thread):
                     if not enable_inertia:
                         self.interrupt_inertia()
                     else:
-                        self.inertia_vx *= self.friction
-                        self.inertia_vy *= self.friction
+                        with self._inertia_lock:
+                            self.inertia_vx *= self.friction
+                            self.inertia_vy *= self.friction
 
-                        # 速度过低时停止惯性。
-                        speed_sq = (
-                            self.inertia_vx * self.inertia_vx
-                            + self.inertia_vy * self.inertia_vy
-                        )
-                        if speed_sq < INERTIA_STOP_THRESHOLD:
+                            speed_sq = (
+                                self.inertia_vx * self.inertia_vx
+                                + self.inertia_vy * self.inertia_vy
+                            )
+                            if speed_sq < INERTIA_STOP_THRESHOLD:
+                                do_stop = True
+                                sx, sy = 0.0, 0.0
+                            else:
+                                do_stop = False
+                                sx, sy = self.inertia_vx, self.inertia_vy
+
+                        if do_stop:
                             self.interrupt_inertia()
                         else:
-                            self.mouse_controller.scroll(
-                                self.inertia_vx, self.inertia_vy
-                            )
+                            self.mouse_controller.scroll(sx, sy)
                     time.sleep(ENGINE_TICK_INTERVAL)
                 except Exception as e:
                     logger.debug(f"ScrollEngine inertia mode error: {e}")
