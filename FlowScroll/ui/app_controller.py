@@ -85,8 +85,21 @@ class ApplicationController:
         """将当前预设和配置持久化到磁盘。"""
         self.preset_manager.save_to_file()
 
+    def _stop_existing_threads(self) -> None:
+        """停止并等待已有的后台线程退出。"""
+        if self.scroller is not None:
+            self.scroller.request_stop()
+            self.scroller.join(timeout=1.0)
+        if self.window_monitor is not None and hasattr(self.window_monitor, "request_stop"):
+            self.window_monitor.request_stop()
+            self.window_monitor.join(timeout=1.0)
+
     def start_threads(self, overlay) -> None:
         """启动所有后台线程（窗口监控、滚动引擎、输入监听）。"""
+        if getattr(self, "scroller", None) is not None or getattr(self, "input_listener", None) is not None:
+            logger.warning("start_threads called while threads are already running, stopping old threads first")
+            self._stop_existing_threads()
+
         self.window_monitor = None
         self.scroller = None
         self.input_listener = None

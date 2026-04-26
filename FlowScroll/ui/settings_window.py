@@ -31,6 +31,8 @@ from FlowScroll.core.config import (
     BUILTIN_PRESETS,
     DEFAULT_PRESET_NAME,
     set_config_attr,
+    get_preset_display_name,
+    get_preset_internal_name,
 )
 from FlowScroll.i18n import set_ui_language, tr
 
@@ -93,93 +95,6 @@ class MainWindow(QMainWindow):
         self.init_ui()
         self._start_threads()
         self.ctrl.check_for_updates(self._refresh_update_indicator)
-
-    # ---- 代理属性：向后兼容 tabs_builder / dialogs 等 ----
-
-    @property
-    def presets(self):
-        """代理属性：返回当前预设字典。"""
-        return self.ctrl.presets
-
-    @property
-    def current_preset_name(self):
-        """代理属性：返回当前预设名称。"""
-        return self.ctrl.current_preset_name
-
-    @current_preset_name.setter
-    def current_preset_name(self, value) -> None:
-        """代理属性：设置当前预设名称。"""
-        self.ctrl.current_preset_name = value
-
-    @property
-    def bridge(self):
-        """代理属性：返回 LogicBridge 实例。"""
-        return self.ctrl.bridge
-
-    @property
-    def autostart(self):
-        """代理属性：返回 AutoStartManager 实例。"""
-        return self.ctrl.autostart
-
-    @property
-    def preset_manager(self):
-        """代理属性：返回 PresetManager 实例。"""
-        return self.ctrl.preset_manager
-
-    @property
-    def scroller(self):
-        """代理属性：返回 ScrollEngine 实例。"""
-        return self.ctrl.scroller
-
-    @property
-    def keyboard_hook_available(self):
-        """代理属性：返回键盘钩子是否可用。"""
-        return self.ctrl.keyboard_hook_available
-
-    @keyboard_hook_available.setter
-    def keyboard_hook_available(self, value):
-        """代理属性：设置键盘钩子可用状态。"""
-        self.ctrl.keyboard_hook_available = value
-
-    @property
-    def mouse_hook_available(self):
-        """代理属性：返回鼠标钩子是否可用。"""
-        return self.ctrl.mouse_hook_available
-
-    @mouse_hook_available.setter
-    def mouse_hook_available(self, value):
-        """代理属性：设置鼠标钩子可用状态。"""
-        self.ctrl.mouse_hook_available = value
-
-    @property
-    def github_url(self):
-        """代理属性：返回 GitHub 仓库 URL。"""
-        return self.ctrl.github_url
-
-    @github_url.setter
-    def github_url(self, value):
-        """代理属性：设置 GitHub 仓库 URL。"""
-        self.ctrl.github_url = value
-
-    @property
-    def latest_release_version(self):
-        """代理属性：返回最新发布版本号。"""
-        return self.ctrl.latest_release_version
-
-    @latest_release_version.setter
-    def latest_release_version(self, value):
-        """代理属性：设置最新发布版本号。"""
-        self.ctrl.latest_release_version = value
-
-    @property
-    def update_badge_mode(self):
-        """代理属性：返回更新徽章模式。"""
-        return self.ctrl.update_badge_mode
-
-    @update_badge_mode.setter
-    def update_badge_mode(self, value):
-        """代理属性：设置更新徽章模式。"""
-        self.ctrl.update_badge_mode = value
 
     # ---- 线程启动 ----
 
@@ -288,20 +203,20 @@ class MainWindow(QMainWindow):
     # ---- 预设管理 ----
 
     def _all_preset_names(self):
-        """返回所有预设名称列表（内置 + 自定义）。"""
-        return self.ctrl.preset_manager.get_all_names()
+        """返回所有预设的本地化显示名称列表。"""
+        return self.ctrl.preset_manager.get_all_display_names()
 
     def _refresh_combo(self, select_name):
-        """刷新预设下拉框，选中指定名称。"""
+        """刷新预设下拉框，选中指定名称（内部键名）。"""
         self.combo_presets.blockSignals(True)
         self.combo_presets.clear()
         self.combo_presets.addItems(self._all_preset_names())
-        self.combo_presets.setCurrentText(select_name)
+        self.combo_presets.setCurrentText(get_preset_display_name(select_name))
         self.combo_presets.blockSignals(False)
 
     def save_new_preset(self) -> None:
         """保存新预设：弹出输入框，校验名称后持久化。"""
-        suggested = self.current_preset_name
+        suggested = self.ctrl.current_preset_name
         if suggested in BUILTIN_PRESETS:
             suggested = ""
         text, ok = QInputDialog.getText(
@@ -318,7 +233,7 @@ class MainWindow(QMainWindow):
                     tr("main.preset.builtin_warning_body"),
                 )
                 return
-            if text in self.presets and not self._confirm_preset_action(
+            if text in self.ctrl.presets and not self._confirm_preset_action(
                 tr("main.preset.overwrite_title"),
                 tr("main.preset.overwrite_body", name=text),
             ):
@@ -328,7 +243,8 @@ class MainWindow(QMainWindow):
 
     def delete_preset(self) -> None:
         """删除自定义预设：确认后删除并回退到默认预设。"""
-        name = self.combo_presets.currentText()
+        display_name = self.combo_presets.currentText()
+        name = get_preset_internal_name(display_name)
         if name in BUILTIN_PRESETS:
             QMessageBox.warning(
                 self,
@@ -336,19 +252,20 @@ class MainWindow(QMainWindow):
                 tr("main.preset.delete_builtin_body"),
             )
             return
-        if name not in self.presets:
+        if name not in self.ctrl.presets:
             return
         if not self._confirm_preset_action(
             tr("main.preset.delete_confirm_title"),
-            tr("main.preset.delete_confirm_body", name=name),
+            tr("main.preset.delete_confirm_body", name=display_name),
         ):
             return
         self.ctrl.delete_preset(name)
         self._refresh_combo(DEFAULT_PRESET_NAME)
-        self.load_selected_preset(DEFAULT_PRESET_NAME)
+        self.load_selected_preset(get_preset_display_name(DEFAULT_PRESET_NAME))
 
-    def load_selected_preset(self, name) -> None:
-        """加载指定预设并同步 UI 控件。"""
+    def load_selected_preset(self, display_name) -> None:
+        """加载指定预设并同步 UI 控件。接收本地化显示名称，内部转换为键名。"""
+        name = get_preset_internal_name(display_name)
         self.ctrl.load_selected_preset(name)
         self.sync_ui_from_config()
 
@@ -555,23 +472,39 @@ class MainWindow(QMainWindow):
 
     def sync_ui_from_config(self) -> None:
         """将 cfg 中的值同步到 UI 控件。"""
-        self.ui_widgets["sensitivity"].setValue(cfg.sensitivity)
-        self.ui_widgets["speed_factor"].setValue(cfg.speed_factor)
-        self.ui_widgets["dead_zone"].setValue(cfg.dead_zone)
-        self.ui_widgets["overlay_size"].setValue(cfg.overlay_size)
-        self.ui_widgets["enable_horizontal"].setChecked(cfg.enable_horizontal)
-        self.ui_widgets["minimize_to_tray"].setChecked(cfg.minimize_to_tray)
-        self.ui_widgets["enable_inertia"].setChecked(cfg.enable_inertia)
-        if "disable_fullscreen" in self.ui_widgets:
-            self.ui_widgets["disable_fullscreen"].setChecked(cfg.disable_fullscreen)
+        with STATE_LOCK:
+            sensitivity = cfg.sensitivity
+            speed_factor = cfg.speed_factor
+            dead_zone = cfg.dead_zone
+            overlay_size = cfg.overlay_size
+            enable_horizontal = cfg.enable_horizontal
+            minimize_to_tray = cfg.minimize_to_tray
+            enable_inertia = cfg.enable_inertia
+            disable_fullscreen = cfg.disable_fullscreen
+            horizontal_hotkey = cfg.horizontal_hotkey
 
-        self.update_hotkey_label()
+        self.ui_widgets["sensitivity"].setValue(sensitivity)
+        self.ui_widgets["speed_factor"].setValue(speed_factor)
+        self.ui_widgets["dead_zone"].setValue(dead_zone)
+        self.ui_widgets["overlay_size"].setValue(overlay_size)
+        self.ui_widgets["enable_horizontal"].setChecked(enable_horizontal)
+        self.ui_widgets["minimize_to_tray"].setChecked(minimize_to_tray)
+        self.ui_widgets["enable_inertia"].setChecked(enable_inertia)
+        if "disable_fullscreen" in self.ui_widgets:
+            self.ui_widgets["disable_fullscreen"].setChecked(disable_fullscreen)
+
+        if horizontal_hotkey:
+            self.lbl_hotkey.setText(hotkey_to_display(horizontal_hotkey))
+        else:
+            self.lbl_hotkey.setText(tr("main.hotkey.not_set"))
         self.refresh_config_storage_ui()
 
     def update_hotkey_label(self) -> None:
         """更新横向滚动快捷键的显示标签。"""
-        if cfg.horizontal_hotkey:
-            self.lbl_hotkey.setText(hotkey_to_display(cfg.horizontal_hotkey))
+        with STATE_LOCK:
+            horizontal_hotkey = cfg.horizontal_hotkey
+        if horizontal_hotkey:
+            self.lbl_hotkey.setText(hotkey_to_display(horizontal_hotkey))
         else:
             self.lbl_hotkey.setText(tr("main.hotkey.not_set"))
 
@@ -579,12 +512,15 @@ class MainWindow(QMainWindow):
 
     def on_show_overlay(self) -> None:
         """显示准星覆盖层（在鼠标当前位置居中）。"""
-        if cfg.hide_overlay:
+        with STATE_LOCK:
+            hide = cfg.hide_overlay
+            size = cfg.overlay_size
+        if hide:
             return
         self.overlay.set_direction("neutral")
         self.overlay.move(
-            int(QCursor.pos().x() - cfg.overlay_size / 2),
-            int(QCursor.pos().y() - cfg.overlay_size / 2),
+            int(QCursor.pos().x() - size / 2),
+            int(QCursor.pos().y() - size / 2),
         )
         self.overlay.show()
         self.overlay.raise_()
@@ -750,7 +686,7 @@ class MainWindow(QMainWindow):
 
     def toggle_autorun(self, checked) -> None:
         """切换开机自启动开关，失败时回滚 UI 状态。"""
-        if not self.autostart.set_autorun(checked):
+        if not self.ctrl.autostart.set_autorun(checked):
             self.sender().blockSignals(True)
             self.sender().setChecked(not checked)
             self.sender().blockSignals(False)

@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from typing import Dict, List
 
 from FlowScroll.core.config import (
@@ -10,6 +11,7 @@ from FlowScroll.core.config import (
     ensure_config_dir,
     get_config_file,
     get_config_load_candidates,
+    get_preset_display_name,
 )
 from FlowScroll.services.logging_service import logger
 
@@ -115,18 +117,34 @@ class PresetManager:
         cfg.from_webdav_dict({})
 
     def save_to_file(self) -> None:
-        """将预设与当前配置写回配置文件。"""
+        """将预设与当前配置写回配置文件（原子写入，非 Windows 下限制文件权限）。"""
         data = self._serialize_state()
         config_path = ensure_config_dir()
+        config_dir = os.path.dirname(config_path)
         try:
-            with open(config_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
+            fd, tmp_path = tempfile.mkstemp(dir=config_dir, suffix=".tmp")
+            try:
+                if os.name != "nt":
+                    os.fchmod(fd, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+                os.replace(tmp_path, config_path)
+            except BaseException:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
         except Exception as e:
             logger.error(f"Failed to save presets to file: {e}")
 
     def get_all_names(self) -> List[str]:
-        """返回所有可选预设名称。"""
+        """返回所有可选预设名称（内部键名）。"""
         return list(BUILTIN_PRESETS.keys()) + list(self.presets.keys())
+
+    def get_all_display_names(self) -> List[str]:
+        """返回所有可选预设的本地化显示名称。"""
+        return [get_preset_display_name(n) for n in self.get_all_names()]
 
     def save_preset(self, name: str) -> bool:
         """将当前配置保存为一个自定义预设。"""

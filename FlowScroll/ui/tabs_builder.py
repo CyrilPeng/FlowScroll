@@ -87,8 +87,8 @@ def build_parameter_tab(main_window):
             "overlay_size",
             v,
             after_change=lambda new_value: (
-                main_window.bridge.update_size.emit(int(new_value)),
-                main_window.bridge.preview_size.emit(),
+                main_window.ctrl.bridge.update_size.emit(int(new_value)),
+                main_window.ctrl.bridge.preview_size.emit(),
             ),
         ),
         decimals=0,
@@ -108,7 +108,10 @@ def build_parameter_tab(main_window):
 
     main_window.combo_presets = UpwardComboBox()
     main_window.combo_presets.addItems(main_window._all_preset_names())
-    main_window.combo_presets.setCurrentText(main_window.current_preset_name)
+    from FlowScroll.core.config import get_preset_display_name
+    main_window.combo_presets.setCurrentText(
+        get_preset_display_name(main_window.ctrl.current_preset_name)
+    )
     main_window.combo_presets.currentTextChanged.connect(
         main_window.load_selected_preset
     )
@@ -155,7 +158,7 @@ def build_parameter_tab(main_window):
     main_window.btn_new_badge.clicked.connect(
         lambda: webbrowser.open(
             getattr(
-                main_window,
+                main_window.ctrl,
                 "github_url",
                 "",
             )
@@ -172,7 +175,7 @@ def build_parameter_tab(main_window):
 
     main_window.btn_github.clicked.connect(
         lambda: webbrowser.open(
-            getattr(main_window, "github_url", "")
+            getattr(main_window.ctrl, "github_url", "")
             or "https://github.com/CyrilPeng/FlowScroll"
         )
     )
@@ -303,7 +306,7 @@ def build_advanced_tab(main_window):
         adv_layout,
         None,
         tr("tab.advanced.autorun"),
-        main_window.autostart.is_autorun(),
+        main_window.ctrl.autostart.is_autorun(),
         main_window.toggle_autorun,
     )
     adv_layout.addWidget(create_h_line())
