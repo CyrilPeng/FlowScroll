@@ -536,10 +536,14 @@ class TestAdvancedTab:
             def is_autorun(self):
                 return False
 
+        class DummyCtrl:
+            def __init__(self):
+                self.autostart = DummyAutoStart()
+
         class DummyMainWindow:
             def __init__(self):
                 self.ui_widgets = {}
-                self.autostart = DummyAutoStart()
+                self.ctrl = DummyCtrl()
                 self.refreshed = False
 
             def toggle_autorun(self, *_args):

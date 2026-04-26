@@ -2,6 +2,34 @@
 
 > 2026-03-29 补充记录：全仓 Python 代码注释与部分 docstring 统一整理为中文，并清理多处历史乱码注释，提升维护与协作时的可读性。
 
+## v1.7.8
+
+### Fixed
+- 修复 `ScrollEngine` 中 `inertia_active`/`inertia_vx`/`inertia_vy` 的数据竞争：新增 `_inertia_lock` 专用锁，保护引擎线程与输入线程之间的惯性状态读写
+- 修复 `GlobalConfig.from_dict()` 批量写入无锁保护导致其他线程读到半更新配置的问题：整体操作包裹在 `STATE_LOCK` 内。同步修复 `from_webdav_dict()`
+- 修复 `_to_dict_common()` 中 `filter_blacklist`/`filter_whitelist` 直接暴露可变列表引用的问题，改为返回防御性副本
+- 修复 `KeyboardManager.current_keys` 集合在 pynput 回调线程中的 add/discard 与快照拷贝不原子的问题：新增 `_keys_lock` 保护
+- 修复 `_compute_friction()` 中 tick 间隔硬编码为 `4.0` 的问题，改为从 `ENGINE_TICK_INTERVAL` 常量动态计算
+- 修复 `win32_event_filter` 中 `suppress_event()` 后 `return False` 可能导致 pynput 监听线程意外终止的问题，改为 `return None`
+- 修复 `WM_MBUTTONDBLCLK (0x0209)` 被误当作按下事件触发二次激活切换的问题，双击事件现在仅被抑制而不触发逻辑
+- 修复 `set_persisted_config_file()` 非原子写入导致崩溃时配置指针文件损坏的问题，改为 write-to-temp + `os.replace` 原子替换
+- 修复 `from_dict()` 中 `filter_mode == 0`（禁用过滤）时旧版 `filter_list` 同时填充黑名单和白名单的问题，现在仅填充黑名单
+
+### Improved
+- `ApplicationController.start_threads()` 新增重复调用守卫，在重复调用时先停止旧线程再启动新线程
+- macOS 前台窗口检测优先使用 `AppKit NSWorkspace` 原生 API（零子进程开销），不可用时回退到 `osascript` 并带 `timeout=2`
+- Linux 前台窗口检测从 4 次独立 `xprop` 子进程调用合并为 1 次批量查询，减少进程创建开销
+- 单实例 IPC 消息读取添加 1024 字节上限，防止恶意本机进程发送大量数据
+- 崩溃提示框从硬编码中文改为通过 `tr()` 国际化，非中文用户可看到英文消息
+- 内置预设名称完成 i18n 全流程集成：combo box 和对话框均显示本地化名称，内部键名不变以保持配置兼容
+- `sync_ui_from_config()` 和 `update_hotkey_label()` 中的 `cfg` 属性读取统一纳入 `STATE_LOCK` 保护，与项目加锁纪律一致
+- `ScrollEngine` 新增 `_stop_event` 和 `request_stop()` 方法，支持优雅停止与 `join()`，不再依赖守护线程强制终止
+- `MainWindow` 移除全部 15+ 代理属性，`tabs_builder` / `dialogs` 改为直接访问 `main_window.ctrl.*`，减少维护噪音
+- 配置文件写入（`preset_manager.save_to_file` 和 `set_persisted_config_file`）统一改为 `tempfile.mkstemp` + `os.replace` 原子写入，非 Windows 下设置 `0o600` 权限
+
+### Removed
+- 移除未使用的 `zstandard` 依赖
+
 ## v1.7.7
 
 ### Changed

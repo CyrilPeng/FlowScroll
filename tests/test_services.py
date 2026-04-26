@@ -273,25 +273,13 @@ class TestLinuxPlatform:
                 "0x3a00007",
                 "_NET_WM_NAME",
                 "WM_NAME",
-            ): '_NET_WM_NAME(UTF8_STRING) = "Terminal"',
-            (
-                "xprop",
-                "-id",
-                "0x3a00007",
                 "WM_CLASS",
-            ): 'WM_CLASS(STRING) = "gnome-terminal-server", "Gnome-terminal"',
-            (
-                "xprop",
-                "-id",
-                "0x3a00007",
                 "_NET_WM_PID",
-            ): "_NET_WM_PID(CARDINAL) = 4321",
-            (
-                "xprop",
-                "-id",
-                "0x3a00007",
                 "_NET_WM_STATE",
-            ): "_NET_WM_STATE(ATOM) = _NET_WM_STATE_FULLSCREEN",
+            ): '_NET_WM_NAME(UTF8_STRING) = "Terminal"\n'
+               'WM_CLASS(STRING) = "gnome-terminal-server", "Gnome-terminal"\n'
+               "_NET_WM_PID(CARDINAL) = 4321\n"
+               "_NET_WM_STATE(ATOM) = _NET_WM_STATE_FULLSCREEN",
         }
 
         monkeypatch.setattr(
