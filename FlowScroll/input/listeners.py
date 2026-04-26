@@ -265,11 +265,9 @@ class GlobalInputListener:
         timer.start()
 
     def _handle_activation_press(self, x, y, source):
-        """处理激活键按下事件：惯性中只打断不激活；点击模式下再次按下则关闭；支持延迟启动。"""
-        # 惯性运行中只负责打断，不应再次激活滚动。
+        """处理激活键按下事件：惯性中先打断再激活；点击模式下再次按下则关闭；支持延迟启动。"""
         if self.scroll_engine and self.scroll_engine._is_inertia_active():
             self.scroll_engine.interrupt_inertia()
-            return
 
         # 单击启用模式下，如果当前已经处于激活状态，
         # 再次按下触发键应立即关闭，不受延迟启动影响。
