@@ -2,6 +2,14 @@
 
 > 2026-03-29 补充记录：全仓 Python 代码注释与部分 docstring 统一整理为中文，并清理多处历史乱码注释，提升维护与协作时的可读性。
 
+## v1.7.10
+
+### Fixed
+- 修复 v1.7.8 起 Windows exe 体积从 23MB 飙升至 80MB 的问题：移除 `zstandard` 运行依赖后 Nuitka onefile 压缩静默失效，现将 `zstandard` 作为 CI 构建依赖恢复压缩
+
+### Improved
+- 三平台构建排除 20 个未使用的 PySide6 模块（QtWebEngine、Qt3D、QtMultimedia、QtQuick 等），减小产物体积
+
 ## v1.7.9
 
 ### Fixed

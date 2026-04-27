@@ -121,12 +121,12 @@ jobs:
         run: uv sync --frozen
 
       - name: 安装 Nuitka
-        run: uv pip install Nuitka
+        run: uv pip install Nuitka zstandard
 
       - name: 构建 Windows 版本
         if: matrix.os == 'windows-latest'
         run: |
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Win_${{ github.ref_name }}.exe main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --nofollow-import-to=PySide6.QtWebEngine* --nofollow-import-to=PySide6.Qt3D* --nofollow-import-to=PySide6.QtMultimedia* --nofollow-import-to=PySide6.QtQuick* --nofollow-import-to=PySide6.QtCharts* --nofollow-import-to=PySide6.QtDataVisualization* --nofollow-import-to=PySide6.QtBluetooth* --nofollow-import-to=PySide6.QtNfc* --nofollow-import-to=PySide6.QtRemoteObjects* --nofollow-import-to=PySide6.QtSensors* --nofollow-import-to=PySide6.QtSerialPort* --nofollow-import-to=PySide6.QtWebSockets* --nofollow-import-to=PySide6.QtPositioning* --nofollow-import-to=PySide6.QtLocation* --nofollow-import-to=PySide6.QtTest* --nofollow-import-to=PySide6.QtSql* --nofollow-import-to=PySide6.QtSvg* --nofollow-import-to=PySide6.QtXml* --nofollow-import-to=PySide6.QtPdf* --nofollow-import-to=PySide6.QtHttpServer* --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Win_${{ github.ref_name }}.exe main.py
 
       - name: 构建 macOS 版本
         if: matrix.os == 'macos-latest'
@@ -137,7 +137,7 @@ jobs:
             ICON_ARG=""
           fi
 
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --macos-app-name="FlowScroll" --output-dir=build_out main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --macos-create-app-bundle --enable-plugin=pyside6 $ICON_ARG --nofollow-import-to=PySide6.QtWebEngine* --nofollow-import-to=PySide6.Qt3D* --nofollow-import-to=PySide6.QtMultimedia* --nofollow-import-to=PySide6.QtQuick* --nofollow-import-to=PySide6.QtCharts* --nofollow-import-to=PySide6.QtDataVisualization* --nofollow-import-to=PySide6.QtBluetooth* --nofollow-import-to=PySide6.QtNfc* --nofollow-import-to=PySide6.QtRemoteObjects* --nofollow-import-to=PySide6.QtSensors* --nofollow-import-to=PySide6.QtSerialPort* --nofollow-import-to=PySide6.QtWebSockets* --nofollow-import-to=PySide6.QtPositioning* --nofollow-import-to=PySide6.QtLocation* --nofollow-import-to=PySide6.QtTest* --nofollow-import-to=PySide6.QtSql* --nofollow-import-to=PySide6.QtSvg* --nofollow-import-to=PySide6.QtXml* --nofollow-import-to=PySide6.QtPdf* --nofollow-import-to=PySide6.QtHttpServer* --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --macos-app-name="FlowScroll" --output-dir=build_out main.py
 
           if [ -d "build_out/main.app" ]; then
             mv build_out/main.app "build_out/FlowScroll.app"
@@ -166,7 +166,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0 imagemagick
 
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --nofollow-import-to=PySide6.QtWebEngine* --nofollow-import-to=PySide6.Qt3D* --nofollow-import-to=PySide6.QtMultimedia* --nofollow-import-to=PySide6.QtQuick* --nofollow-import-to=PySide6.QtCharts* --nofollow-import-to=PySide6.QtDataVisualization* --nofollow-import-to=PySide6.QtBluetooth* --nofollow-import-to=PySide6.QtNfc* --nofollow-import-to=PySide6.QtRemoteObjects* --nofollow-import-to=PySide6.QtSensors* --nofollow-import-to=PySide6.QtSerialPort* --nofollow-import-to=PySide6.QtWebSockets* --nofollow-import-to=PySide6.QtPositioning* --nofollow-import-to=PySide6.QtLocation* --nofollow-import-to=PySide6.QtTest* --nofollow-import-to=PySide6.QtSql* --nofollow-import-to=PySide6.QtSvg* --nofollow-import-to=PySide6.QtXml* --nofollow-import-to=PySide6.QtPdf* --nofollow-import-to=PySide6.QtHttpServer* --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 
           find build_out -path "*/FlowScroll/resources/FlowScroll.svg" | grep -q .
           find build_out -path "*/FlowScroll/locales/en-US.json" | grep -q .
