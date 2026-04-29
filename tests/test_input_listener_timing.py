@@ -32,6 +32,8 @@ def _import_listeners_with_fake_pynput(monkeypatch):
     fake_mouse = types.ModuleType("pynput.mouse")
 
     class FakeButton:
+        left = object()
+        right = object()
         middle = object()
         x1 = object()
         x2 = object()
@@ -226,3 +228,31 @@ def test_delayed_activation_cancelled_before_timer_fire_does_not_activate(monkey
         assert runtime.active is False
         assert runtime.origin_pos == (0, 0)
     assert bridge.show_overlay.count == 0
+
+
+def test_left_or_right_click_cancels_active_scroll_without_suppressing(monkeypatch):
+    listeners_module, _ = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    bridge = _DummyBridge()
+    listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
+
+    with STATE_LOCK:
+        cfg.activation_mode = 0
+        runtime.active = True
+        runtime.origin_pos = (100, 100)
+
+    listener.on_click(120, 130, listeners_module.mouse.Button.left, True)
+
+    with STATE_LOCK:
+        assert runtime.active is False
+    assert bridge.hide_overlay.count == 1
+
+    with STATE_LOCK:
+        runtime.active = True
+
+    listener.on_click(120, 130, listeners_module.mouse.Button.right, True)
+
+    with STATE_LOCK:
+        assert runtime.active is False
+    assert bridge.hide_overlay.count == 2

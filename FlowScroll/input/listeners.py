@@ -400,6 +400,13 @@ class GlobalInputListener:
             self.scroll_engine.interrupt_inertia()
             return
 
+        if pressed and button in (mouse.Button.left, mouse.Button.right):
+            with STATE_LOCK:
+                active = runtime.active
+            if active:
+                self._set_active(False)
+            return
+
         if pressed and button == self._get_horizontal_mouse_button():
             self.bridge.toggle_horizontal.emit()
             return
