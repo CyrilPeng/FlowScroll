@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QApplication
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QColor, QPainter, QPen, QPainterPath
+from PySide6.QtGui import QColor, QPainter, QPen, QPainterPath, QRadialGradient
 
 from FlowScroll.platform import OS_NAME
 from FlowScroll.core.config import cfg
@@ -59,32 +59,47 @@ class ResizableOverlay(QWidget):
         self.preview_timer.start(800)
 
     def paintEvent(self, event) -> None:
-        """绘制准星：中心圆点 + 根据方向显示的箭头。"""
+        """绘制准星：光晕中心 + 渐变方向箭头。"""
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         p.translate(self.width() / 2, self.height() / 2)
         scale = self.width() / self.base_size
         p.scale(scale, scale)
 
-        p.setBrush(QColor(50, 50, 50))
-        p.setPen(QPen(QColor(255, 255, 255, 220), 2))
-        p.drawEllipse(-4, -4, 8, 8)
+        # 外层光晕
+        glow_outer = QRadialGradient(0, 0, 12)
+        glow_outer.setColorAt(0.0, QColor(59, 130, 246, 80))
+        glow_outer.setColorAt(0.6, QColor(59, 130, 246, 30))
+        glow_outer.setColorAt(1.0, QColor(59, 130, 246, 0))
+        p.setBrush(glow_outer)
+        p.setPen(Qt.NoPen)
+        p.drawEllipse(-12, -12, 24, 24)
+
+        # 中心实心圆点
+        p.setBrush(QColor(59, 130, 246, 200))
+        p.setPen(QPen(QColor(255, 255, 255, 230), 1.5))
+        p.drawEllipse(-3, -3, 6, 6)
 
         def draw_arrow(painter, angle, is_active):
             painter.save()
             painter.rotate(angle)
-            painter.translate(0, -12)
+            painter.translate(0, -14)
             path = QPainterPath()
             if is_active:
-                path.moveTo(0, -7)
-                path.lineTo(-9, 7)
-                path.lineTo(9, 7)
-                painter.setBrush(QColor(0, 0, 0))
-                painter.setPen(QPen(Qt.white, 2))
+                path.moveTo(0, -8)
+                path.lineTo(-9, 6)
+                path.lineTo(9, 6)
+                painter.setPen(QPen(QColor(255, 255, 255, 200), 1.5))
+                gradient = QRadialGradient(0, 0, 10)
+                gradient.setColorAt(0.0, QColor(59, 130, 246, 220))
+                gradient.setColorAt(1.0, QColor(37, 99, 235, 180))
+                painter.setBrush(gradient)
             else:
-                path.moveTo(0, -4)
+                path.moveTo(0, -5)
                 path.lineTo(-5, 3)
                 path.lineTo(5, 3)
+                painter.setPen(QPen(QColor(148, 163, 184, 140), 1))
+                painter.setBrush(QColor(148, 163, 184, 50))
             path.closeSubpath()
             painter.drawPath(path)
             painter.restore()
