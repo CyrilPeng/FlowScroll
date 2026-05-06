@@ -125,6 +125,10 @@ def build_parameter_tab(main_window):
     btn_save.setObjectName("BtnPrimary")
     btn_save.setFocusPolicy(Qt.NoFocus)
     btn_save.setCursor(Qt.PointingHandCursor)
+    save_icon_path = resource_path(os.path.join("FlowScroll", "resources", "ic_folder.svg"))
+    if os.path.exists(save_icon_path):
+        btn_save.setIcon(QIcon(save_icon_path))
+        btn_save.setIconSize(QSize(16, 16))
     btn_save.clicked.connect(main_window.save_new_preset)
     preset_row.addWidget(btn_save)
 
@@ -385,7 +389,7 @@ def build_advanced_tab(main_window):
     main_window.ui_widgets["filter_mode_button"] = btn_app_filter
 
     btn_webdav = QPushButton(tr("tab.advanced.webdav_btn"))
-    btn_webdav.setObjectName("BtnAdv")
+    btn_webdav.setObjectName("BtnAdvSecondary")
     btn_webdav.setCursor(Qt.PointingHandCursor)
     cloud_path = resource_path(os.path.join("FlowScroll", "resources", "ic_cloud.svg"))
     if os.path.exists(cloud_path):
@@ -402,7 +406,7 @@ def build_advanced_tab(main_window):
     data_layout.addWidget(btn_webdav)
 
     btn_storage = QPushButton(tr("tab.advanced.config_path_btn"))
-    btn_storage.setObjectName("BtnAdv")
+    btn_storage.setObjectName("BtnAdvSecondary")
     btn_storage.setCursor(Qt.PointingHandCursor)
     storage_path = resource_path(
         os.path.join("FlowScroll", "resources", "ic_folder.svg")

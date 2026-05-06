@@ -48,15 +48,15 @@ def get_main_stylesheet() -> str:
         QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
         
         QLabel {{ color: {COLOR_TEXT_PRIMARY}; font-size: 14px; }}
-        QLabel#HeaderTitle {{ font-size: 28px; font-weight: 800; color: {COLOR_TEXT_PRIMARY}; letter-spacing: 0.5px; }}
+        QLabel#HeaderTitle {{ font-size: 28px; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; letter-spacing: 0.5px; }}
         QLabel#HeaderSubtitle {{ font-size: 13px; color: {COLOR_TEXT_HINT}; font-weight: 600; margin-top: -4px; }}
-        QLabel#SectionTitle {{ font-size: 12px; font-weight: 700; color: {COLOR_TEXT_MUTED}; margin-top: 12px; margin-bottom: 4px; padding-left: 4px; padding-right: 12px; }}
+        QLabel#SectionTitle {{ font-size: 11px; font-weight: 600; color: {COLOR_TEXT_MUTED}; letter-spacing: 1px; margin-top: 12px; margin-bottom: 4px; padding-left: 4px; padding-right: 12px; }}
         
         QFrame#Card {{ background-color: {COLOR_BG_CARD}; border-radius: 16px; border: 1px solid {COLOR_BORDER}; }}
         QFrame#Card:hover {{ border: 1px solid {COLOR_BORDER_HOVER}; background-color: #233046; }}
         QFrame#Separator {{ background-color: {COLOR_BORDER}; max-height: 1px; }}
 
-        QDoubleSpinBox {{ background-color: {COLOR_BG_DARK}; border: 1px solid {COLOR_BORDER}; border-radius: 8px; padding: 4px; color: {COLOR_ACCENT}; font-weight: 700; font-size: 14px; }}
+        QDoubleSpinBox {{ background-color: {COLOR_BG_DARK}; border: 1px solid {COLOR_BORDER}; border-radius: 8px; padding: 4px; color: {COLOR_ACCENT_LIGHT}; font-weight: 600; font-size: 13px; }}
         QDoubleSpinBox:focus {{ border: 1px solid {COLOR_ACCENT}; background-color: {COLOR_BG_INPUT}; }}
         QDoubleSpinBox:disabled {{ color: {COLOR_TEXT_HINT}; border-color: {COLOR_BORDER}; }}
         QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{ width: 0px; height: 0px; }}
@@ -77,7 +77,7 @@ def get_main_stylesheet() -> str:
 
         QTabWidget::pane {{ border: none; background-color: transparent; }}
         QTabBar {{ background: transparent; }}
-        QTabBar::tab {{ background: transparent; color: {COLOR_TEXT_MUTED}; font-weight: 700; font-size: 14px; padding: 10px 20px; border: none; border-radius: 8px; margin: 2px 4px; }}
+        QTabBar::tab {{ background: transparent; color: {COLOR_TEXT_MUTED}; font-weight: 600; font-size: 14px; padding: 10px 20px; border: none; border-radius: 8px; margin: 2px 4px; }}
         QTabBar::tab:hover {{ color: {COLOR_TEXT_SECONDARY}; background-color: rgba(59, 130, 246, 0.08); }}
         QTabBar::tab:selected {{ color: {COLOR_ACCENT}; background-color: rgba(59, 130, 246, 0.12); }}
 
@@ -96,10 +96,15 @@ def get_main_stylesheet() -> str:
         QPushButton#BtnDanger:pressed {{ background-color: {COLOR_DANGER_BG}; }}
         QPushButton#BtnDanger:disabled {{ background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_HINT}; border-color: {COLOR_BORDER}; }}
 
-        QPushButton#BtnAdv {{ background-color: {COLOR_BG_CARD}; border: 1px solid {COLOR_ACCENT}; color: {COLOR_ACCENT_LIGHT}; border-radius: 10px; padding: 12px; font-weight: 700; font-size: 14px; text-align: center; }}
+        QPushButton#BtnAdv {{ background-color: {COLOR_BG_CARD}; border: 1px solid {COLOR_ACCENT}; color: {COLOR_ACCENT_LIGHT}; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px; text-align: center; min-height: 40px; }}
         QPushButton#BtnAdv:hover {{ background-color: #172554; border-color: {COLOR_ACCENT_LIGHT}; }}
         QPushButton#BtnAdv:pressed {{ background-color: #0C1A33; }}
         QPushButton#BtnAdv:disabled {{ background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_HINT}; border-color: {COLOR_BORDER}; }}
+
+        QPushButton#BtnAdvSecondary {{ background-color: {COLOR_BG_CARD}; border: 1px solid {COLOR_BORDER}; color: {COLOR_TEXT_SECONDARY}; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px; text-align: center; min-height: 40px; }}
+        QPushButton#BtnAdvSecondary:hover {{ background-color: {COLOR_BORDER}; border-color: {COLOR_BORDER_HOVER}; color: {COLOR_TEXT_PRIMARY}; }}
+        QPushButton#BtnAdvSecondary:pressed {{ background-color: {COLOR_BG_DARK}; }}
+        QPushButton#BtnAdvSecondary:disabled {{ background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_HINT}; border-color: {COLOR_BORDER}; }}
 
         QPushButton#BtnIcon {{ background: transparent; border: none; padding: 6px; border-radius: 8px; }}
         QPushButton#BtnIcon:hover {{ background-color: {COLOR_BG_CARD}; }}
