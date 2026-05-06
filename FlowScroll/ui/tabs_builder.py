@@ -209,7 +209,12 @@ def build_advanced_tab(main_window):
     tab2_layout.setSpacing(20)
     tab2_layout.setAlignment(Qt.AlignTop)
 
-    adv_card, adv_layout = create_card()
+    # ---- 滚动行为 ----
+    lbl_scroll = QLabel(tr("tab.advanced.section.scroll_behavior"))
+    lbl_scroll.setObjectName("SectionTitle")
+    tab2_layout.addWidget(lbl_scroll)
+
+    scroll_card, scroll_layout = create_card()
 
     main_window.input_hook_status_label = QLabel()
     main_window.input_hook_status_label.setWordWrap(True)
@@ -219,8 +224,8 @@ def build_advanced_tab(main_window):
         "border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 10px; "
         "padding: 10px 12px; line-height: 1.4;"
     )
-    adv_layout.addWidget(main_window.input_hook_status_label)
-    adv_layout.addWidget(create_h_line())
+    scroll_layout.addWidget(main_window.input_hook_status_label)
+    scroll_layout.addWidget(create_h_line())
 
     # 横向滚动快捷键设置行。
     row_horizontal = QWidget()
@@ -252,13 +257,13 @@ def build_advanced_tab(main_window):
         btn_gear.setIcon(QIcon(gear_path))
         btn_gear.setIconSize(QSize(16, 16))
     else:
-        btn_gear.setText("鈿欙笍")
+        btn_gear.setText("\u2699")
     btn_gear.clicked.connect(main_window.open_hotkey_dialog)
     row_horizontal_layout.addWidget(btn_gear)
     main_window.ui_widgets["horizontal_hotkey_button"] = btn_gear
 
-    adv_layout.addWidget(row_horizontal)
-    adv_layout.addWidget(create_h_line())
+    scroll_layout.addWidget(row_horizontal)
+    scroll_layout.addWidget(create_h_line())
 
     # 惯性滚动设置行。
     row_inertia = QWidget()
@@ -289,47 +294,8 @@ def build_advanced_tab(main_window):
     btn_inertia_gear.clicked.connect(main_window.open_inertia_settings_dialog)
     row_inertia_layout.addWidget(btn_inertia_gear)
 
-    adv_layout.addWidget(row_inertia)
-    adv_layout.addWidget(create_h_line())
-
-    main_window.ui_widgets["minimize_to_tray"] = add_toggle_row(
-        adv_layout,
-        "minimize_to_tray",
-        tr("tab.advanced.minimize_to_tray"),
-        cfg.minimize_to_tray,
-        lambda v: _persist_config_change(main_window, "minimize_to_tray", v),
-    )
-    adv_layout.addWidget(create_h_line())
-
-    # 开机自启动不存入 cfg，因此这里的 key 传入 None。
-    add_toggle_row(
-        adv_layout,
-        None,
-        tr("tab.advanced.autorun"),
-        main_window.ctrl.autostart.is_autorun(),
-        main_window.toggle_autorun,
-    )
-    adv_layout.addWidget(create_h_line())
-
-    # 内联显示的高级规则开关。
-    main_window.ui_widgets["disable_fullscreen"] = add_toggle_row(
-        adv_layout,
-        "disable_fullscreen",
-        tr("tab.advanced.disable_fullscreen"),
-        cfg.disable_fullscreen,
-        lambda v: _persist_config_change(main_window, "disable_fullscreen", v),
-        style_sheet="color: #FCA5A5;",
-    )
-    adv_layout.addWidget(create_h_line())
-
-    main_window.ui_widgets["hide_overlay"] = add_toggle_row(
-        adv_layout,
-        "hide_overlay",
-        tr("tab.advanced.hide_overlay"),
-        cfg.hide_overlay,
-        lambda v: _persist_config_change(main_window, "hide_overlay", v),
-    )
-    adv_layout.addWidget(create_h_line())
+    scroll_layout.addWidget(row_inertia)
+    scroll_layout.addWidget(create_h_line())
 
     btn_reverse_mode = QPushButton(tr("tab.advanced.reverse_btn"))
     btn_reverse_mode.setObjectName("BtnAdv")
@@ -339,7 +305,7 @@ def build_advanced_tab(main_window):
         btn_reverse_mode.setIcon(QIcon(move_path))
         btn_reverse_mode.setIconSize(QSize(18, 18))
     btn_reverse_mode.clicked.connect(main_window.open_reverse_mode_dialog)
-    adv_layout.addWidget(btn_reverse_mode)
+    scroll_layout.addWidget(btn_reverse_mode)
 
     btn_work_mode = QPushButton(tr("tab.advanced.work_mode_btn"))
     btn_work_mode.setObjectName("BtnAdv")
@@ -349,8 +315,61 @@ def build_advanced_tab(main_window):
         btn_work_mode.setIcon(QIcon(gear_path))
         btn_work_mode.setIconSize(QSize(18, 18))
     btn_work_mode.clicked.connect(main_window.open_work_mode_dialog)
-    adv_layout.addWidget(btn_work_mode)
+    scroll_layout.addWidget(btn_work_mode)
     main_window.ui_widgets["work_mode_button"] = btn_work_mode
+
+    tab2_layout.addWidget(scroll_card)
+
+    # ---- 系统集成 ----
+    lbl_system = QLabel(tr("tab.advanced.section.system"))
+    lbl_system.setObjectName("SectionTitle")
+    tab2_layout.addWidget(lbl_system)
+
+    system_card, system_layout = create_card()
+
+    main_window.ui_widgets["minimize_to_tray"] = add_toggle_row(
+        system_layout,
+        "minimize_to_tray",
+        tr("tab.advanced.minimize_to_tray"),
+        cfg.minimize_to_tray,
+        lambda v: _persist_config_change(main_window, "minimize_to_tray", v),
+    )
+    system_layout.addWidget(create_h_line())
+
+    add_toggle_row(
+        system_layout,
+        None,
+        tr("tab.advanced.autorun"),
+        main_window.ctrl.autostart.is_autorun(),
+        main_window.toggle_autorun,
+    )
+    system_layout.addWidget(create_h_line())
+
+    main_window.ui_widgets["disable_fullscreen"] = add_toggle_row(
+        system_layout,
+        "disable_fullscreen",
+        tr("tab.advanced.disable_fullscreen"),
+        cfg.disable_fullscreen,
+        lambda v: _persist_config_change(main_window, "disable_fullscreen", v),
+    )
+    system_layout.addWidget(create_h_line())
+
+    main_window.ui_widgets["hide_overlay"] = add_toggle_row(
+        system_layout,
+        "hide_overlay",
+        tr("tab.advanced.hide_overlay"),
+        cfg.hide_overlay,
+        lambda v: _persist_config_change(main_window, "hide_overlay", v),
+    )
+
+    tab2_layout.addWidget(system_card)
+
+    # ---- 数据与同步 ----
+    lbl_data = QLabel(tr("tab.advanced.section.data_sync"))
+    lbl_data.setObjectName("SectionTitle")
+    tab2_layout.addWidget(lbl_data)
+
+    data_card, data_layout = create_card()
 
     btn_app_filter = QPushButton(tr("tab.advanced.filter_mode_btn"))
     btn_app_filter.setObjectName("BtnAdv")
@@ -362,7 +381,7 @@ def build_advanced_tab(main_window):
         btn_app_filter.setIcon(QIcon(filter_path))
         btn_app_filter.setIconSize(QSize(18, 18))
     btn_app_filter.clicked.connect(main_window.open_filter_mode_dialog)
-    adv_layout.addWidget(btn_app_filter)
+    data_layout.addWidget(btn_app_filter)
     main_window.ui_widgets["filter_mode_button"] = btn_app_filter
 
     btn_webdav = QPushButton(tr("tab.advanced.webdav_btn"))
@@ -380,7 +399,7 @@ def build_advanced_tab(main_window):
         btn_webdav.setIcon(QIcon(shifted_pixmap))
         btn_webdav.setIconSize(QSize(18, 20))
     btn_webdav.clicked.connect(main_window.open_webdav_settings)
-    adv_layout.addWidget(btn_webdav)
+    data_layout.addWidget(btn_webdav)
 
     btn_storage = QPushButton(tr("tab.advanced.config_path_btn"))
     btn_storage.setObjectName("BtnAdv")
@@ -393,13 +412,13 @@ def build_advanced_tab(main_window):
         btn_storage.setIconSize(QSize(18, 18))
     btn_storage.clicked.connect(main_window.open_config_storage_dialog)
     main_window.ui_widgets["config_path_button"] = btn_storage
-    adv_layout.addWidget(btn_storage)
+    data_layout.addWidget(btn_storage)
 
-    tab2_layout.addWidget(adv_card)
+    tab2_layout.addWidget(data_card)
+
     main_window.refresh_input_hook_status_ui()
     main_window.refresh_config_storage_ui()
 
-    # 添加拉伸项，让内容自然贴顶显示。
     tab2_layout.addStretch()
 
     return tab2_widget
