@@ -19,7 +19,7 @@ except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境下�
 
 
 GITHUB_FALLBACK_URL = "https://github.com/CyrilPeng/FlowScroll/releases"
-GITEE_FALLBACK_URL = "https://gitee.com/Cyril_P/FlowScroll/releases"
+GITEE_FALLBACK_URL = "https://gitee.com/CyrilPeng/FlowScroll/releases"
 
 
 def parse_version(version: str) -> Version | None:
@@ -66,7 +66,7 @@ def _fetch_github():
 
 
 def _fetch_gitee():
-    url = "https://gitee.com/api/v5/repos/Cyril_P/FlowScroll/releases/latest"
+    url = "https://gitee.com/api/v5/repos/CyrilPeng/FlowScroll/releases/latest"
     req = urllib.request.Request(
         url, headers={"User-Agent": "FlowScroll-Update-Checker"}
     )

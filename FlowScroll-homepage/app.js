@@ -114,7 +114,7 @@
 
   const defaultConfig = {
     githubUrl: "https://github.com/CyrilPeng/FlowScroll",
-    giteeUrl: "https://gitee.com/Cyril_P/FlowScroll"
+    giteeUrl: "https://gitee.com/CyrilPeng/FlowScroll"
   };
 
   const config = Object.assign({}, defaultConfig, window.FLOWSCROLL_CONFIG || {});

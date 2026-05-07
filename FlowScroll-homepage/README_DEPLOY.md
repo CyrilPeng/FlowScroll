@@ -35,7 +35,7 @@
 window.FLOWSCROLL_CONFIG = {
   siteUrl: "https://flowscroll.example.com",
   githubUrl: "https://github.com/CyrilPeng/FlowScroll",
-  giteeUrl: "https://gitee.com/Cyril_P/FlowScroll"
+  giteeUrl: "https://gitee.com/CyrilPeng/FlowScroll"
 };
 ```
 
