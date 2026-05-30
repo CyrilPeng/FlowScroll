@@ -1,4 +1,6 @@
 import os
+from typing import Callable
+
 from PySide6.QtWidgets import (
     QFrame,
     QVBoxLayout,
@@ -7,11 +9,53 @@ from PySide6.QtWidgets import (
     QLabel,
     QCheckBox,
 )
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QIcon
 from FlowScroll.ui.utils import resource_path
 from FlowScroll.ui.components import NoWheelSlider, NoWheelSpinBox
 from FlowScroll.ui.styles import get_section_label_style
+
+
+# 全局防抖计时器列表：存储 (计时器, 回调函数) 元组，
+# 防止被垃圾回收，窗口关闭时必须刷新。
+_DEBOUNCE_TIMERS: list[tuple["QTimer", Callable]] = []
+
+
+def _make_debounced(callback: Callable, delay_ms: int = 250) -> Callable:
+    """将回调包装为防抖版本：在最后一次调用后延迟 delay_ms 毫秒才真正执行。
+
+    用于滑块拖动等频繁连续值变化场景，避免每次微小变化都触发磁盘写入。
+    """
+    timer = QTimer()
+    timer.setSingleShot(True)
+    _DEBOUNCE_TIMERS.append((timer, callback))
+
+    def _on_timeout():
+        args = timer.property("args")
+        if args is not None:
+            callback(*args)
+
+    timer.timeout.connect(_on_timeout)
+
+    def debounced(*args):
+        timer.setProperty("args", args)
+        timer.start(delay_ms)
+
+    return debounced
+
+
+def _flush_all_debounced() -> None:
+    """立即执行所有待执行的防抖回调并停止计时器。
+
+    窗口关闭前必须调用，防止最后一次配置变更因防抖延迟而丢失。
+    """
+    for timer, callback in list(_DEBOUNCE_TIMERS):
+        if timer.isActive():
+            timer.stop()
+            args = timer.property("args")
+            if args is not None:
+                callback(*args)
+    _DEBOUNCE_TIMERS.clear()
 
 
 def create_card():
@@ -58,7 +102,8 @@ def add_slider_row(
     spin.setSingleStep(1.0 / (10**decimals))
     spin.setFixedSize(70, 32)
     spin.setAlignment(Qt.AlignCenter)
-    spin.valueChanged.connect(callback)
+    debounced_callback = _make_debounced(callback)
+    spin.valueChanged.connect(debounced_callback)
     spin.setFocusPolicy(Qt.ClickFocus)
 
     top_layout.addWidget(lbl)

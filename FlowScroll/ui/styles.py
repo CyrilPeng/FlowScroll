@@ -1,8 +1,10 @@
+from functools import lru_cache
 from FlowScroll.platform import OS_NAME
 
 
+@lru_cache(maxsize=1)
 def _get_font_family() -> str:
-    """获取平台特定的字体族"""
+    """获取平台特定的字体族。结果在整个程序生命周期内不变。"""
     if OS_NAME == "Darwin":
         return "'.AppleSystemUIFont', 'SF Pro Text', sans-serif"
     return "'Segoe UI', 'Microsoft YaHei', sans-serif"
@@ -21,37 +23,49 @@ COLOR_TEXT_PRIMARY = "#F8FAFC"
 COLOR_TEXT_SECONDARY = "#E2E8F0"
 COLOR_TEXT_MUTED = "#94A3B8"
 COLOR_TEXT_HINT = "#64748B"
+COLOR_TEXT_LIGHT = "#CBD5E1"
 COLOR_ACCENT = "#3B82F6"
 COLOR_ACCENT_HOVER = "#2563EB"
 COLOR_ACCENT_PRESSED = "#1D4ED8"
 COLOR_ACCENT_LIGHT = "#60A5FA"
+COLOR_DANGER = "#EF4444"
+COLOR_DANGER_HOVER = "#DC2626"
 COLOR_DANGER_BG = "#450A0A"
 COLOR_DANGER_BORDER = "#7F1D1D"
 COLOR_DANGER_TEXT = "#FCA5A5"
+COLOR_WARNING = "#F59E0B"
+COLOR_WARNING_TEXT = "#FDE68A"
 COLOR_SUCCESS = "#059669"
 COLOR_SUCCESS_HOVER = "#047857"
 
+# 警示横幅用的半透明背景色（rgba 无法用 hex 常量表达，保留为字符串）
+WARNING_BANNER_BG = "rgba(120, 53, 15, 0.28)"
+WARNING_BANNER_BORDER = "rgba(251, 191, 36, 0.35)"
+ERROR_BANNER_BG = "rgba(127, 29, 29, 0.28)"
+ERROR_BANNER_BORDER = "rgba(252, 165, 165, 0.35)"
 
+
+@lru_cache(maxsize=1)
 def get_main_stylesheet() -> str:
-    """获取主窗口样式表"""
+    """获取主窗口样式表。缓存以避免重复生成。"""
     font_family = _get_font_family()
     return f"""
         QMainWindow {{ background-color: {COLOR_BG_DARK}; font-family: {font_family}; }}
         QScrollArea {{ border: none; background-color: transparent; }}
         QScrollArea > QWidget > QWidget {{ background-color: transparent; }}
-        
+
         /* Custom Scrollbar for modern look */
         QScrollBar:vertical {{ border: none; background: {COLOR_BG_DARK}; width: 6px; margin: 0px; }}
         QScrollBar::handle:vertical {{ background: {COLOR_BORDER}; border-radius: 3px; min-height: 20px; }}
         QScrollBar::handle:vertical:hover {{ background: {COLOR_BORDER_HOVER}; }}
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0px; }}
         QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
-        
+
         QLabel {{ color: {COLOR_TEXT_PRIMARY}; font-size: 14px; }}
         QLabel#HeaderTitle {{ font-size: 28px; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; letter-spacing: 0.5px; }}
         QLabel#HeaderSubtitle {{ font-size: 13px; color: {COLOR_TEXT_HINT}; font-weight: 600; margin-top: -4px; }}
         QLabel#SectionTitle {{ font-size: 11px; font-weight: 600; color: {COLOR_TEXT_MUTED}; letter-spacing: 1px; margin-top: 12px; margin-bottom: 4px; padding-left: 4px; padding-right: 12px; }}
-        
+
         QFrame#Card {{ background-color: {COLOR_BG_CARD}; border-radius: 16px; border: 1px solid {COLOR_BORDER}; }}
         QFrame#Card:hover {{ border: 1px solid {COLOR_BORDER_HOVER}; background-color: #233046; }}
         QFrame#Separator {{ background-color: {COLOR_BORDER}; max-height: 1px; }}
@@ -125,8 +139,9 @@ def get_main_stylesheet() -> str:
     """
 
 
+@lru_cache(maxsize=1)
 def get_dialog_stylesheet() -> str:
-    """获取通用对话框样式表"""
+    """获取通用对话框样式表。缓存以避免重复生成。"""
     font_family = _get_font_family()
     return f"""
         QDialog {{ background-color: {COLOR_BG_DARK}; font-family: {font_family}; }}
@@ -165,8 +180,9 @@ def get_dialog_stylesheet() -> str:
     """
 
 
+@lru_cache(maxsize=1)
 def get_checkbox_style() -> str:
-    """获取复选框样式"""
+    """获取复选框样式。缓存以避免重复生成。"""
     return f"""
         QCheckBox {{ color: {COLOR_TEXT_SECONDARY}; font-size: 14px; font-weight: 600; spacing: 12px; min-height: 24px; }}
         QCheckBox::indicator {{ width: 20px; height: 20px; border-radius: 6px; border: 2px solid {COLOR_BORDER_HOVER}; background-color: {COLOR_BG_DARK}; }}
@@ -177,29 +193,32 @@ def get_checkbox_style() -> str:
     """
 
 
+@lru_cache(maxsize=1)
 def get_radiobutton_style() -> str:
-    """获取单选按钮样式"""
+    """获取单选按钮样式。缓存以避免重复生成。"""
     return f"""
         QRadioButton {{ color: {COLOR_TEXT_SECONDARY}; font-size: 14px; font-weight: 600; spacing: 12px; min-height: 24px; }}
     """
 
 
+@lru_cache(maxsize=1)
 def get_textedit_style() -> str:
-    """获取文本编辑框样式"""
+    """获取文本编辑框样式。缓存以避免重复生成。"""
     return f"""
         QTextEdit {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; padding: 10px; background: {COLOR_BG_CARD}; font-size: 14px; color: {COLOR_TEXT_PRIMARY}; }}
         QTextEdit:focus {{ border: 1px solid {COLOR_ACCENT}; }}
     """
 
 
+@lru_cache(maxsize=1)
 def get_lineedit_style() -> str:
-    """获取行编辑框样式"""
+    """获取行编辑框样式。缓存以避免重复生成。"""
     return f"""
-        QLineEdit {{ 
-            border: 1px solid {COLOR_BORDER}; 
-            border-radius: 8px; 
-            padding: 8px 12px; 
-            background: {COLOR_BG_CARD}; 
+        QLineEdit {{
+            border: 1px solid {COLOR_BORDER};
+            border-radius: 8px;
+            padding: 8px 12px;
+            background: {COLOR_BG_CARD};
             font-size: 13px;
             color: {COLOR_TEXT_PRIMARY};
         }}
@@ -207,8 +226,9 @@ def get_lineedit_style() -> str:
     """
 
 
+@lru_cache(maxsize=1)
 def get_slider_style() -> str:
-    """获取滑块样式"""
+    """获取滑块样式。缓存以避免重复生成。"""
     return f"""
         QSlider::groove:horizontal {{ border-radius: 4px; height: 8px; background: {COLOR_BORDER}; }}
         QSlider::sub-page:horizontal {{ background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {COLOR_ACCENT_HOVER}, stop:1 {COLOR_ACCENT}); border-radius: 4px; }}
@@ -219,8 +239,9 @@ def get_slider_style() -> str:
     """
 
 
+@lru_cache(maxsize=1)
 def get_webdav_dialog_style() -> str:
-    """获取 WebDAV 对话框样式"""
+    """获取 WebDAV 对话框样式。缓存以避免重复生成。"""
     return (
         get_dialog_stylesheet()
         + get_lineedit_style()
@@ -235,8 +256,9 @@ def get_webdav_dialog_style() -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def get_help_dialog_style() -> str:
-    """获取帮助对话框样式"""
+    """获取帮助对话框样式。缓存以避免重复生成。"""
     font_family = _get_font_family()
     return f"""
         QMessageBox {{ background-color: {COLOR_BG_DARK}; font-family: {font_family}; }}
@@ -246,42 +268,48 @@ def get_help_dialog_style() -> str:
     """
 
 
+@lru_cache(maxsize=1)
 def get_value_label_style() -> str:
-    """获取数值标签样式（用于滑块旁的数值显示）"""
+    """获取数值标签样式（用于滑块旁的数值显示）。缓存以避免重复生成。"""
     return f"color: {COLOR_ACCENT}; font-weight: 700; font-size: 13px;"
 
 
+@lru_cache(maxsize=1)
 def get_hint_label_style() -> str:
-    """获取提示标签样式（用于滑块两端的标签）"""
+    """获取提示标签样式（用于滑块两端的标签）。缓存以避免重复生成。"""
     return f"color: {COLOR_TEXT_MUTED}; font-size: 12px;"
 
 
+@lru_cache(maxsize=1)
 def get_section_label_style() -> str:
-    """获取节标题标签样式"""
+    """获取节标题标签样式。缓存以避免重复生成。"""
     return f"font-weight: 600; color: {COLOR_TEXT_PRIMARY}; font-size: 14px;"
 
 
+@lru_cache(maxsize=1)
 def get_hotkey_label_style() -> str:
-    """获取快捷键标签样式"""
+    """获取快捷键标签样式。缓存以避免重复生成。"""
     return f"color: {COLOR_TEXT_MUTED}; font-size: 13px; font-weight: 600;"
 
 
+@lru_cache(maxsize=1)
 def get_new_badge_style() -> str:
-    """获取 NEW 徽章样式"""
-    return f"""
-        QPushButton {{ background-color: #EF4444; color: white; font-size: 10px; 
-            font-weight: 800; padding: 2px 6px; border-radius: 8px; border: none; }}
-        QPushButton:hover {{ background-color: #DC2626; }}
+    """获取 NEW 徽章样式。缓存以避免重复生成。"""
+    return """
+        QPushButton { background-color: #EF4444; color: white; font-size: 10px;
+            font-weight: 800; padding: 2px 6px; border-radius: 8px; border: none; }
+        QPushButton:hover { background-color: #DC2626; }
     """
 
 
+@lru_cache(maxsize=1)
 def get_help_button_style() -> str:
-    """获取帮助按钮样式"""
+    """获取帮助按钮样式。缓存以避免重复生成。"""
     return f"""
         QPushButton {{
-            font-size: 16px; 
-            font-weight: 800; 
-            color: #CBD5E1; 
+            font-size: 16px;
+            font-weight: 800;
+            color: #CBD5E1;
             background-color: {COLOR_BG_CARD};
             border: 1px solid {COLOR_BORDER_HOVER};
             border-radius: 12px;
@@ -291,3 +319,77 @@ def get_help_button_style() -> str:
         }}
         QPushButton:hover {{ background-color: {COLOR_BORDER}; border-color: #64748B; color: {COLOR_TEXT_PRIMARY}; }}
     """
+
+
+# ==========================================
+# 语义化组件样式函数
+# 用于对话框和标签页构建，消除裸字符串硬编码
+# ==========================================
+
+
+@lru_cache(maxsize=1)
+def get_dialog_title_style() -> str:
+    """对话框标题样式（如"滚动行为"、"应用过滤"等）。缓存以避免重复生成。"""
+    return f"font-size: 17px; font-weight: 700; color: {COLOR_TEXT_PRIMARY};"
+
+
+@lru_cache(maxsize=1)
+def get_dialog_subtitle_style() -> str:
+    """对话框副标题样式（标题下方的说明文字）。缓存以避免重复生成。"""
+    return f"color: {COLOR_TEXT_MUTED}; font-size: 13px;"
+
+
+@lru_cache(maxsize=1)
+def get_card_title_style() -> str:
+    """卡片内的小标题样式（如"摩擦力"、"触发阈值"等）。缓存以避免重复生成。"""
+    return f"font-size: 15px; font-weight: 700; color: {COLOR_TEXT_SECONDARY};"
+
+
+@lru_cache(maxsize=1)
+def get_description_style() -> str:
+    """描述性文本样式（用于选项说明、选项解释等次要文字）。缓存以避免重复生成。"""
+    return f"color: {COLOR_TEXT_MUTED}; font-size: 12px;"
+
+
+@lru_cache(maxsize=1)
+def get_column_header_style() -> str:
+    """列标题样式（如黑名单/白名单标题、强调标签）。缓存以避免重复生成。"""
+    return f"color: {COLOR_TEXT_SECONDARY}; font-weight: 600;"
+
+
+@lru_cache(maxsize=1)
+def get_hint_block_style() -> str:
+    """带行高的多行提示文本样式（如配置路径对话框中的说明）。缓存以避免重复生成。"""
+    return f"color: {COLOR_TEXT_LIGHT}; font-size: 13px; line-height: 1.5;"
+
+
+@lru_cache(maxsize=1)
+def get_warning_banner_style() -> str:
+    """黄色警示横幅样式（用于进程名不可用、环境变量锁定等软性警告）。缓存以避免重复生成。"""
+    return (
+        f"color: {COLOR_WARNING_TEXT}; background: {WARNING_BANNER_BG}; "
+        f"border: 1px solid {WARNING_BANNER_BORDER}; border-radius: 10px; "
+        f"padding: 10px 12px; line-height: 1.4;"
+    )
+
+
+@lru_cache(maxsize=1)
+def get_error_banner_style() -> str:
+    """红色错误横幅样式（用于严重问题，如输入钩子不可用）。缓存以避免重复生成。"""
+    return (
+        f"color: {COLOR_DANGER_TEXT}; background: {ERROR_BANNER_BG}; "
+        f"border: 1px solid {ERROR_BANNER_BORDER}; border-radius: 10px; "
+        f"padding: 10px 12px;"
+    )
+
+
+@lru_cache(maxsize=1)
+def get_card_label_style() -> str:
+    """卡片内通用标签文本样式（用于卡片中默认浅色文本）。缓存以避免重复生成。"""
+    return f"color: {COLOR_TEXT_SECONDARY};"
+
+
+@lru_cache(maxsize=1)
+def get_small_warning_style() -> str:
+    """小字号警示文本样式（如 keyring 不可用等轻量提示）。缓存以避免重复生成。"""
+    return f"color: {COLOR_WARNING}; font-size: 11px;"

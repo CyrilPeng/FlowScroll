@@ -4,6 +4,7 @@ import socket
 import time
 import urllib.error
 import urllib.request
+from functools import lru_cache
 from urllib.parse import urlparse
 
 from FlowScroll.constants import (
@@ -144,31 +145,30 @@ def validate_webdav_url(url: str) -> str | None:
     return None
 
 
+@lru_cache(maxsize=16)
 def normalize_webdav_base_url(url: str) -> str:
-    """确保 WebDAV 基础 URL 以斜杠结尾。"""
+    """确保 WebDAV 基础 URL 以斜杠结尾。使用 LRU 缓存。"""
     value = (url or "").strip()
     if not value:
         return value
     return value if value.endswith("/") else value + "/"
 
 
+@lru_cache(maxsize=32)
 def build_legacy_webdav_file_url(base_url: str) -> str:
-    """构建旧版 WebDAV 文件 URL（直接存放在根目录下）。"""
+    """构建旧版 WebDAV 文件 URL（直接存放在根目录下）。使用 LRU 缓存。"""
     return normalize_webdav_base_url(base_url) + WEBDAV_CONFIG_FILENAME
 
 
+@lru_cache(maxsize=32)
 def build_preferred_webdav_file_url(base_url: str) -> str:
-    """构建新版 WebDAV 文件 URL（存放在应用专用子目录 FlowScroll/ 下）。"""
-    return (
-        normalize_webdav_base_url(base_url)
-        + WEBDAV_APP_DIRNAME
-        + "/"
-        + WEBDAV_CONFIG_FILENAME
-    )
+    """构建新版 WebDAV 文件 URL（存放在应用专用子目录 FlowScroll/ 下）。使用 LRU 缓存。"""
+    return normalize_webdav_base_url(base_url) + WEBDAV_APP_DIRNAME + "/" + WEBDAV_CONFIG_FILENAME
 
 
+@lru_cache(maxsize=16)
 def build_webdav_collection_url(base_url: str) -> str:
-    """构建 WebDAV 集合（目录）URL。"""
+    """构建 WebDAV 集合（目录）URL。使用 LRU 缓存。"""
     return normalize_webdav_base_url(base_url) + WEBDAV_APP_DIRNAME + "/"
 
 
@@ -362,8 +362,10 @@ if QDialog is not None:
             layout.addWidget(self.edit_pwd)
 
             if not credential_service.is_keyring_available:
+                from FlowScroll.ui.styles import get_small_warning_style
+
                 hint = QLabel(tr("webdav.keyring_unavailable_hint"))
-                hint.setStyleSheet("color: #F59E0B; font-size: 11px;")
+                hint.setStyleSheet(get_small_warning_style())
                 hint.setWordWrap(True)
                 layout.addWidget(hint)
 
@@ -393,9 +395,7 @@ if QDialog is not None:
             layout.addStretch()
             layout.addLayout(btn_layout)
 
-            adaptive_height = max(
-                WEBDAV_DIALOG_DEFAULT_HEIGHT, self.sizeHint().height()
-            )
+            adaptive_height = max(WEBDAV_DIALOG_DEFAULT_HEIGHT, self.sizeHint().height())
             self.resize(WEBDAV_DIALOG_DEFAULT_WIDTH, adaptive_height)
             self._job = None
 
@@ -547,9 +547,7 @@ if QDialog is not None:
             if parent is not None and hasattr(parent, "save_presets_to_file"):
                 parent.save_presets_to_file()
             else:
-                with open(
-                    ensure_config_dir(get_config_file()), "w", encoding="utf-8"
-                ) as f:
+                with open(ensure_config_dir(get_config_file()), "w", encoding="utf-8") as f:
                     json.dump(
                         {
                             "presets": {},
@@ -571,9 +569,7 @@ if QDialog is not None:
         def _on_job_failed(self, error: str):
             """任务失败回调：显示本地化错误消息。"""
             message_key = (
-                "webdav.connect_failed"
-                if self._job and self._job.mode == "upload"
-                else "webdav.download_failed"
+                "webdav.connect_failed" if self._job and self._job.mode == "upload" else "webdav.download_failed"
             )
             QMessageBox.critical(
                 self,
@@ -591,6 +587,4 @@ else:
 
     class WebDAVSyncDialog:
         def __init__(self, *_args, **_kwargs):
-            raise RuntimeError(
-                "WebDAVSyncDialog requires PySide6 with GUI dependencies"
-            )
+            raise RuntimeError("WebDAVSyncDialog requires PySide6 with GUI dependencies")

@@ -241,11 +241,11 @@ class ApplicationController:
         )
 
     def load_selected_preset(self, name) -> None:
-        """切换到指定预设，同步 scroller 摩擦系数并持久化。"""
+        """切换到指定预设并持久化。
+        引擎通过 config_bus 订阅 inertia_friction_ms，自动同步摩擦系数。
+        """
         if not self.preset_manager.load_preset(name):
             return
-        if self.scroller:
-            self.scroller.update_friction()
         self.save_presets_to_file()
 
     def save_new_preset(self, name) -> bool:
@@ -258,14 +258,15 @@ class ApplicationController:
 
     def delete_preset(self, name) -> bool:
         """删除自定义预设，返回是否成功。"""
-        if name in BUILTIN_PRESETS or name not in self.presets:
+        if name in BUILTIN_PRESETS or name not in self.preset_manager.presets:
             return False
-        self.preset_manager.delete_preset(name)
+        if not self.preset_manager.delete_preset(name):
+            return False
         self.save_presets_to_file()
         return True
 
     def on_inertia_settings_accepted(self) -> None:
-        """惯性设置对话框确认后，更新引擎摩擦系数并持久化。"""
-        if self.scroller:
-            self.scroller.update_friction()
+        """惯性设置对话框确认后持久化配置。
+        引擎通过 config_bus 订阅 inertia_friction_ms，自动同步摩擦系数。
+        """
         self.save_presets_to_file()

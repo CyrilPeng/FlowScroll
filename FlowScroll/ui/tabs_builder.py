@@ -25,9 +25,12 @@ def build_parameter_tab(main_window):
         QSizePolicy,
     )
 
-    from FlowScroll.ui.components import UpwardComboBox
+    from FlowScroll.ui.components import UpwardComboBox, SpeedCurveWidget
     from FlowScroll.ui.helpers import create_card, create_h_line, add_slider_row
-    from FlowScroll.ui.styles import get_new_badge_style
+    from FlowScroll.ui.styles import (
+        get_new_badge_style,
+        get_hint_block_style,
+    )
     from FlowScroll.ui.utils import resource_path
 
     tab1_widget = QWidget()
@@ -38,6 +41,21 @@ def build_parameter_tab(main_window):
 
     core_card, core_layout = create_card()
 
+    # 实时速度曲线可视化组件
+    # 拖动 sensitivity / dead_zone / speed_factor 任意滑块时
+    # 曲线会实时重绘以反映最新的参数组合效果。
+    speed_curve = SpeedCurveWidget()
+    speed_curve.update_params(cfg.sensitivity, cfg.dead_zone, cfg.speed_factor)
+    main_window.ui_widgets["speed_curve"] = speed_curve
+
+    def _update_speed_curve(attr_name, value):
+        """核心参数变化时，持久化并同步刷新速度曲线。"""
+        _persist_config_change(main_window, attr_name, value)
+        # 从 main_window.ui_widgets 取值以避免捕获时未注册的竞态
+        curve = main_window.ui_widgets.get("speed_curve")
+        if curve is not None:
+            curve.update_params(cfg.sensitivity, cfg.dead_zone, cfg.speed_factor)
+
     main_window.ui_widgets["sensitivity"] = add_slider_row(
         core_layout,
         "sensitivity",
@@ -46,7 +64,7 @@ def build_parameter_tab(main_window):
         cfg.sensitivity,
         1.0,
         5.0,
-        lambda v: _persist_config_change(main_window, "sensitivity", v),
+        lambda v: _update_speed_curve("sensitivity", v),
         decimals=1,
     )
     core_layout.addWidget(create_h_line())
@@ -58,7 +76,7 @@ def build_parameter_tab(main_window):
         cfg.speed_factor,
         0.01,
         10.00,
-        lambda v: _persist_config_change(main_window, "speed_factor", v),
+        lambda v: _update_speed_curve("speed_factor", v),
         decimals=2,
     )
     core_layout.addWidget(create_h_line())
@@ -70,7 +88,7 @@ def build_parameter_tab(main_window):
         cfg.dead_zone,
         0.0,
         100.0,
-        lambda v: _persist_config_change(main_window, "dead_zone", v),
+        lambda v: _update_speed_curve("dead_zone", v),
         decimals=1,
     )
     core_layout.addWidget(create_h_line())
@@ -93,6 +111,14 @@ def build_parameter_tab(main_window):
         ),
         decimals=0,
     )
+
+    # 在核心参数卡片尾部插入速度曲线可视化（带说明）
+    core_layout.addWidget(create_h_line())
+    curve_hint = QLabel(tr("param.speed_curve_hint"))
+    curve_hint.setWordWrap(True)
+    curve_hint.setStyleSheet(get_hint_block_style())
+    core_layout.addWidget(curve_hint)
+    core_layout.addWidget(speed_curve)
 
     tab1_layout.addWidget(core_card)
 
@@ -129,7 +155,7 @@ def build_parameter_tab(main_window):
     if os.path.exists(save_icon_path):
         btn_save.setIcon(QIcon(save_icon_path))
         btn_save.setIconSize(QSize(16, 16))
-    btn_save.clicked.connect(main_window.save_new_preset)
+    btn_save.clicked.connect(lambda: main_window.save_new_preset(main_window.prompt_new_preset_name()))
     preset_row.addWidget(btn_save)
 
     btn_del = QPushButton(tr("tab.presets.delete"))
@@ -204,7 +230,7 @@ def build_advanced_tab(main_window):
     )
 
     from FlowScroll.ui.helpers import create_card, create_h_line, add_toggle_row
-    from FlowScroll.ui.styles import get_hotkey_label_style
+    from FlowScroll.ui.styles import get_hotkey_label_style, get_warning_banner_style
     from FlowScroll.ui.utils import resource_path
 
     tab2_widget = QWidget()
@@ -223,11 +249,7 @@ def build_advanced_tab(main_window):
     main_window.input_hook_status_label = QLabel()
     main_window.input_hook_status_label.setWordWrap(True)
     main_window.input_hook_status_label.setVisible(False)
-    main_window.input_hook_status_label.setStyleSheet(
-        "color: #FDE68A; background: rgba(120, 53, 15, 0.28); "
-        "border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 10px; "
-        "padding: 10px 12px; line-height: 1.4;"
-    )
+    main_window.input_hook_status_label.setStyleSheet(get_warning_banner_style())
     scroll_layout.addWidget(main_window.input_hook_status_label)
     scroll_layout.addWidget(create_h_line())
 
