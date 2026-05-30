@@ -4,6 +4,7 @@ import sys
 import time
 import tempfile
 import traceback
+from logging.handlers import RotatingFileHandler
 
 
 def get_log_dir():
@@ -15,6 +16,13 @@ def get_log_dir():
 
 
 LOG_FILE = os.path.join(get_log_dir(), "app.log")
+CRASH_LOG_FILE = os.path.join(get_log_dir(), "FlowScroll_Crash_Log.txt")
+
+# 单文件最大 512KB，保留 2 个备份，总计约 1.5MB
+LOG_MAX_BYTES = 512 * 1024
+LOG_BACKUP_COUNT = 2
+# 崩溃日志保留最近 10 次记录
+CRASH_LOG_MAX_ENTRIES = 10
 
 
 def is_frozen_binary():
@@ -38,8 +46,13 @@ def setup_logging():
     if logger.handlers:
         return logger
 
-    # 文件处理器。
-    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    # 文件处理器（带轮转：最多 3 个文件 × 512KB）
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=LOG_MAX_BYTES,
+        backupCount=LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
     file_handler.setLevel(logging.ERROR)
 
     # 控制台处理器。
@@ -63,15 +76,47 @@ logger = setup_logging()
 
 
 def log_crash(exception):
-    crash_log_path = os.path.join(get_log_dir(), "FlowScroll_Crash_Log.txt")
+    """将崩溃信息追加到崩溃日志文件（保留最近 N 条记录），返回日志路径。"""
     try:
         from FlowScroll import __version__
 
-        with open(crash_log_path, "w", encoding="utf-8") as f:
+        # 追加模式：保留历史崩溃记录
+        with open(CRASH_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"\n{'=' * 60}\n")
             f.write(f"FlowScroll v{__version__}\n")
             f.write(f"Crash Time: {time.ctime()}\n")
             f.write(f"Error: {str(exception)}\n")
             f.write(traceback.format_exc())
-        return crash_log_path
+            f.write(f"{'=' * 60}\n")
+
+        # 限制崩溃日志文件大小：保留最近 N 条记录
+        _trim_crash_log()
+
+        return CRASH_LOG_FILE
     except Exception:
         return None
+
+
+def _trim_crash_log():
+    """保留崩溃日志中最近 N 条记录，避免文件无限增长。"""
+    try:
+        if not os.path.exists(CRASH_LOG_FILE):
+            return
+
+        with open(CRASH_LOG_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # 按分隔符切分为独立崩溃记录
+        separator = f"\n{'=' * 60}\n"
+        # 过滤空段
+        records = [r for r in content.split(separator) if r.strip()]
+
+        if len(records) <= CRASH_LOG_MAX_ENTRIES:
+            return
+
+        # 保留最近的 N 条
+        trimmed = records[-CRASH_LOG_MAX_ENTRIES:]
+        with open(CRASH_LOG_FILE, "w", encoding="utf-8") as f:
+            f.write(separator.join(trimmed))
+    except Exception:
+        pass

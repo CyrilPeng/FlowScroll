@@ -15,6 +15,7 @@ from FlowScroll.constants import (
     WINDOW_INFO_FAILURE_STALE_THRESHOLD,
 )
 
+# 配置路径相关常量
 CONFIG_FILENAME = "FlowScroll_config.json"
 APP_DIR_NAME = "FlowScroll"
 CONFIG_POINTER_FILENAME = "config_path.json"
@@ -39,7 +40,8 @@ def _path_module_for(path: str | None = None):
 
 def _join_path(*parts: str) -> str:
     """使用目标平台对应的路径模块拼接路径。"""
-    return _path_module_for().join(*parts)
+    first_part = parts[0] if parts else None
+    return _path_module_for(first_part).join(*parts)
 
 
 def _dirname_path(path: str) -> str:
@@ -145,9 +147,7 @@ def set_persisted_config_file(path: str | None) -> None:
         return
 
     os.makedirs(_dirname_path(pointer_file), exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=_dirname_path(pointer_file), suffix=".tmp"
-    )
+    fd, tmp_path = tempfile.mkstemp(dir=_dirname_path(pointer_file), suffix=".tmp")
     try:
         if os.name != "nt":
             os.fchmod(fd, 0o600)
@@ -274,12 +274,14 @@ def get_preset_display_name(name: str) -> str:
     if not i18n_key:
         return name
     from FlowScroll.i18n import tr
+
     return tr(i18n_key)
 
 
 def get_preset_internal_name(display_name: str) -> str:
     """将本地化显示名称反查为内部预设键名，非内置预设原样返回。"""
     from FlowScroll.i18n import tr
+
     for internal_name, i18n_key in PRESET_DISPLAY_KEYS.items():
         if tr(i18n_key) == display_name:
             return internal_name
@@ -311,6 +313,35 @@ class GlobalConfig:
     运行时状态已拆分到 RuntimeState。
     """
 
+    config_version: int
+    dead_zone: float
+    sensitivity: float
+    speed_factor: float
+    overlay_size: float
+    enable_horizontal: bool
+    minimize_to_tray: bool
+    horizontal_hotkey: str
+    activation_hotkey_click: str
+    activation_hotkey_hold: str
+    reverse_y: bool
+    reverse_x: bool
+    hide_overlay: bool
+    activation_mode: int  # 0=点击中键启用/关闭, 1=长按中键时启用
+    activation_compat_mode: bool
+    activation_delay_ms: int
+    ui_language: str
+    filter_mode: int  # 0=全局, 1=黑名单, 2=白名单
+    filter_blacklist: list[str]
+    filter_whitelist: list[str]
+    filter_use_regex: bool
+    disable_fullscreen: bool
+    disable_desktop: bool
+    enable_inertia: bool
+    inertia_friction_ms: float
+    inertia_threshold: float
+    webdav_url: str
+    webdav_username: str
+
     def __init__(self):
         self.config_version = CONFIG_VERSION
 
@@ -329,9 +360,9 @@ class GlobalConfig:
         self.reverse_y = False
         self.reverse_x = False
 
-        self.hide_overlay = False  # 是否隐藏准星
+        self.hide_overlay = False
 
-        self.activation_mode = 0  # 0=点击中键启用/关闭, 1=长按中键时启用
+        self.activation_mode = 0
         self.activation_compat_mode = False
         self.activation_delay_ms = 0
         self.ui_language = "auto"
@@ -385,16 +416,16 @@ class GlobalConfig:
         """返回配置字典（运行时 + 持久化字段的合集）。"""
         return self._to_dict_common()
 
+    def to_dict_for_sync(self) -> dict:
+        """返回用于 WebDAV 同步的配置字典，不包含 WebDAV 凭据。"""
+        return self._to_dict_common()
+
     def to_webdav_dict(self) -> dict:
         """返回 WebDAV 相关配置字典（仅 URL 和用户名，不含密码）。"""
         return {
             "url": self.webdav_url,
             "username": self.webdav_username,
         }
-
-    def to_dict_for_sync(self) -> dict:
-        """生成用于 WebDAV 同步的配置字典，不包含 WebDAV 凭据。"""
-        return self._to_dict_common()
 
     def from_dict(self, data) -> None:
         """从字典中恢复配置值，处理旧版 filter_list 到 blacklist/whitelist 的迁移。"""
@@ -427,12 +458,8 @@ class GlobalConfig:
                 else:
                     self.filter_whitelist = []
 
-            self.filter_blacklist = [
-                str(v).strip() for v in self.filter_blacklist if str(v).strip()
-            ]
-            self.filter_whitelist = [
-                str(v).strip() for v in self.filter_whitelist if str(v).strip()
-            ]
+            self.filter_blacklist = [str(v).strip() for v in self.filter_blacklist if str(v).strip()]
+            self.filter_whitelist = [str(v).strip() for v in self.filter_whitelist if str(v).strip()]
             self.filter_use_regex = data.get("filter_use_regex", False)
             self.disable_fullscreen = data.get("disable_fullscreen", True)
             self.disable_desktop = data.get("disable_desktop", True)
@@ -443,6 +470,8 @@ class GlobalConfig:
             self.enable_inertia = data.get("enable_inertia", False)
             self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
             self.inertia_threshold = data.get("inertia_threshold", 80.0)
+        # 在锁外广播：为所有已订阅字段发出变更通知
+        self.notify_all_subscribed()
 
     def from_webdav_dict(self, data) -> None:
         """从字典中恢复 WebDAV URL 和用户名。"""
@@ -462,13 +491,66 @@ class GlobalConfig:
             return list(self.filter_whitelist)
         return []
 
+    def set(self, key: str, value) -> None:
+        """线程安全地设置单个字段并通知订阅者（仅在值变化时）。"""
+        with STATE_LOCK:
+            old = getattr(self, key, None)
+            if old == value:
+                return
+            setattr(self, key, value)
+        # 在锁外发送通知，避免持有 STATE_LOCK 时执行订阅者代码。
+        config_bus.notify(key, value)
+
+    def notify_all_subscribed(self) -> None:
+        """为所有已订阅字段发射当前值，用于批量 from_dict 完成后。"""
+        config_bus.notify_all_subscribed(self)
+
 
 cfg = GlobalConfig()
 runtime = RuntimeState()
 STATE_LOCK = threading.RLock()
 
 
+class ConfigBus:
+    """配置变更总线：发布/订阅模式用于广播配置变更。
+
+    订阅者（如 ScrollEngine）向感兴趣的字段注册回调，
+    当字段值发生变化时，自动收到通知，无需 UI 层显式调用。
+    """
+
+    def __init__(self):
+        self._listeners: dict[str, list] = {}
+
+    def subscribe(self, key: str, callback) -> None:
+        """注册对指定配置字段的订阅回调。"""
+        self._listeners.setdefault(key, []).append(callback)
+
+    def notify(self, key: str, value) -> None:
+        """向所有订阅指定字段的回调广播新值。"""
+        from FlowScroll.services.logging_service import logger
+
+        for cb in self._listeners.get(key, []):
+            try:
+                cb(value)
+            except Exception as e:
+                # 订阅者错误不应传播到调用方，但需记录以供调试。
+                logger.warning(
+                    f"ConfigBus subscriber error for key '{key}': "
+                    f"{getattr(cb, '__qualname__', str(cb))}: {e}",
+                    exc_info=True,
+                )
+
+    def notify_all_subscribed(self, source: "GlobalConfig") -> None:
+        """为所有已订阅字段发射当前值（用于批量 from_dict 后）。"""
+        for key in self._listeners:
+            value = getattr(source, key, None)
+            self.notify(key, value)
+
+
+config_bus = ConfigBus()
+
+
 def set_config_attr(name: str, value) -> None:
-    """线程安全地设置 cfg 属性，所有 UI 侧对 cfg 的写操作应通过此函数。"""
-    with STATE_LOCK:
-        setattr(cfg, name, value)
+    """线程安全地设置 cfg 属性并通知订阅者。
+    所有 UI 侧对 cfg 的写操作应通过此函数或 cfg.set()。"""
+    cfg.set(name, value)
