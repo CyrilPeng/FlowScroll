@@ -21,6 +21,28 @@ class TestGlobalConfig:
             r"C:\Users\Test\AppData\Roaming\FlowScroll"
         )
 
+    def test_path_module_tracks_platform_monkeypatch(self, monkeypatch):
+        """路径模块不能缓存宿主平台，否则跨平台测试会被执行顺序污染。"""
+        import FlowScroll.core.config as config_module
+
+        monkeypatch.setattr(config_module.os, "name", "posix")
+        monkeypatch.setattr(config_module.os.sys, "platform", "linux")
+        assert config_module._join_path("/tmp", "FlowScroll") == "/tmp/FlowScroll"
+
+        monkeypatch.setattr(config_module.os, "name", "nt")
+        monkeypatch.setattr(config_module.os.sys, "platform", "win32")
+        assert config_module._join_path(
+            r"C:\Users\Test\AppData\Roaming", "FlowScroll"
+        ) == r"C:\Users\Test\AppData\Roaming\FlowScroll"
+
+    def test_join_path_prefers_windows_style_base_path(self):
+        """即使宿主是 POSIX，Windows 风格基路径也应使用 ntpath 拼接。"""
+        import FlowScroll.core.config as config_module
+
+        assert config_module._join_path(
+            r"C:\Users\Test\AppData\Roaming", "FlowScroll"
+        ) == r"C:\Users\Test\AppData\Roaming\FlowScroll"
+
     def test_custom_config_file_env_overrides_default(self, monkeypatch):
         import FlowScroll.core.config as config_module
 
@@ -135,6 +157,33 @@ class TestGlobalConfig:
         assert "webdav_url" not in d
         assert "webdav_username" not in d
 
+    def test_to_dict_for_sync_excludes_webdav_settings(self):
+        from FlowScroll.core.config import GlobalConfig
+
+        c = GlobalConfig()
+        c.webdav_url = "https://example.com/dav/"
+        c.webdav_username = "user"
+
+        d = c.to_dict_for_sync()
+        assert d == c.to_dict()
+        assert "webdav_url" not in d
+        assert "webdav_username" not in d
+
+    def test_preset_display_name_follows_language_change(self):
+        from FlowScroll.core.config import GlobalConfig, get_preset_display_name
+        import FlowScroll.core.config as config_module
+
+        original_cfg = config_module.cfg
+        try:
+            config_module.cfg = GlobalConfig()
+            config_module.cfg.ui_language = "en-US"
+            assert get_preset_display_name("网页阅读") == "Web Reading"
+
+            config_module.cfg.ui_language = "zh-CN"
+            assert get_preset_display_name("网页阅读") == "网页阅读"
+        finally:
+            config_module.cfg = original_cfg
+
     def test_webdav_settings_roundtrip(self):
         from FlowScroll.core.config import GlobalConfig
 
@@ -158,16 +207,19 @@ class TestGlobalConfig:
         assert c.speed_factor == 2.0
         assert c.dead_zone == 20.0
 
-    def test_to_dict_for_sync_equals_to_dict(self):
-        """to_dict_for_sync 和 to_dict 的非 WebDAV 字段应完全一致。"""
+    def test_to_dict_contains_all_expected_fields(self):
+        """to_dict 应包含所有持久化字段，且值正确。"""
         from FlowScroll.core.config import GlobalConfig
 
         c = GlobalConfig()
         c.sensitivity = 3.0
         c.reverse_x = True
-        d_full = c.to_dict()
-        d_sync = c.to_dict_for_sync()
-        assert d_full == d_sync
+        d = c.to_dict()
+        assert d["sensitivity"] == 3.0
+        assert d["reverse_x"] is True
+        # 确保不含 WebDAV 凭据
+        assert "webdav_url" not in d
+        assert "webdav_username" not in d
 
 
 class TestRuntimeState:

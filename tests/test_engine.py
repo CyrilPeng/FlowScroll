@@ -212,20 +212,36 @@ class TestScrollEngineInertia:
         assert engine._scroll_history[0][1] == 2.0
         assert engine._scroll_history[1][1] == 3.0
 
-    def test_get_max_speed_from_history_returns_max_vector(self):
+    def test_get_weighted_velocity_returns_time_weighted_average(self):
         engine = self._make_engine()
-        engine._scroll_history.append((time.monotonic(), 1.0, 0.0))
-        engine._scroll_history.append((time.monotonic(), 0.0, 5.0))
-        engine._scroll_history.append((time.monotonic(), 3.0, 4.0))
+        now = time.monotonic()
+        # 所有条目使用同一时间戳 → 权重均为 1.0 → 返回算术平均
+        engine._scroll_history.append((now, 1.0, 0.0))
+        engine._scroll_history.append((now, 0.0, 5.0))
+        engine._scroll_history.append((now, 3.0, 4.0))
 
-        vx, vy = engine._get_max_speed_from_history()
+        vx, vy = engine._get_weighted_velocity_from_history()
 
-        speed_sq = vx * vx + vy * vy
-        assert speed_sq == 25.0
+        assert abs(vx - 4 / 3) < 1e-9
+        assert abs(vy - 3.0) < 1e-9
 
-    def test_get_max_speed_from_history_empty(self):
+    def test_get_weighted_velocity_recent_frame_dominates(self):
         engine = self._make_engine()
-        vx, vy = engine._get_max_speed_from_history()
+        now = time.monotonic()
+        # 旧帧 50ms 前 (decay=0.05 → 权重 ~0.368)
+        # 新帧 now (权重 1.0)
+        # 旧帧对结果的影响应明显小于新帧。
+        engine._scroll_history.append((now - 0.05, 10.0, 0.0))
+        engine._scroll_history.append((now, 0.0, 10.0))
+
+        vx, vy = engine._get_weighted_velocity_from_history()
+
+        # 近期帧 (0,10) 的权重应显著高于旧帧 (10,0)
+        assert vy > vx
+
+    def test_get_weighted_velocity_empty(self):
+        engine = self._make_engine()
+        vx, vy = engine._get_weighted_velocity_from_history()
         assert vx == 0.0
         assert vy == 0.0
 

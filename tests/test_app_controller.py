@@ -96,3 +96,55 @@ def test_hotkeys_module_imports_without_qt(monkeypatch):
     assert hotkeys.Qt is None
     assert hotkeys.MODIFIER_KEYS == set()
     assert hotkeys.normalize_hotkey_string("Ctrl+K") == "ctrl+k"
+
+
+def test_delete_preset_uses_preset_manager_storage(monkeypatch):
+    fake_pynput = types.ModuleType("pynput")
+    fake_mouse = types.ModuleType("pynput.mouse")
+
+    class FakeController:
+        pass
+
+    fake_mouse.Controller = FakeController
+    fake_pynput.mouse = fake_mouse
+
+    monkeypatch.setitem(sys.modules, "pynput", fake_pynput)
+    monkeypatch.setitem(sys.modules, "pynput.mouse", fake_mouse)
+
+    fake_qtcore = types.ModuleType("PySide6.QtCore")
+
+    class QObject:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    class Signal:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    class QThread:
+        pass
+
+    fake_qtcore.QObject = QObject
+    fake_qtcore.Signal = Signal
+    fake_qtcore.QThread = QThread
+    fake_pyside6 = types.ModuleType("PySide6")
+    fake_pyside6.QtCore = fake_qtcore
+
+    monkeypatch.setitem(sys.modules, "PySide6", fake_pyside6)
+    monkeypatch.setitem(sys.modules, "PySide6.QtCore", fake_qtcore)
+
+    import FlowScroll.ui.app_controller as app_controller_module
+
+    controller = app_controller_module.ApplicationController.__new__(
+        app_controller_module.ApplicationController
+    )
+    controller.preset_manager = MagicMock()
+    controller.preset_manager.presets = {"custom": {}}
+    controller.preset_manager.delete_preset.return_value = True
+    controller.save_presets_to_file = MagicMock()
+
+    assert app_controller_module.ApplicationController.delete_preset(
+        controller, "custom"
+    ) is True
+    controller.preset_manager.delete_preset.assert_called_once_with("custom")
+    controller.save_presets_to_file.assert_called_once_with()

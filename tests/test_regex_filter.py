@@ -418,12 +418,12 @@ class TestRegexConfigPersistence:
         assert "filter_use_regex" in d
         assert d["filter_use_regex"] is True
 
-    def test_to_dict_for_sync_includes_filter_use_regex(self):
+    def test_to_dict_includes_filter_use_regex(self):
         from FlowScroll.core.config import GlobalConfig
 
         c = GlobalConfig()
         c.filter_use_regex = True
-        d = c.to_dict_for_sync()
+        d = c.to_dict()
         assert "filter_use_regex" in d
         assert d["filter_use_regex"] is True
 
