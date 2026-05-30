@@ -1,0 +1,52 @@
+# Pre-commit hooks 配置
+# 使用方式：
+#   1. 安装 pre-commit: pip install pre-commit 或 uv pip install pre-commit
+#   2. 安装 hooks: pre-commit install
+#   3. 运行 (可选): pre-commit run --all-files
+
+repos:
+  # 通用检查
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: 移除尾部空格
+      - id: end-of-file-fixer
+        name: 修复文件末尾换行符
+      - id: check-yaml
+        name: 检查 YAML 语法
+      - id: check-added-large-files
+        name: 检查大文件
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: 检查合并冲突标记
+      - id: debug-statements
+        name: 检查调试语句
+
+  # Ruff - 快速 Python Linter 和代码格式化工具
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      # Linter
+      - id: ruff
+        name: Ruff Linter
+        args: [--fix, --exit-non-zero-on-fix, --line-length=120]
+      # Formatter (替代 Black)
+      - id: ruff-format
+        name: Ruff Formatter
+        args: [--line-length=120]
+
+  # MyPy - 静态类型检查 (可选但推荐)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        name: MyPy 类型检查
+        files: ^FlowScroll/
+        args: [
+          --ignore-missing-imports,
+          --no-strict-optional,
+          --disable-error-code=attr-defined,
+        ]
+        additional_dependencies:
+          - types-requests>=2.31.0

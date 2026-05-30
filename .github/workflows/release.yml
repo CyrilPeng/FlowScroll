@@ -117,6 +117,12 @@ jobs:
       - name: 设置 Python 环境
         run: uv python install 3.12
 
+      - name: 安装 Linux Qt 运行库
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
+
       - name: 安装项目依赖
         run: uv sync --frozen
 
@@ -164,7 +170,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0 imagemagick
+          sudo apt-get install -y libfuse2t64 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 imagemagick
 
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --nofollow-import-to=PySide6.QtWebEngine* --nofollow-import-to=PySide6.Qt3D* --nofollow-import-to=PySide6.QtMultimedia* --nofollow-import-to=PySide6.QtQuick* --nofollow-import-to=PySide6.QtCharts* --nofollow-import-to=PySide6.QtDataVisualization* --nofollow-import-to=PySide6.QtBluetooth* --nofollow-import-to=PySide6.QtNfc* --nofollow-import-to=PySide6.QtRemoteObjects* --nofollow-import-to=PySide6.QtSensors* --nofollow-import-to=PySide6.QtSerialPort* --nofollow-import-to=PySide6.QtWebSockets* --nofollow-import-to=PySide6.QtPositioning* --nofollow-import-to=PySide6.QtLocation* --nofollow-import-to=PySide6.QtTest* --nofollow-import-to=PySide6.QtSql* --nofollow-import-to=PySide6.QtSvg* --nofollow-import-to=PySide6.QtXml* --nofollow-import-to=PySide6.QtPdf* --nofollow-import-to=PySide6.QtHttpServer* --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 

@@ -1,6 +1,6 @@
 [project]
 name = "FlowScroll"
-version = "1.7.12"
+version = "1.8.0"
 description = "全局无级滚动工具——把浏览器里的中键自动滚动，带到整个系统"
 authors = [
     { name = "某不科学的高数" }
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Desktop Environment",
 ]
 dependencies = [
-    "PySide6>=6.0.0",
+    "PySide6-Essentials>=6.0.0",
     "pynput>=1.7.6",
     "keyring>=24.0",
     "packaging>=24.0",
@@ -35,8 +35,8 @@ dev = [
     "pytest>=7.0",
 ]
 
-[tool.setuptools]
-packages = ["FlowScroll"]
+[tool.setuptools.packages.find]
+include = ["FlowScroll*"]
 
 [tool.setuptools.package-data]
 FlowScroll = ["locales/*.json", "resources/*.*"]

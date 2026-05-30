@@ -1,4 +1,4 @@
-name: CI
+name: 持续集成
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: Test on ${{ matrix.os }}
+    name: 在 ${{ matrix.os }} 上运行测试
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -18,26 +18,32 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout Code
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: Setup uv
+      - name: 安装 uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: Setup Python
+      - name: 设置 Python 环境
         run: uv python install 3.12
 
-      - name: Install Dependencies
+      - name: 安装 Linux Qt 运行库
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
+
+      - name: 安装项目依赖
         run: uv sync --frozen --extra dev
 
-      - name: Run Tests
+      - name: 运行测试
         run: uv run python -m pytest tests/ -v
 
   package-verify:
     needs: test
-    name: Package Verify on ${{ matrix.os }}
+    name: 在 ${{ matrix.os }} 上验证打包
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -54,29 +60,35 @@ jobs:
             artifact_path: FlowScroll_CI_Linux.AppImage
 
     steps:
-      - name: Checkout Code
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: Setup uv
+      - name: 安装 uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: Setup Python
+      - name: 设置 Python 环境
         run: uv python install 3.12
 
-      - name: Install Dependencies
+      - name: 安装 Linux Qt 运行库
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
+
+      - name: 安装项目依赖
         run: uv sync --frozen
 
-      - name: Install Nuitka
+      - name: 安装 Nuitka
         run: uv pip install Nuitka
 
-      - name: Build Windows package
+      - name: 构建 Windows 包
         if: matrix.os == 'windows-latest'
         run: |
           uv run python -m nuitka --assume-yes-for-downloads --standalone --onefile --enable-plugin=pyside6 --include-qt-plugins=platforms,styles,imageformats --windows-console-mode=disable --windows-icon-from-ico=logo.ico --include-data-files=logo.ico=logo.ico --include-data-files=main.py=main.py --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_CI_Win.exe main.py
 
-      - name: Build macOS package
+      - name: 构建 macOS 包
         if: matrix.os == 'macos-latest'
         run: |
           if [ -f "logo.icns" ]; then
@@ -108,11 +120,11 @@ jobs:
             "FlowScroll_CI_Mac.dmg" \
             "build_out/FlowScroll.app/"
 
-      - name: Build Linux package
+      - name: 构建 Linux 包
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2t64 binutils libxcb-cursor0 imagemagick
+          sudo apt-get install -y libfuse2t64 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 imagemagick
 
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 
@@ -163,7 +175,7 @@ jobs:
           ./appimagetool --appimage-extract-and-run AppDir "FlowScroll_CI_Linux.AppImage"
           test -f "FlowScroll_CI_Linux.AppImage"
 
-      - name: Upload CI package artifact
+      - name: 上传 CI 打包产物
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
