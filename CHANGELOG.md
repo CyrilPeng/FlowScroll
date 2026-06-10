@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.1
+
+### Fixed
+- 修复 Windows 延迟启动模式下，浏览器中键点击网页链接被 FlowScroll 提前拦截，导致 Chrome / Edge 无法在后台打开新标签页的问题
+
+### Tests
+- 补充 Windows 中键延迟启动事件放行与激活态关闭抑制的回归测试
+
 ## v1.8.0
 
 ### Fixed

@@ -98,6 +98,14 @@ class _DummyBridge:
         self.toggle_horizontal = _DummySignal()
 
 
+class _SuppressingMouseListener:
+    def __init__(self):
+        self.suppressed = 0
+
+    def suppress_event(self):
+        self.suppressed += 1
+
+
 def test_delayed_activation_uses_realtime_mouse_position(monkeypatch):
     listeners_module, FakeController = _import_listeners_with_fake_pynput(monkeypatch)
     from FlowScroll.core.config import STATE_LOCK, cfg, runtime
@@ -256,3 +264,56 @@ def test_left_or_right_click_cancels_active_scroll_without_suppressing(monkeypat
     with STATE_LOCK:
         assert runtime.active is False
     assert bridge.hide_overlay.count == 2
+
+
+def test_win32_delayed_middle_click_passes_through_before_activation(monkeypatch):
+    listeners_module, _ = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    bridge = _DummyBridge()
+    listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
+    listener.mouse_listener = _SuppressingMouseListener()
+
+    with STATE_LOCK:
+        cfg.activation_mode = 0
+        cfg.activation_compat_mode = True
+        cfg.activation_delay_ms = 120
+        cfg.activation_hotkey_click = ""
+        runtime.active = False
+        runtime.origin_pos = (0, 0)
+
+    assert listener.win32_event_filter(0x0207, None) is True
+    assert listener.win32_event_filter(0x0208, None) is True
+
+    assert listener.mouse_listener.suppressed == 0
+    assert bridge.show_overlay.count == 0
+    assert bridge.hide_overlay.count == 0
+    with STATE_LOCK:
+        assert runtime.active is False
+        assert runtime.origin_pos == (0, 0)
+
+
+def test_win32_active_delayed_middle_click_is_suppressed_to_close(monkeypatch):
+    listeners_module, FakeController = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    bridge = _DummyBridge()
+    listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
+    listener.mouse_listener = _SuppressingMouseListener()
+
+    with STATE_LOCK:
+        cfg.activation_mode = 0
+        cfg.activation_compat_mode = True
+        cfg.activation_delay_ms = 120
+        cfg.activation_hotkey_click = ""
+        runtime.active = True
+        runtime.origin_pos = (10, 20)
+
+    FakeController.position = (200, 300)
+
+    assert listener.win32_event_filter(0x0207, None) is None
+
+    assert listener.mouse_listener.suppressed == 1
+    assert bridge.hide_overlay.count == 1
+    with STATE_LOCK:
+        assert runtime.active is False

@@ -381,6 +381,16 @@ class GlobalInputListener:
                 self.is_app_allowed_callback()
                 and self._uses_default_middle_activation()
             ):
+                with STATE_LOCK:
+                    delayed_inactive = (
+                        bool(cfg.activation_compat_mode)
+                        and int(cfg.activation_delay_ms) > 0
+                        and not runtime.active
+                    )
+
+                if delayed_inactive:
+                    return True
+
                 x, y = self._mouse_controller.position
                 pressed = msg == 0x0207
                 if msg != 0x0209:
