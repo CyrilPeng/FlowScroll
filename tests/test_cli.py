@@ -77,8 +77,14 @@ class TestSilentFlag:
         try:
             result = _run_main("--silent", timeout=2.0)
             # 如果程序意外退出，检查不是 argparse 错误
+            # 接受 Qt/pynput/平台相关的环境限制错误（如无 X server）
             if result.returncode != 0:
-                assert "error:" not in result.stderr.lower() or "qt" in result.stderr.lower()
+                stderr_lower = result.stderr.lower()
+                is_env_error = any(
+                    kw in stderr_lower
+                    for kw in ["qt", "pynput", "display", "x server", "x connection", "platform"]
+                )
+                assert is_env_error, f"Unexpected error: {result.stderr}"
         except subprocess.TimeoutExpired:
             # 预期行为：程序在静默模式下持续运行
             pass
@@ -88,7 +94,12 @@ class TestSilentFlag:
         try:
             result = _run_main("-s", timeout=2.0)
             if result.returncode != 0:
-                assert "error:" not in result.stderr.lower() or "qt" in result.stderr.lower()
+                stderr_lower = result.stderr.lower()
+                is_env_error = any(
+                    kw in stderr_lower
+                    for kw in ["qt", "pynput", "display", "x server", "x connection", "platform"]
+                )
+                assert is_env_error, f"Unexpected error: {result.stderr}"
         except subprocess.TimeoutExpired:
             pass
 
