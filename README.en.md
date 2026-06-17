@@ -77,6 +77,20 @@ Platform status:
 
 ## Quick Start
 
+### Command-Line Arguments
+
+FlowScroll supports the following command-line arguments:
+
+| Argument | Description |
+|---|---|
+| `--silent` / `-s` | Silent start: hide the main window, run in system tray only |
+| `--version` / `-v` | Show version number |
+| `--help` / `-h` | Show help information |
+
+> When launched at startup, `--silent` is automatically added for true background operation.
+
+### Activation Modes
+
 FlowScroll supports two activation modes. Each mode has its own activation hotkey/button. If empty, middle mouse button is used by default.
 
 ### Click to toggle (default)
@@ -240,12 +254,6 @@ This contributor graph updates automatically with the repository:
 </div>
 
 If you want to help improve it too, issues and pull requests are welcome.
-
----
-
-## Community Links
-
-- [Linux.do](https://linux.do/): A general tech community focused on open source, productivity tools, development, and AI discussions.
 
 ---
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.9.0
+
+### Added
+- 新增 CLI 参数支持：`--silent` / `-s` 静默启动（窗口不显示，仅托盘运行）、`--version` / `-v` 显示版本号、`--help` / `-h` 显示帮助信息
+- 开机自启动自动携带 `--silent` 参数，实现真正的后台静默启动
+
+### Changed
+- `--version` 和 `--help` 在 Windows 上以消息框形式显示（兼容无控制台的 GUI 应用）
+
+### Tests
+- 新增 CLI 参数解析测试（`tests/test_cli.py`）
+- 更新自启动管理器测试以匹配新的 `--silent` 参数行为
+
 ## v1.8.1
 
 ### Fixed

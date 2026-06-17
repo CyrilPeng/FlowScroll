@@ -398,7 +398,7 @@ class TestAutoStartManager:
 
         manager = autostart_module.AutoStartManager()
 
-        assert manager.app_path == "/usr/bin/python3 '/tmp/Flow Scroll/main.py'"
+        assert manager.app_path == "/usr/bin/python3 '/tmp/Flow Scroll/main.py' --silent"
 
     def test_windows_source_run_uses_python_for_script(self, monkeypatch):
         import FlowScroll.services.autostart as autostart_module
@@ -412,7 +412,7 @@ class TestAutoStartManager:
         manager = autostart_module.AutoStartManager()
 
         assert (
-            manager.app_path == '"C:\\Python312\\python.exe" "D:\\FlowScroll\\main.py"'
+            manager.app_path == '"C:\\Python312\\python.exe" "D:\\FlowScroll\\main.py" --silent'
         )
 
     def test_windows_non_frozen_exe_uses_executable_directly(self, monkeypatch):
@@ -428,7 +428,7 @@ class TestAutoStartManager:
 
         manager = autostart_module.AutoStartManager()
 
-        assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe"'
+        assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe" --silent'
 
     def test_windows_frozen_exe_path_with_spaces_is_quoted(self, monkeypatch):
         import FlowScroll.services.autostart as autostart_module
@@ -445,7 +445,7 @@ class TestAutoStartManager:
 
         manager = autostart_module.AutoStartManager()
 
-        assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe"'
+        assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe" --silent'
 
 
 class TestMainTabPersistence:

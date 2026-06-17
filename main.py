@@ -6,11 +6,72 @@
 import sys
 import ctypes
 import os
+import argparse
+
+from FlowScroll import __version__
+
+
+def _show_message_box(title: str, message: str) -> None:
+    """在 Windows 上用 MessageBox 显示信息（无需控制台），其他平台用 print。"""
+    if sys.platform == "win32":
+        try:
+            # MB_OK | MB_ICONINFORMATION = 0x40
+            ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
+        except Exception:
+            pass
+    else:
+        print(f"{title}\n\n{message}")
+
+
+class _MessageBoxHelpAction(argparse.Action):
+    """自定义 help action：用消息框显示帮助信息（兼容无控制台的 Windows GUI 应用）。"""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        help_text = parser.format_help()
+        _show_message_box("FlowScroll", help_text)
+        parser.exit()
+
+
+# ---- CLI 参数解析 ----
+# 在 QApplication 实例化之前完成，避免 Qt 干扰自定义参数。
+_parser = argparse.ArgumentParser(
+    prog="FlowScroll",
+    description="全局无级滚动工具——把浏览器里的中键自动滚动，带到整个系统。",
+    add_help=False,  # 禁用默认 help，使用自定义消息框实现
+)
+_parser.add_argument(
+    "-h", "--help",
+    action=_MessageBoxHelpAction,
+    nargs=0,
+    default=argparse.SUPPRESS,
+    help="显示此帮助信息。",
+)
+_parser.add_argument(
+    "-v", "--version",
+    action="store_true",
+    default=False,
+    help="显示版本号。",
+)
+_parser.add_argument(
+    "-s", "--silent",
+    action="store_true",
+    default=False,
+    help="静默启动：不显示主窗口，仅在系统托盘运行。",
+)
+
+# 仅解析 FlowScroll 自有的参数，将其从 argv 中移除，
+# 剩余参数留给 QApplication（Qt 会消费 --style 等内置参数）。
+_known_args, _qt_argv = _parser.parse_known_args()
+
+# --version / --help 使用消息框显示（Windows GUI 应用无控制台）
+if _known_args.version:
+    _show_message_box("FlowScroll", f"FlowScroll v{__version__}")
+    sys.exit(0)
+
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QIcon
 
-from FlowScroll import __version__
 from FlowScroll.i18n import tr
 from FlowScroll.platform import system_platform, OS_NAME
 from FlowScroll.services.logging_service import logger, log_crash
@@ -35,7 +96,8 @@ def main() -> None:
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
         )
-        app = QApplication(sys.argv)
+        # 使用移除自定义参数后的 argv，避免 Qt 报未知参数 warning。
+        app = QApplication([sys.argv[0]] + _qt_argv)
 
         if OS_NAME == "Windows":
             myappid = f"cyrilpeng.FlowScroll.app.v{__version__}"
@@ -61,7 +123,10 @@ def main() -> None:
         single_instance.activation_requested.connect(window.show_normal_window)
         if single_instance.pending_activation_request:
             window.show_normal_window()
-        window.show()
+
+        # --silent 模式下不显示主窗口，仅通过托盘图标运行。
+        if not _known_args.silent:
+            window.show()
 
         sys.exit(app.exec())
     except Exception as e:
