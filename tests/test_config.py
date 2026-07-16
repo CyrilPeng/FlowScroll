@@ -17,9 +17,7 @@ class TestGlobalConfig:
         monkeypatch.setattr(config_module.os.sys, "platform", "win32")
         monkeypatch.setenv("APPDATA", r"C:\Users\Test\AppData\Roaming")
 
-        assert config_module.get_default_config_dir() == (
-            r"C:\Users\Test\AppData\Roaming\FlowScroll"
-        )
+        assert config_module.get_default_config_dir() == (r"C:\Users\Test\AppData\Roaming\FlowScroll")
 
     def test_path_module_tracks_platform_monkeypatch(self, monkeypatch):
         """路径模块不能缓存宿主平台，否则跨平台测试会被执行顺序污染。"""
@@ -31,17 +29,19 @@ class TestGlobalConfig:
 
         monkeypatch.setattr(config_module.os, "name", "nt")
         monkeypatch.setattr(config_module.os.sys, "platform", "win32")
-        assert config_module._join_path(
-            r"C:\Users\Test\AppData\Roaming", "FlowScroll"
-        ) == r"C:\Users\Test\AppData\Roaming\FlowScroll"
+        assert (
+            config_module._join_path(r"C:\Users\Test\AppData\Roaming", "FlowScroll")
+            == r"C:\Users\Test\AppData\Roaming\FlowScroll"
+        )
 
     def test_join_path_prefers_windows_style_base_path(self):
         """即使宿主是 POSIX，Windows 风格基路径也应使用 ntpath 拼接。"""
         import FlowScroll.core.config as config_module
 
-        assert config_module._join_path(
-            r"C:\Users\Test\AppData\Roaming", "FlowScroll"
-        ) == r"C:\Users\Test\AppData\Roaming\FlowScroll"
+        assert (
+            config_module._join_path(r"C:\Users\Test\AppData\Roaming", "FlowScroll")
+            == r"C:\Users\Test\AppData\Roaming\FlowScroll"
+        )
 
     def test_custom_config_file_env_overrides_default(self, monkeypatch):
         import FlowScroll.core.config as config_module
@@ -63,9 +63,7 @@ class TestGlobalConfig:
             r"D:\Portable\FlowScroll",
         )
 
-        assert config_module.get_config_file() == (
-            r"D:\Portable\FlowScroll\FlowScroll_config.json"
-        )
+        assert config_module.get_config_file() == (r"D:\Portable\FlowScroll\FlowScroll_config.json")
 
     def test_persisted_config_pointer_overrides_default(self, monkeypatch, tmp_path):
         import FlowScroll.core.config as config_module
@@ -77,9 +75,7 @@ class TestGlobalConfig:
         monkeypatch.delenv(config_module.CONFIG_FILE_ENV_VAR, raising=False)
         monkeypatch.delenv(config_module.CONFIG_DIR_ENV_VAR, raising=False)
         monkeypatch.setattr(config_module, "CONFIG_FILE", str(default_file))
-        monkeypatch.setattr(
-            config_module, "get_config_pointer_file", lambda: str(pointer_file)
-        )
+        monkeypatch.setattr(config_module, "get_config_pointer_file", lambda: str(pointer_file))
 
         config_module.set_persisted_config_file(str(custom_file))
 
@@ -87,9 +83,7 @@ class TestGlobalConfig:
         assert config_module.get_config_file() == str(custom_file.resolve())
         assert config_module.get_config_override_source() == "custom"
 
-    def test_resetting_persisted_config_pointer_returns_to_default(
-        self, monkeypatch, tmp_path
-    ):
+    def test_resetting_persisted_config_pointer_returns_to_default(self, monkeypatch, tmp_path):
         import FlowScroll.core.config as config_module
 
         pointer_file = tmp_path / "config_path.json"
@@ -99,9 +93,7 @@ class TestGlobalConfig:
         monkeypatch.delenv(config_module.CONFIG_FILE_ENV_VAR, raising=False)
         monkeypatch.delenv(config_module.CONFIG_DIR_ENV_VAR, raising=False)
         monkeypatch.setattr(config_module, "CONFIG_FILE", str(default_file))
-        monkeypatch.setattr(
-            config_module, "get_config_pointer_file", lambda: str(pointer_file)
-        )
+        monkeypatch.setattr(config_module, "get_config_pointer_file", lambda: str(pointer_file))
 
         config_module.set_persisted_config_file(str(custom_file))
         config_module.set_persisted_config_file(None)
@@ -207,6 +199,41 @@ class TestGlobalConfig:
         assert c.speed_factor == 2.0
         assert c.dead_zone == 20.0
 
+    def test_from_dict_rejects_invalid_values_without_partial_mutation(self):
+        from FlowScroll.core.config import GlobalConfig
+
+        c = GlobalConfig()
+        c.sensitivity = 4.0
+        before = c.to_dict()
+
+        with pytest.raises(ValueError, match="activation_delay_ms"):
+            c.from_dict(
+                {
+                    "sensitivity": 3.0,
+                    "activation_delay_ms": "invalid",
+                }
+            )
+
+        assert c.to_dict() == before
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"sensitivity": float("nan")},
+            {"dead_zone": -1},
+            {"enable_horizontal": "yes"},
+            {"activation_mode": 2},
+            {"filter_blacklist": "chrome"},
+            {"filter_whitelist": ["chrome", 123]},
+            {"ui_language": "unknown"},
+        ],
+    )
+    def test_from_dict_rejects_unsafe_shapes(self, payload):
+        from FlowScroll.core.config import GlobalConfig
+
+        with pytest.raises(ValueError):
+            GlobalConfig().from_dict(payload)
+
     def test_to_dict_contains_all_expected_fields(self):
         """to_dict 应包含所有持久化字段，且值正确。"""
         from FlowScroll.core.config import GlobalConfig
@@ -258,9 +285,7 @@ class TestBuiltinPresets:
 
         required = {"sensitivity", "speed_factor", "dead_zone", "overlay_size"}
         for name, preset in BUILTIN_PRESETS.items():
-            assert required.issubset(preset.keys()), (
-                f"预设 '{name}' 缺少字段: {required - preset.keys()}"
-            )
+            assert required.issubset(preset.keys()), f"预设 '{name}' 缺少字段: {required - preset.keys()}"
 
     def test_default_preset_exists(self):
         from FlowScroll.core.config import BUILTIN_PRESETS, DEFAULT_PRESET_NAME
@@ -338,9 +363,7 @@ class TestPresetManager:
         from FlowScroll.core.config import cfg
         from FlowScroll.ui.preset_manager import PresetManager
 
-        path = self._make_temp_config(
-            {"presets": {}, "last_used": config_module.DEFAULT_PRESET_NAME}
-        )
+        path = self._make_temp_config({"presets": {}, "last_used": config_module.DEFAULT_PRESET_NAME})
 
         try:
             monkeypatch.setattr(config_module, "CONFIG_FILE", path)
@@ -488,9 +511,7 @@ class TestPresetManager:
                 saved = json.load(f)
 
             for name, data in saved.get("presets", {}).items():
-                assert "webdav_password" not in data, (
-                    f"预设 '{name}' 包含 webdav_password"
-                )
+                assert "webdav_password" not in data, f"预设 '{name}' 包含 webdav_password"
                 assert "webdav_url" not in data
                 assert "webdav_username" not in data
         finally:
@@ -530,16 +551,12 @@ class TestPresetManager:
         finally:
             os.unlink(path)
 
-    def test_load_migrates_legacy_home_config_to_new_default_path(
-        self, monkeypatch, tmp_path
-    ):
+    def test_load_migrates_legacy_home_config_to_new_default_path(self, monkeypatch, tmp_path):
         import FlowScroll.core.config as config_module
         from FlowScroll.ui.preset_manager import PresetManager
 
         legacy_path = tmp_path / ".FlowScroll_config.json"
-        new_path = (
-            tmp_path / "AppData" / "Roaming" / "FlowScroll" / "FlowScroll_config.json"
-        )
+        new_path = tmp_path / "AppData" / "Roaming" / "FlowScroll" / "FlowScroll_config.json"
 
         legacy_path.write_text(
             json.dumps(
@@ -567,9 +584,7 @@ class TestPresetManager:
         saved = json.loads(new_path.read_text(encoding="utf-8"))
         assert saved["current_config"]["sensitivity"] == 4.25
 
-    def test_load_does_not_rewrite_when_windows_paths_only_differ_in_case(
-        self, monkeypatch, tmp_path
-    ):
+    def test_load_does_not_rewrite_when_windows_paths_only_differ_in_case(self, monkeypatch, tmp_path):
         import builtins
         import FlowScroll.core.config as config_module
         from FlowScroll.ui.preset_manager import PresetManager
@@ -603,10 +618,7 @@ class TestPresetManager:
         original_open = builtins.open
 
         def fake_open(path, mode="r", encoding=None):
-            if (
-                "r" in mode
-                and str(path).lower() == r"c:\portable\flowscroll\config.json"
-            ):
+            if "r" in mode and str(path).lower() == r"c:\portable\flowscroll\config.json":
                 return original_open(config_path, mode, encoding=encoding)
             return original_open(path, mode, encoding=encoding)
 

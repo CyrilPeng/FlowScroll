@@ -282,6 +282,8 @@ class WebDAVJobThread(QThread):
                 req.add_header("Authorization", self.auth)
                 with self._open(req) as response:
                     remote_data = json.loads(response.read().decode("utf-8"))
+                if not isinstance(remote_data, dict):
+                    raise ValueError("Remote config root must be a JSON object")
                 return remote_data
             except urllib.error.HTTPError as e:
                 last_error = e
@@ -539,13 +541,30 @@ if QDialog is not None:
             local_webdav_url = cfg.webdav_url
             local_webdav_username = cfg.webdav_username
 
-            cfg.from_dict(remote_data)
+            try:
+                cfg.from_dict(remote_data)
+            except (TypeError, ValueError) as e:
+                log_webdav_event(
+                    "error",
+                    "invalid_config",
+                    mode="download",
+                    url=self._job.url if self._job else "<unknown>",
+                    username=mask_webdav_username(self._job.username if self._job else ""),
+                    error=str(e),
+                )
+                QMessageBox.critical(
+                    self,
+                    tr("webdav.failed_title"),
+                    tr("webdav.invalid_config"),
+                )
+                return
             set_config_attr("webdav_url", local_webdav_url)
             set_config_attr("webdav_username", local_webdav_username)
 
             parent = self.parent()
             if parent is not None and hasattr(parent, "save_presets_to_file"):
-                parent.save_presets_to_file()
+                if not parent.save_presets_to_file():
+                    return
             else:
                 with open(ensure_config_dir(get_config_file()), "w", encoding="utf-8") as f:
                     json.dump(

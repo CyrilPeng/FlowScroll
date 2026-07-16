@@ -1,6 +1,5 @@
 """键盘管理、快捷键归一化与 WebDAV 错误格式化测试。"""
 
-import builtins
 import importlib
 import socket
 import sys
@@ -128,11 +127,7 @@ class TestKeyboardManagerHotkeyNormalizationPureMock:
         def _normalize_hotkey_string(value):
             if not value:
                 return ""
-            return "+".join(
-                p
-                for p in (_normalize_hotkey_part(x) for x in str(value).split("+"))
-                if p
-            )
+            return "+".join(p for p in (_normalize_hotkey_part(x) for x in str(value).split("+")) if p)
 
         fake_hotkeys.normalize_hotkey_part = _normalize_hotkey_part
         fake_hotkeys.normalize_hotkey_string = _normalize_hotkey_string
@@ -148,18 +143,14 @@ class TestKeyboardManagerHotkeyNormalizationPureMock:
         return module, FakeKeyCode, FakeKey
 
     def test_ctrl_letter_control_char_normalized_without_pynput(self, monkeypatch):
-        listeners_module, FakeKeyCode, _ = self._import_listeners_with_fake_pynput(
-            monkeypatch
-        )
+        listeners_module, FakeKeyCode, _ = self._import_listeners_with_fake_pynput(monkeypatch)
         km = listeners_module.KeyboardManager.__new__(listeners_module.KeyboardManager)
 
         assert km._get_key_name(FakeKeyCode(char="\x0b")) == "k"
         assert km._normalize_key_name("k") == "k"
 
     def test_ctrl_letter_vk_fallback_without_pynput(self, monkeypatch):
-        listeners_module, FakeKeyCode, FakeKey = (
-            self._import_listeners_with_fake_pynput(monkeypatch)
-        )
+        listeners_module, FakeKeyCode, FakeKey = self._import_listeners_with_fake_pynput(monkeypatch)
         pressed_events = []
 
         km = listeners_module.KeyboardManager(
@@ -333,10 +324,7 @@ class TestWebDAVErrorFormatting:
         assert any("event=failed" in entry for entry in logged)
         assert any("mode=download" in entry for entry in logged)
         assert any("username=b*b" in entry for entry in logged)
-        assert any(
-            "url=https://example.com/dav/FlowScroll_config.json" in entry
-            for entry in logged
-        )
+        assert any("url=https://example.com/dav/FlowScroll_config.json" in entry for entry in logged)
 
     def test_webdav_job_logs_start_finish_and_duration(self, monkeypatch):
         import FlowScroll.ui.webdav_dialog as webdav_dialog
@@ -410,9 +398,7 @@ class TestWebDAVErrorFormatting:
 
         def fake_urlopen(req, timeout=10):
             requests.append((req.get_method(), req.full_url, timeout))
-            if req.get_method() == "PUT" and req.full_url.endswith(
-                "/dav/FlowScroll_config.json"
-            ):
+            if req.get_method() == "PUT" and req.full_url.endswith("/dav/FlowScroll_config.json"):
                 raise HTTPError(
                     url=req.full_url,
                     code=404,
@@ -420,17 +406,11 @@ class TestWebDAVErrorFormatting:
                     hdrs=None,
                     fp=None,
                 )
-            if req.get_method() == "MKCOL" and req.full_url.endswith(
-                "/dav/FlowScroll/"
-            ):
+            if req.get_method() == "MKCOL" and req.full_url.endswith("/dav/FlowScroll/"):
                 return DummyResponse(201)
-            if req.get_method() == "PUT" and req.full_url.endswith(
-                "/dav/FlowScroll/FlowScroll_config.json"
-            ):
+            if req.get_method() == "PUT" and req.full_url.endswith("/dav/FlowScroll/FlowScroll_config.json"):
                 return DummyResponse(201)
-            raise AssertionError(
-                f"unexpected request: {req.get_method()} {req.full_url}"
-            )
+            raise AssertionError(f"unexpected request: {req.get_method()} {req.full_url}")
 
         monkeypatch.setattr(webdav_dialog.urllib.request, "urlopen", fake_urlopen)
 
@@ -457,9 +437,7 @@ class TestWebDAVErrorFormatting:
             ),
         ]
 
-    def test_webdav_download_falls_back_to_app_subdir_after_legacy_404(
-        self, monkeypatch
-    ):
+    def test_webdav_download_falls_back_to_app_subdir_after_legacy_404(self, monkeypatch):
         import FlowScroll.ui.webdav_dialog as webdav_dialog
 
         requests = []
@@ -478,9 +456,7 @@ class TestWebDAVErrorFormatting:
 
         def fake_urlopen(req, timeout=10):
             requests.append((req.get_method(), req.full_url, timeout))
-            if req.get_method() == "GET" and req.full_url.endswith(
-                "/dav/FlowScroll_config.json"
-            ):
+            if req.get_method() == "GET" and req.full_url.endswith("/dav/FlowScroll_config.json"):
                 raise HTTPError(
                     url=req.full_url,
                     code=404,
@@ -488,13 +464,9 @@ class TestWebDAVErrorFormatting:
                     hdrs=None,
                     fp=None,
                 )
-            if req.get_method() == "GET" and req.full_url.endswith(
-                "/dav/FlowScroll/FlowScroll_config.json"
-            ):
+            if req.get_method() == "GET" and req.full_url.endswith("/dav/FlowScroll/FlowScroll_config.json"):
                 return DummyResponse()
-            raise AssertionError(
-                f"unexpected request: {req.get_method()} {req.full_url}"
-            )
+            raise AssertionError(f"unexpected request: {req.get_method()} {req.full_url}")
 
         monkeypatch.setattr(webdav_dialog.urllib.request, "urlopen", fake_urlopen)
 
@@ -518,6 +490,70 @@ class TestWebDAVErrorFormatting:
                 10,
             ),
         ]
+
+    def test_webdav_download_rejects_non_object_json(self, monkeypatch):
+        import FlowScroll.ui.webdav_dialog as webdav_dialog
+
+        class DummyResponse:
+            def read(self):
+                return b"[]"
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        monkeypatch.setattr(
+            webdav_dialog.urllib.request,
+            "urlopen",
+            lambda _req, timeout=10: DummyResponse(),
+        )
+        job = webdav_dialog.WebDAVJobThread(
+            "download",
+            "https://example.com/dav/",
+            "Basic abc",
+            "alice",
+        )
+        failures = []
+        payloads = []
+        job.failed.connect(failures.append)
+        job.download_finished.connect(payloads.append)
+
+        job.run()
+
+        assert failures
+        assert payloads == []
+
+    def test_webdav_invalid_config_keeps_local_settings(self, monkeypatch):
+        import FlowScroll.ui.webdav_dialog as webdav_dialog
+        from FlowScroll.core.config import GlobalConfig
+
+        local_config = GlobalConfig()
+        local_config.sensitivity = 4.0
+        before = local_config.to_dict()
+        messages = []
+
+        class DummyDialog:
+            _job = None
+
+            def parent(self):
+                raise AssertionError("invalid config must not be persisted")
+
+        monkeypatch.setattr(webdav_dialog, "cfg", local_config)
+        monkeypatch.setattr(
+            webdav_dialog.QMessageBox,
+            "critical",
+            lambda _parent, title, body: messages.append((title, body)),
+        )
+
+        webdav_dialog.WebDAVSyncDialog._on_download_finished(
+            DummyDialog(),
+            {"sensitivity": "fast"},
+        )
+
+        assert local_config.to_dict() == before
+        assert messages
 
 
 class TestAdvancedTab:

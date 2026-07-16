@@ -1,4 +1,5 @@
 import json
+import math
 import ntpath
 import os
 import posixpath
@@ -437,49 +438,103 @@ class GlobalConfig:
             "username": self.webdav_username,
         }
 
+    @staticmethod
+    def _validate_dict(data: dict) -> dict:
+        """校验并规范化持久化配置，返回可一次性应用的字段字典。"""
+        if not isinstance(data, dict):
+            raise ValueError("Config root must be a JSON object")
+
+        defaults = GlobalConfig()
+
+        def number(key: str, *, minimum: float = 0.0, exclusive: bool = False) -> float:
+            value = data.get(key, getattr(defaults, key))
+            if isinstance(value, bool) or not isinstance(value, int | float):
+                raise ValueError(f"Config field '{key}' must be a number")
+            value = float(value)
+            if not math.isfinite(value):
+                raise ValueError(f"Config field '{key}' must be finite")
+            if value < minimum or (exclusive and value == minimum):
+                operator = ">" if exclusive else ">="
+                raise ValueError(f"Config field '{key}' must be {operator} {minimum}")
+            return value
+
+        def boolean(key: str) -> bool:
+            value = data.get(key, getattr(defaults, key))
+            if not isinstance(value, bool):
+                raise ValueError(f"Config field '{key}' must be a boolean")
+            return value
+
+        def integer(key: str, *, minimum: int, maximum: int) -> int:
+            value = data.get(key, getattr(defaults, key))
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"Config field '{key}' must be an integer")
+            if not minimum <= value <= maximum:
+                raise ValueError(f"Config field '{key}' must be between {minimum} and {maximum}")
+            return value
+
+        def text(key: str) -> str:
+            value = data.get(key, getattr(defaults, key))
+            if not isinstance(value, str):
+                raise ValueError(f"Config field '{key}' must be a string")
+            return value
+
+        def string_list(key: str, fallback=None) -> list[str]:
+            value = data.get(key, fallback if fallback is not None else getattr(defaults, key))
+            if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+                raise ValueError(f"Config field '{key}' must be a list of strings")
+            return [item.strip() for item in value if item.strip()]
+
+        filter_mode = integer("filter_mode", minimum=0, maximum=2)
+        legacy_list = string_list("filter_list", [])
+        filter_blacklist = (
+            string_list("filter_blacklist")
+            if "filter_blacklist" in data
+            else legacy_list
+            if filter_mode in (0, 1)
+            else []
+        )
+        filter_whitelist = (
+            string_list("filter_whitelist") if "filter_whitelist" in data else legacy_list if filter_mode == 2 else []
+        )
+
+        ui_language = text("ui_language")
+        if ui_language not in ("auto", "zh-CN", "en-US"):
+            raise ValueError("Config field 'ui_language' is unsupported")
+
+        return {
+            "sensitivity": number("sensitivity"),
+            "speed_factor": number("speed_factor"),
+            "dead_zone": number("dead_zone"),
+            "overlay_size": number("overlay_size", exclusive=True),
+            "enable_horizontal": boolean("enable_horizontal"),
+            "minimize_to_tray": boolean("minimize_to_tray"),
+            "horizontal_hotkey": text("horizontal_hotkey"),
+            "activation_hotkey_click": text("activation_hotkey_click"),
+            "activation_hotkey_hold": text("activation_hotkey_hold"),
+            "reverse_y": boolean("reverse_y"),
+            "reverse_x": boolean("reverse_x"),
+            "hide_overlay": boolean("hide_overlay"),
+            "filter_mode": filter_mode,
+            "filter_blacklist": filter_blacklist,
+            "filter_whitelist": filter_whitelist,
+            "filter_use_regex": boolean("filter_use_regex"),
+            "disable_fullscreen": boolean("disable_fullscreen"),
+            "disable_desktop": boolean("disable_desktop"),
+            "activation_mode": integer("activation_mode", minimum=0, maximum=1),
+            "activation_compat_mode": boolean("activation_compat_mode"),
+            "activation_delay_ms": integer("activation_delay_ms", minimum=0, maximum=60_000),
+            "ui_language": ui_language,
+            "enable_inertia": boolean("enable_inertia"),
+            "inertia_friction_ms": number("inertia_friction_ms", exclusive=True),
+            "inertia_threshold": number("inertia_threshold"),
+        }
+
     def from_dict(self, data) -> None:
-        """从字典中恢复配置值，处理旧版 filter_list 到 blacklist/whitelist 的迁移。"""
+        """校验并原子恢复配置，兼容旧版 filter_list 字段。"""
+        values = self._validate_dict(data)
         with STATE_LOCK:
-            self.sensitivity = data.get("sensitivity", 2.0)
-            self.speed_factor = data.get("speed_factor", 2.0)
-            self.dead_zone = data.get("dead_zone", 20.0)
-            self.overlay_size = data.get("overlay_size", 60.0)
-            self.enable_horizontal = data.get("enable_horizontal", True)
-            self.minimize_to_tray = data.get("minimize_to_tray", True)
-            self.horizontal_hotkey = data.get("horizontal_hotkey", "")
-            self.activation_hotkey_click = data.get("activation_hotkey_click", "")
-            self.activation_hotkey_hold = data.get("activation_hotkey_hold", "")
-            self.reverse_y = data.get("reverse_y", False)
-            self.reverse_x = data.get("reverse_x", False)
-            self.hide_overlay = data.get("hide_overlay", False)
-            self.filter_mode = data.get("filter_mode", 0)
-            legacy_list = data.get("filter_list", [])
-            self.filter_blacklist = data.get("filter_blacklist")
-            self.filter_whitelist = data.get("filter_whitelist")
-
-            if self.filter_blacklist is None:
-                if self.filter_mode in (0, 1):
-                    self.filter_blacklist = legacy_list
-                else:
-                    self.filter_blacklist = []
-            if self.filter_whitelist is None:
-                if self.filter_mode == 2:
-                    self.filter_whitelist = legacy_list
-                else:
-                    self.filter_whitelist = []
-
-            self.filter_blacklist = [str(v).strip() for v in self.filter_blacklist if str(v).strip()]
-            self.filter_whitelist = [str(v).strip() for v in self.filter_whitelist if str(v).strip()]
-            self.filter_use_regex = data.get("filter_use_regex", False)
-            self.disable_fullscreen = data.get("disable_fullscreen", True)
-            self.disable_desktop = data.get("disable_desktop", True)
-            self.activation_mode = data.get("activation_mode", 0)
-            self.activation_compat_mode = data.get("activation_compat_mode", False)
-            self.activation_delay_ms = int(data.get("activation_delay_ms", 0))
-            self.ui_language = data.get("ui_language", "auto")
-            self.enable_inertia = data.get("enable_inertia", False)
-            self.inertia_friction_ms = data.get("inertia_friction_ms", 500)
-            self.inertia_threshold = data.get("inertia_threshold", 80.0)
+            for key, value in values.items():
+                setattr(self, key, value)
         # 在锁外广播：为所有已订阅字段发出变更通知
         self.notify_all_subscribed()
 
