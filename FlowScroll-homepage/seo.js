@@ -8,20 +8,20 @@
     ? "en-US"
     : "zh-CN";
   const isEnglishPage = pageLang === "en-US";
-  const canonicalPath = isEnglishPage ? "/en.html" : "/";
+  const canonicalPath = isEnglishPage ? "en.html" : "";
 
   if (siteUrl) {
     const canonicalUrl = absoluteUrl(siteUrl, canonicalPath);
     setLinkTag("canonical", canonicalUrl);
-    setLinkTag("alternate-zh", absoluteUrl(siteUrl, "/"), {
+    setLinkTag("alternate-zh", absoluteUrl(siteUrl, ""), {
       rel: "alternate",
       hreflang: "zh-CN"
     });
-    setLinkTag("alternate-en", absoluteUrl(siteUrl, "/en.html"), {
+    setLinkTag("alternate-en", absoluteUrl(siteUrl, "en.html"), {
       rel: "alternate",
       hreflang: "en"
     });
-    setLinkTag("alternate-default", absoluteUrl(siteUrl, "/"), {
+    setLinkTag("alternate-default", absoluteUrl(siteUrl, ""), {
       rel: "alternate",
       hreflang: "x-default"
     });

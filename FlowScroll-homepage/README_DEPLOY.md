@@ -1,6 +1,10 @@
 # FlowScroll 官网部署说明
 
-这个目录是一套可直接部署到 Cloudflare Pages 的静态站。
+这个目录是一套通过 GitHub Actions 部署到 GitHub Pages 的静态站。
+
+生产地址：`https://cyrilpeng.github.io/FlowScroll/`
+
+部署工作流位于 `.github/workflows/pages.yml`。推送到 `main` 且主页目录发生变化时，工作流会自动发布；也可以在 GitHub Actions 页面手动触发。
 
 ## 当前下载逻辑
 
@@ -33,7 +37,7 @@
 
 ```js
 window.FLOWSCROLL_CONFIG = {
-  siteUrl: "https://flowscroll.example.com",
+  siteUrl: "https://cyrilpeng.github.io/FlowScroll/",
   githubUrl: "https://github.com/CyrilPeng/FlowScroll",
   giteeUrl: "https://gitee.com/CyrilPeng/FlowScroll"
 };
@@ -52,7 +56,7 @@ window.FLOWSCROLL_CONFIG = {
 1. `config.js` 中的 `siteUrl`、`githubUrl`、`giteeUrl` 是否指向正式地址
 2. GitHub Releases 的最新版本是否已经包含 Windows / macOS / Linux 对应发布文件
 3. Gitee Releases 是否已同步同一版本，且附件可访问
-4. `python generate_sitemap.py https://你的域名 > sitemap.xml` 是否已经执行
+4. `python generate_sitemap.py https://cyrilpeng.github.io/FlowScroll > sitemap.xml` 是否已经执行
 5. `robots.txt` 中是否已经补上正式的 `Sitemap:` 地址
 6. `index.html` 与 `en.html` 部署后是否都能正常打开，语言切换是否互通
 7. 当 GitHub 不可访问时，下载区是否能自动回退到 Gitee Releases
@@ -65,16 +69,16 @@ window.FLOWSCROLL_CONFIG = {
 
 ## 生成 sitemap
 
-部署到正式域名后，运行：
+生产 URL 变化后，运行：
 
 ```bash
-python generate_sitemap.py https://flowscroll.example.com > sitemap.xml
+python generate_sitemap.py https://cyrilpeng.github.io/FlowScroll > sitemap.xml
 ```
 
 ## robots.txt
 
-生成 `sitemap.xml` 后，把下面这一行替换成真实域名：
+`robots.txt` 应指向同一生产地址：
 
 ```txt
-Sitemap: https://flowscroll.example.com/sitemap.xml
+Sitemap: https://cyrilpeng.github.io/FlowScroll/sitemap.xml
 ```

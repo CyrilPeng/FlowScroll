@@ -11,9 +11,9 @@ Bring browser-style auto-scroll to your whole desktop.
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows_%7C_macOS_%7C_Linux-lightgrey)]()
-[![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)](https://github.com/CyrilPeng/FlowScroll/releases) ![Channel](https://img.shields.io/badge/Channel-dev-f59e0b) 
+[![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)](https://github.com/CyrilPeng/FlowScroll/releases) ![Channel](https://img.shields.io/badge/Channel-dev-f59e0b)
 
-[Website](https://flowscroll.pages.dev/) | [Releases](https://github.com/CyrilPeng/FlowScroll/releases)
+[Website](https://cyrilpeng.github.io/FlowScroll/) | [Releases](https://github.com/CyrilPeng/FlowScroll/releases)
 
 </div>
 

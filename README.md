@@ -13,9 +13,9 @@
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows_%7C_macOS_%7C_Linux-lightgrey)]()
-[![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)](https://github.com/CyrilPeng/FlowScroll/releases) ![Channel](https://img.shields.io/badge/Channel-dev-f59e0b) 
+[![Release](https://img.shields.io/github/v/release/CyrilPeng/FlowScroll?color=success&label=Release)](https://github.com/CyrilPeng/FlowScroll/releases) ![Channel](https://img.shields.io/badge/Channel-dev-f59e0b)
 
-[项目官网](https://flowscroll.pages.dev/) | [发行版](https://github.com/CyrilPeng/FlowScroll/releases)
+[项目官网](https://cyrilpeng.github.io/FlowScroll/) | [发行版](https://github.com/CyrilPeng/FlowScroll/releases)
 
 </div>
 
@@ -274,7 +274,7 @@ WebDAV 密码通过系统安全存储（macOS Keychain / Windows Credential Mana
 
 ### 1. 会和浏览器自带的中键自动滚动冲突吗？
 
-默认情况下会由 FlowScroll 接管中键滚动行为，也就是**会替代浏览器原生中键滚动**。  
+默认情况下会由 FlowScroll 接管中键滚动行为，也就是**会替代浏览器原生中键滚动**。
 如果你不希望在浏览器中启用 FlowScroll，只需要把浏览器进程名关键词加入**黑名单**（例如 `chrome`、`msedge`、`firefox`），即可直接禁止在浏览器中使用。
 
 ### 2. 黑名单和白名单有什么区别？
@@ -285,7 +285,7 @@ WebDAV 密码通过系统安全存储（macOS Keychain / Windows Credential Mana
 
 ### 3. 关键词如何匹配应用？
 
-关键词按“前台进程名包含”进行匹配，不区分大小写。  
+关键词按“前台进程名包含”进行匹配，不区分大小写。
 建议使用稳定且简短的进程名片段，例如 `chrome`、`code`、`potplayer`。
 如果当前环境无法识别进程名，则仅对当前前台应用回退为窗口标题匹配。
 
@@ -299,7 +299,7 @@ WebDAV 密码通过系统安全存储（macOS Keychain / Windows Credential Mana
 
 ### 5. WebDAV 同步会上传账号密码吗？
 
-不会。WebDAV 同步只上传参数配置，不上传密码。  
+不会。WebDAV 同步只上传参数配置，不上传密码。
 密码优先保存在系统凭据管理（Keyring）中。
 
 ---
