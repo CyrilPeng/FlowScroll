@@ -99,9 +99,16 @@ class MainWindow(DialogMixin, PresetMixin, LanguageMixin, QMainWindow):
         self._start_threads()
         self.ctrl.check_for_updates(self._refresh_update_indicator)
 
-    def save_presets_to_file(self) -> None:
+    def save_presets_to_file(self, target_path: str | None = None) -> bool:
         """将当前预设和配置持久化到磁盘。"""
-        self.ctrl.save_presets_to_file()
+        saved = self.ctrl.save_presets_to_file(target_path)
+        if not saved:
+            QMessageBox.warning(
+                self,
+                tr("main.settings_failed.title"),
+                tr("main.settings_failed.body"),
+            )
+        return saved
 
     # ---- 线程启动 ----
 

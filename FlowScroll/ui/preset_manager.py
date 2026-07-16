@@ -88,9 +88,7 @@ class PresetManager:
 
                 if current_config is not None:
                     self.current_preset_name = (
-                        last_used
-                        if last_used in BUILTIN_PRESETS or last_used in self.presets
-                        else DEFAULT_PRESET_NAME
+                        last_used if last_used in BUILTIN_PRESETS or last_used in self.presets else DEFAULT_PRESET_NAME
                     )
                     cfg.from_dict(current_config)
                 elif last_used in BUILTIN_PRESETS:
@@ -116,10 +114,10 @@ class PresetManager:
         cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
         cfg.from_webdav_dict({})
 
-    def save_to_file(self) -> None:
+    def save_to_file(self, target_path: str | None = None) -> bool:
         """将预设与当前配置写回配置文件（原子写入，非 Windows 下限制文件权限）。"""
         data = self._serialize_state()
-        config_path = ensure_config_dir()
+        config_path = ensure_config_dir(target_path) if target_path else ensure_config_dir()
         config_dir = os.path.dirname(config_path)
         try:
             fd, tmp_path = tempfile.mkstemp(dir=config_dir, suffix=".tmp")
@@ -135,8 +133,10 @@ class PresetManager:
                 except OSError:
                     pass
                 raise
+            return True
         except Exception as e:
             logger.error(f"Failed to save presets to file: {e}")
+            return False
 
     def get_all_names(self) -> List[str]:
         """返回所有可选预设名称（内部键名）。"""

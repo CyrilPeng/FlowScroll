@@ -9,16 +9,12 @@
 """
 
 import json
-import os
 
-import pytest
 
 from FlowScroll.core.config import (
     BUILTIN_PRESETS,
     DEFAULT_PRESET_NAME,
     cfg,
-    ensure_config_dir,
-    get_config_file,
 )
 from FlowScroll.core.config import STATE_LOCK
 from FlowScroll.ui.preset_manager import PresetManager
@@ -40,6 +36,7 @@ class TestPresetManagerDefaults:
 
 
 # ---- save_preset / delete_preset 返回值 ----
+
 
 class TestSaveDeleteReturnValues:
     """验证 save_preset / delete_preset 的成功与失败条件。"""
@@ -99,6 +96,7 @@ class TestSaveDeleteReturnValues:
 
 # ---- load_preset 行为 ----
 
+
 class TestLoadPreset:
     """验证切换预设时的行为。"""
 
@@ -156,8 +154,8 @@ class TestLoadPreset:
 
 # ---- 序列化结构 ----
 
-class TestSerializeState:
 
+class TestSerializeState:
     def test_serialize_state_has_all_required_keys(self, tmp_path, monkeypatch):
         fake_config = tmp_path / "FlowScroll_config.json"
         monkeypatch.setattr("FlowScroll.ui.preset_manager.get_config_file", lambda: str(fake_config))
@@ -177,8 +175,8 @@ class TestSerializeState:
 
 # ---- 列表查询 ----
 
-class TestGetAllNames:
 
+class TestGetAllNames:
     def test_get_all_names_includes_builtin_and_custom(self, tmp_path, monkeypatch):
         fake_config = tmp_path / "FlowScroll_config.json"
         monkeypatch.setattr("FlowScroll.ui.preset_manager.get_config_file", lambda: str(fake_config))
@@ -211,8 +209,8 @@ class TestGetAllNames:
 
 # ---- atomic write ----
 
-class TestAtomicWrite:
 
+class TestAtomicWrite:
     def test_save_to_file_produces_valid_json(self, tmp_path, monkeypatch):
         fake_config = tmp_path / "FlowScroll_config.json"
         monkeypatch.setattr("FlowScroll.ui.preset_manager.get_config_file", lambda: str(fake_config))
@@ -222,7 +220,7 @@ class TestAtomicWrite:
 
         mgr = PresetManager()
         mgr.save_preset("roundtrip")
-        mgr.save_to_file()
+        assert mgr.save_to_file() is True
 
         assert fake_config.exists()
         with open(fake_config, "r", encoding="utf-8") as f:
@@ -235,3 +233,23 @@ class TestAtomicWrite:
         # 没有残留 *.tmp 文件（原子写入应在成功后清除临时文件）
         tmp_files = list(tmp_path.glob("*.tmp"))
         assert tmp_files == []
+
+    def test_save_to_file_can_target_new_path(self, tmp_path):
+        target = tmp_path / "nested" / "migrated.json"
+        mgr = PresetManager()
+
+        assert mgr.save_to_file(str(target)) is True
+        assert target.exists()
+
+    def test_save_to_file_reports_atomic_replace_failure(self, tmp_path, monkeypatch):
+        target = tmp_path / "FlowScroll_config.json"
+        target.write_text('{"existing": true}', encoding="utf-8")
+        monkeypatch.setattr(
+            "FlowScroll.ui.preset_manager.os.replace",
+            lambda *_args: (_ for _ in ()).throw(PermissionError("read only")),
+        )
+        mgr = PresetManager()
+
+        assert mgr.save_to_file(str(target)) is False
+        assert target.read_text(encoding="utf-8") == '{"existing": true}'
+        assert list(tmp_path.glob("*.tmp")) == []

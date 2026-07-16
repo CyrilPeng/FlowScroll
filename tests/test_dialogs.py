@@ -173,6 +173,68 @@ class TestDialogsDocstrings:
         assert len(ConfigStorageDialog.__doc__) > 10
 
 
+class TestConfigStoragePathSwitch:
+    """验证配置路径仅在目标文件写入成功后切换。"""
+
+    @staticmethod
+    def _dummy(save_result):
+        class DummyDialog:
+            _changed = False
+            _last_applied_path = "old.json"
+            refreshed = 0
+            saved_targets = []
+
+            def _save_parent_config(self, target_path):
+                self.saved_targets.append(target_path)
+                return save_result
+
+            def refresh_state(self):
+                self.refreshed += 1
+
+        return DummyDialog()
+
+    def test_failed_target_write_keeps_existing_pointer(self, monkeypatch):
+        from FlowScroll.ui.dialogs import config_storage
+
+        pointer_updates = []
+        dialog = self._dummy(False)
+        monkeypatch.setattr(config_storage, "normalize_config_file_path", lambda path: f"normalized:{path}")
+        monkeypatch.setattr(config_storage, "set_persisted_config_file", pointer_updates.append)
+
+        changed = config_storage.ConfigStorageDialog._apply_path(dialog, "new.json")
+
+        assert changed is False
+        assert dialog.saved_targets == ["normalized:new.json"]
+        assert pointer_updates == []
+        assert dialog._changed is False
+
+    def test_successful_target_write_switches_pointer_after_save(self, monkeypatch):
+        from FlowScroll.ui.dialogs import config_storage
+
+        events = []
+        dialog = self._dummy(True)
+
+        def save_target(target_path):
+            events.append(("save", target_path))
+            return True
+
+        dialog._save_parent_config = save_target
+        monkeypatch.setattr(config_storage, "normalize_config_file_path", lambda path: f"normalized:{path}")
+        monkeypatch.setattr(
+            config_storage,
+            "set_persisted_config_file",
+            lambda path: events.append(("pointer", path)),
+        )
+        monkeypatch.setattr(config_storage, "get_config_file", lambda: "normalized:new.json")
+
+        changed = config_storage.ConfigStorageDialog._apply_path(dialog, "new.json")
+
+        assert changed is True
+        assert events == [("save", "normalized:new.json"), ("pointer", "new.json")]
+        assert dialog._last_applied_path == "normalized:new.json"
+        assert dialog.refreshed == 1
+
+
 class TestDialogsModuleDocstrings:
     """验证各对话框子模块都有模块级文档字符串。"""
 

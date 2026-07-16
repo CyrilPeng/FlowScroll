@@ -30,8 +30,10 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 
 from FlowScroll.core.config import (
+    get_default_config_file,
     get_config_file,
     get_config_override_source,
+    normalize_config_file_path,
     set_persisted_config_file,
 )
 from FlowScroll.i18n import tr
@@ -131,23 +133,37 @@ class ConfigStorageDialog(QDialog):
         self.refresh_state()
         self.resize(560, max(260, self.sizeHint().height()))
 
-    def _save_parent_config(self):
+    def _save_parent_config(self, target_path: str) -> bool:
         """通知父窗口（通常为 :class:`MainWindow`）持久化当前配置。"""
         parent = self.parent()
         if parent is not None and hasattr(parent, "save_presets_to_file"):
-            parent.save_presets_to_file()
+            return bool(parent.save_presets_to_file(target_path))
+        return False
 
-    def _apply_path(self, path: str | None):
+    def _apply_path(self, path: str | None) -> bool:
         """写入指针文件，更新内部状态，并刷新界面。
 
         参数:
             path: 新的配置路径（绝对路径字符串），或 ``None`` 表示重置为默认。
         """
-        set_persisted_config_file(path)
+        target_path = normalize_config_file_path(path) if path else get_default_config_file()
+        if not self._save_parent_config(target_path):
+            return False
+
+        try:
+            set_persisted_config_file(path)
+        except OSError:
+            QMessageBox.warning(
+                self,
+                tr("main.settings_failed.title"),
+                tr("main.settings_failed.body"),
+            )
+            return False
+
         self._changed = True
         self._last_applied_path = get_config_file()
-        self._save_parent_config()
         self.refresh_state()
+        return True
 
     def refresh_state(self) -> None:
         """根据当前路径来源（环境变量/自定义/默认）刷新控件启用/禁用状态。"""
@@ -173,7 +189,8 @@ class ConfigStorageDialog(QDialog):
         if not selected_path:
             return
 
-        self._apply_path(selected_path)
+        if not self._apply_path(selected_path):
+            return
         QMessageBox.information(
             self,
             tr("webdav.success_title"),
@@ -190,8 +207,7 @@ class ConfigStorageDialog(QDialog):
         if not text or text == self._last_applied_path:
             self.path_edit.setText(self._last_applied_path)
             return False
-        self._apply_path(text)
-        return True
+        return self._apply_path(text)
 
     def apply_path_from_input_with_notice(self) -> None:
         """在 :meth:`apply_path_from_input` 基础上，成功时弹出信息提示。"""
@@ -208,7 +224,8 @@ class ConfigStorageDialog(QDialog):
         if get_config_override_source() != "custom":
             return
 
-        self._apply_path(None)
+        if not self._apply_path(None):
+            return
         QMessageBox.information(
             self,
             tr("webdav.success_title"),

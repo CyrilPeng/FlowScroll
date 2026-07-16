@@ -182,6 +182,16 @@ def get_config_file() -> str:
     return _normalize_path(CONFIG_FILE)
 
 
+def get_default_config_file() -> str:
+    """返回平台默认配置文件的归一化绝对路径。"""
+    return _normalize_path(CONFIG_FILE)
+
+
+def normalize_config_file_path(path: str) -> str:
+    """归一化用户指定的配置文件路径。"""
+    return _normalize_path(path)
+
+
 def get_config_load_candidates() -> list[str]:
     """返回按优先级排列的配置文件候选列表（主路径 + 默认路径 + 旧版路径）。"""
     primary_path = get_config_file()
@@ -210,7 +220,7 @@ def ensure_config_dir(path: str | None = None) -> str:
     return config_path
 
 
-BUILTIN_PRESETS = {
+BUILTIN_PRESETS: dict[str, dict[str, object]] = {
     "网页阅读": {
         "sensitivity": 1.5,
         "speed_factor": 3.0,
@@ -235,7 +245,7 @@ BUILTIN_PRESETS = {
 }
 
 # 预设共享的默认值，每个预设只需覆盖差异字段。
-_PRESET_DEFAULTS = {
+_PRESET_DEFAULTS: dict[str, object] = {
     "overlay_size": 60.0,
     "enable_horizontal": False,
     "minimize_to_tray": True,
@@ -535,8 +545,7 @@ class ConfigBus:
             except Exception as e:
                 # 订阅者错误不应传播到调用方，但需记录以供调试。
                 logger.warning(
-                    f"ConfigBus subscriber error for key '{key}': "
-                    f"{getattr(cb, '__qualname__', str(cb))}: {e}",
+                    f"ConfigBus subscriber error for key '{key}': " f"{getattr(cb, '__qualname__', str(cb))}: {e}",
                     exc_info=True,
                 )
 

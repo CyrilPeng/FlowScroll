@@ -5,14 +5,9 @@ import os
 from pynput import mouse
 
 from FlowScroll.core.config import (
-    STATE_LOCK,
-    cfg,
-    runtime,
     BUILTIN_PRESETS,
-    DEFAULT_PRESET_NAME,
     get_config_file,
     get_config_override_source,
-    set_config_attr,
 )
 from FlowScroll.core.engine import ScrollEngine
 from FlowScroll.core.rules import is_current_app_allowed
@@ -27,7 +22,7 @@ from FlowScroll.services.update_checker import (
 )
 from FlowScroll.ui.bridge import LogicBridge
 from FlowScroll.ui.preset_manager import PresetManager
-from FlowScroll.platform import OS_NAME, system_platform
+from FlowScroll.platform import OS_NAME
 
 mouse_controller = mouse.Controller()
 
@@ -61,9 +56,7 @@ class ApplicationController:
 
         self.current_version = __version__
         self.version_label = (
-            f"{self.current_version} (Dev)"
-            if is_prerelease_version(self.current_version)
-            else self.current_version
+            f"{self.current_version} (Dev)" if is_prerelease_version(self.current_version) else self.current_version
         )
 
     @property
@@ -81,9 +74,9 @@ class ApplicationController:
         """设置当前预设名称并持久化。"""
         self.preset_manager.current_preset_name = value
 
-    def save_presets_to_file(self) -> None:
+    def save_presets_to_file(self, target_path: str | None = None) -> bool:
         """将当前预设和配置持久化到磁盘。"""
-        self.preset_manager.save_to_file()
+        return self.preset_manager.save_to_file(target_path)
 
     def _stop_existing_threads(self) -> None:
         """停止并等待已有的后台线程退出。"""
@@ -94,7 +87,7 @@ class ApplicationController:
             self.window_monitor.request_stop()
             self.window_monitor.join(timeout=1.0)
 
-    def start_threads(self, overlay) -> None:
+    def start_threads(self, overlay) -> list[tuple[str, str, str]]:
         """启动所有后台线程（窗口监控、滚动引擎、输入监听）。"""
         if getattr(self, "scroller", None) is not None or getattr(self, "input_listener", None) is not None:
             logger.warning("start_threads called while threads are already running, stopping old threads first")
@@ -128,9 +121,7 @@ class ApplicationController:
             ]
 
         try:
-            self.input_listener = GlobalInputListener(
-                self.bridge, is_current_app_allowed, self.scroller
-            )
+            self.input_listener = GlobalInputListener(self.bridge, is_current_app_allowed, self.scroller)
             self.input_listener.start()
             self.keyboard_hook_available = self.input_listener.keyboard_hook_available
             self.mouse_hook_available = self.input_listener.mouse_hook_available
@@ -169,10 +160,6 @@ class ApplicationController:
                 )
             )
         if self.keyboard_hook_available is False and self.mouse_hook_available is False:
-            try:
-                from FlowScroll.services.credential_service import credential_service
-            except ImportError:
-                pass
             messages.append(
                 (
                     "critical",
@@ -236,9 +223,7 @@ class ApplicationController:
             "env_file": "tab.advanced.config_path_source_env_file",
             "env_dir": "tab.advanced.config_path_source_env_dir",
         }.get(source, "tab.advanced.config_path_source_default")
-        return tr(
-            "tab.advanced.config_path_summary", source=tr(source_key), path=current_path
-        )
+        return tr("tab.advanced.config_path_summary", source=tr(source_key), path=current_path)
 
     def load_selected_preset(self, name) -> None:
         """切换到指定预设并持久化。
