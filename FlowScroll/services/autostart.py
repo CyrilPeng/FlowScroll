@@ -18,11 +18,11 @@ class AutoStartManager:
         if getattr(sys, "frozen", False):
             executable_path = os.path.abspath(sys.executable)
             if OS_NAME == "Windows":
-                return f'{self._quote_path(executable_path)} --silent'
-            return f"{executable_path} --silent"
+                return f"{self._quote_path(executable_path)} --silent"
+            return f"{shlex.quote(executable_path)} --silent"
 
         if OS_NAME == "Windows" and script_path.lower().endswith(".exe"):
-            return f'{self._quote_path(script_path)} --silent'
+            return f"{self._quote_path(script_path)} --silent"
         return self._build_source_launch_command(script_path)
 
     @staticmethod

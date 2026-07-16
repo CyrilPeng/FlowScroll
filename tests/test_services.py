@@ -1,15 +1,10 @@
 """凭据服务、规则、更新检测、常量、单实例、资源路径、平台与自启动测试。"""
 
-import builtins
 import importlib
-import json
-import os
 import shutil
 import sys
-import tempfile
 import types
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 
 import pytest
 
@@ -223,9 +218,7 @@ class TestSingleInstanceManager:
         assert left != right
 
     def test_module_imports_without_pyside6(self, monkeypatch):
-        monkeypatch.delitem(
-            sys.modules, "FlowScroll.services.single_instance", raising=False
-        )
+        monkeypatch.delitem(sys.modules, "FlowScroll.services.single_instance", raising=False)
         monkeypatch.setitem(sys.modules, "PySide6", None)
         monkeypatch.setitem(sys.modules, "PySide6.QtCore", None)
         monkeypatch.setitem(sys.modules, "PySide6.QtNetwork", None)
@@ -247,10 +240,7 @@ class TestResourcePath:
         monkeypatch.chdir(project_root / "tests")
 
         resolved = Path(resource_path("FlowScroll/resources/FlowScroll.svg")).resolve()
-        assert (
-            resolved
-            == (project_root / "FlowScroll" / "resources" / "FlowScroll.svg").resolve()
-        )
+        assert resolved == (project_root / "FlowScroll" / "resources" / "FlowScroll.svg").resolve()
 
 
 class TestLinuxPlatform:
@@ -277,14 +267,12 @@ class TestLinuxPlatform:
                 "_NET_WM_PID",
                 "_NET_WM_STATE",
             ): '_NET_WM_NAME(UTF8_STRING) = "Terminal"\n'
-               'WM_CLASS(STRING) = "gnome-terminal-server", "Gnome-terminal"\n'
-               "_NET_WM_PID(CARDINAL) = 4321\n"
-               "_NET_WM_STATE(ATOM) = _NET_WM_STATE_FULLSCREEN",
+            'WM_CLASS(STRING) = "gnome-terminal-server", "Gnome-terminal"\n'
+            "_NET_WM_PID(CARDINAL) = 4321\n"
+            "_NET_WM_STATE(ATOM) = _NET_WM_STATE_FULLSCREEN",
         }
 
-        monkeypatch.setattr(
-            platform, "_run_command", lambda command: responses.get(tuple(command), "")
-        )
+        monkeypatch.setattr(platform, "_run_command", lambda command: responses.get(tuple(command), ""))
         monkeypatch.setattr(
             platform,
             "_read_process_name",
@@ -306,27 +294,46 @@ class TestLinuxPlatform:
         platform.autostart_dir = temp_dir
         platform.desktop_file = temp_dir / "FlowScroll.desktop"
 
-        assert (
-            platform.set_autostart(
-                "FlowScroll", "/opt/flowscroll/FlowScroll.AppImage", True
-            )
-            is True
-        )
+        assert platform.set_autostart("FlowScroll", "/opt/flowscroll/FlowScroll.AppImage", True) is True
         assert platform.desktop_file.exists()
-        assert (
-            platform.is_autostart_enabled(
-                "FlowScroll", "/opt/flowscroll/FlowScroll.AppImage"
-            )
-            is True
-        )
-        assert (
-            platform.set_autostart(
-                "FlowScroll", "/opt/flowscroll/FlowScroll.AppImage", False
-            )
-            is True
-        )
+        assert platform.is_autostart_enabled("FlowScroll", "/opt/flowscroll/FlowScroll.AppImage") is True
+        assert platform.set_autostart("FlowScroll", "/opt/flowscroll/FlowScroll.AppImage", False) is True
         assert platform.desktop_file.exists() is False
         shutil.rmtree(temp_dir)
+
+
+class TestMacOSPlatform:
+    """测试 macOS launchd 自启动参数。"""
+
+    def test_autostart_writes_split_program_arguments(self, tmp_path):
+        import plistlib
+
+        from FlowScroll.platform.macos import MacOSPlatform
+
+        platform = MacOSPlatform()
+        platform.plist_path = str(tmp_path / "com.cyrilpeng.flowscroll.plist")
+        command = "'/Applications/Flow Scroll.app/Contents/MacOS/FlowScroll' --silent"
+
+        assert platform.set_autostart("FlowScroll", command, True) is True
+
+        with open(platform.plist_path, "rb") as f:
+            data = plistlib.load(f)
+        assert data["ProgramArguments"] == [
+            "/Applications/Flow Scroll.app/Contents/MacOS/FlowScroll",
+            "--silent",
+        ]
+        assert platform.is_autostart_enabled("FlowScroll", command) is True
+
+    def test_autostart_detects_stale_program_arguments(self, tmp_path):
+        from FlowScroll.platform.macos import MacOSPlatform
+
+        platform = MacOSPlatform()
+        platform.plist_path = str(tmp_path / "com.cyrilpeng.flowscroll.plist")
+        old_command = "'/Applications/Flow Scroll.app/Contents/MacOS/FlowScroll' --silent"
+        new_command = "'/Applications/FlowScroll.app/Contents/MacOS/FlowScroll' --silent"
+
+        assert platform.set_autostart("FlowScroll", old_command, True) is True
+        assert platform.is_autostart_enabled("FlowScroll", new_command) is False
 
 
 class TestWindowsPlatform:
@@ -362,24 +369,16 @@ class TestWindowsPlatform:
                 return False
 
         monkeypatch.setattr(windows_module, "logger", DummyLogger())
-        monkeypatch.setattr(
-            windows_module.winreg, "OpenKey", lambda *_args, **_kwargs: DummyKey()
-        )
+        monkeypatch.setattr(windows_module.winreg, "OpenKey", lambda *_args, **_kwargs: DummyKey())
         monkeypatch.setattr(
             windows_module.winreg,
             "QueryValueEx",
-            lambda *_args, **_kwargs: (_ for _ in ()).throw(
-                FileNotFoundError(2, "not found")
-            ),
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError(2, "not found")),
         )
 
-        platform = windows_module.WindowsPlatform.__new__(
-            windows_module.WindowsPlatform
-        )
+        platform = windows_module.WindowsPlatform.__new__(windows_module.WindowsPlatform)
 
-        assert (
-            platform.is_autostart_enabled("FlowScroll", "C:\\FlowScroll.exe") is False
-        )
+        assert platform.is_autostart_enabled("FlowScroll", "C:\\FlowScroll.exe") is False
         assert logged == []
 
 
@@ -411,9 +410,7 @@ class TestAutoStartManager:
 
         manager = autostart_module.AutoStartManager()
 
-        assert (
-            manager.app_path == '"C:\\Python312\\python.exe" "D:\\FlowScroll\\main.py" --silent'
-        )
+        assert manager.app_path == '"C:\\Python312\\python.exe" "D:\\FlowScroll\\main.py" --silent'
 
     def test_windows_non_frozen_exe_uses_executable_directly(self, monkeypatch):
         import FlowScroll.services.autostart as autostart_module
@@ -421,9 +418,7 @@ class TestAutoStartManager:
         monkeypatch.setattr(autostart_module, "OS_NAME", "Windows")
         monkeypatch.setattr(autostart_module.os.path, "abspath", lambda value: value)
         monkeypatch.setattr(sys, "executable", "C:\\Temp\\onefile-runtime\\python.exe")
-        monkeypatch.setattr(
-            sys, "argv", ["C:\\Program Files\\FlowScroll\\FlowScroll.exe"]
-        )
+        monkeypatch.setattr(sys, "argv", ["C:\\Program Files\\FlowScroll\\FlowScroll.exe"])
         monkeypatch.setattr(sys, "frozen", False, raising=False)
 
         manager = autostart_module.AutoStartManager()
@@ -435,17 +430,30 @@ class TestAutoStartManager:
 
         monkeypatch.setattr(autostart_module, "OS_NAME", "Windows")
         monkeypatch.setattr(autostart_module.os.path, "abspath", lambda value: value)
-        monkeypatch.setattr(
-            sys, "executable", "C:\\Program Files\\FlowScroll\\FlowScroll.exe"
-        )
-        monkeypatch.setattr(
-            sys, "argv", ["C:\\Program Files\\FlowScroll\\FlowScroll.exe"]
-        )
+        monkeypatch.setattr(sys, "executable", "C:\\Program Files\\FlowScroll\\FlowScroll.exe")
+        monkeypatch.setattr(sys, "argv", ["C:\\Program Files\\FlowScroll\\FlowScroll.exe"])
         monkeypatch.setattr(sys, "frozen", True, raising=False)
 
         manager = autostart_module.AutoStartManager()
 
         assert manager.app_path == '"C:\\Program Files\\FlowScroll\\FlowScroll.exe" --silent'
+
+    def test_macos_frozen_executable_path_with_spaces_is_shell_quoted(self, monkeypatch):
+        import FlowScroll.services.autostart as autostart_module
+
+        monkeypatch.setattr(autostart_module, "OS_NAME", "Darwin")
+        monkeypatch.setattr(autostart_module.os.path, "abspath", lambda value: value)
+        monkeypatch.setattr(
+            sys,
+            "executable",
+            "/Applications/Flow Scroll.app/Contents/MacOS/FlowScroll",
+        )
+        monkeypatch.setattr(sys, "argv", ["/Applications/Flow Scroll.app"])
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+
+        manager = autostart_module.AutoStartManager()
+
+        assert manager.app_path == "'/Applications/Flow Scroll.app/Contents/MacOS/FlowScroll' --silent"
 
 
 class TestMainTabPersistence:
