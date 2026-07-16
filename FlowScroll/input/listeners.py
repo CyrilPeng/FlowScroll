@@ -27,9 +27,7 @@ class KeyboardManager:
         """初始化键盘管理器，绑定按下和释放回调。"""
         if keyboard is None:
             raise ImportError("pynput.keyboard is unavailable")
-        self.listener = keyboard.Listener(
-            on_press=self.on_press, on_release=self.on_release
-        )
+        self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
         self.current_keys = set()
         self._keys_lock = threading.Lock()
         self.on_press_callback = on_press_callback
@@ -126,6 +124,12 @@ class GlobalInputListener:
         self._pending_activation_timer = None
         self._pending_activation_source = None
         self._pressed_activation_sources = {"mouse": False, "keyboard": False}
+        # Windows 延迟激活会先拦截中键按下/松开；若最终判定为短按，
+        # 再重放一组完整点击，避免目标应用只收到 MButtonDown。
+        self._delayed_middle_press_can_replay = False
+        self._delayed_middle_press_activated = False
+        self._middle_replay_active = False
+        self._replayed_middle_callbacks_pending = 0
         # 复用单个鼠标控制器实例，避免每次读取位置时重新创建。
         self._activation_state_lock = threading.Lock()
         self._mouse_controller = mouse.Controller()
@@ -184,6 +188,10 @@ class GlobalInputListener:
                 if x is not None and y is not None:
                     runtime.origin_pos = (x, y)
                 runtime.active = True
+            if source == "mouse":
+                with self._activation_state_lock:
+                    if self._delayed_middle_press_can_replay:
+                        self._delayed_middle_press_activated = True
             self.activation_input_source = source
             self.bridge.show_overlay.emit()
             return
@@ -367,44 +375,82 @@ class GlobalInputListener:
         """Windows 低级鼠标钩子过滤器：拦截中键事件以实现自定义激活行为。"""
         # WM_MBUTTONDOWN = 0x0207，WM_MBUTTONUP = 0x0208，WM_MBUTTONDBLCLK = 0x0209
         if msg in (0x0207, 0x0208, 0x0209):
+            with self._activation_state_lock:
+                if self._middle_replay_active:
+                    # pynput 仍会为放行的重放事件调用 on_click；记录待忽略
+                    # 的回调数量，避免短按重放再次进入激活逻辑。
+                    self._replayed_middle_callbacks_pending += 1
+                    return True
+
             # 惯性运行中，中键只用于打断惯性。
             if self.scroll_engine and self.scroll_engine._is_inertia_active():
                 if msg == 0x0207:
                     self.scroll_engine.interrupt_inertia()
-                if self.mouse_listener and hasattr(
-                    self.mouse_listener, "suppress_event"
-                ):
+                if self.mouse_listener and hasattr(self.mouse_listener, "suppress_event"):
                     self.mouse_listener.suppress_event()
                 return None
 
-            if (
-                self.is_app_allowed_callback()
-                and self._uses_default_middle_activation()
-            ):
+            if self.is_app_allowed_callback() and self._uses_default_middle_activation():
                 with STATE_LOCK:
                     delayed_inactive = (
-                        bool(cfg.activation_compat_mode)
-                        and int(cfg.activation_delay_ms) > 0
-                        and not runtime.active
+                        bool(cfg.activation_compat_mode) and int(cfg.activation_delay_ms) > 0 and not runtime.active
                     )
 
                 if delayed_inactive:
-                    return True
+                    pressed = msg == 0x0207
+                    if pressed:
+                        with self._activation_state_lock:
+                            self._delayed_middle_press_can_replay = True
+                            self._delayed_middle_press_activated = False
+
+                    if msg != 0x0209:
+                        x, y = self._mouse_controller.position
+                        self.on_click(x, y, mouse.Button.middle, pressed)
+
+                    should_replay = False
+                    if msg == 0x0208:
+                        with self._activation_state_lock:
+                            should_replay = (
+                                self._delayed_middle_press_can_replay and not self._delayed_middle_press_activated
+                            )
+                            self._delayed_middle_press_can_replay = False
+                            self._delayed_middle_press_activated = False
+
+                    if self.mouse_listener and hasattr(self.mouse_listener, "suppress_event"):
+                        self.mouse_listener.suppress_event()
+
+                    if should_replay:
+                        self._replay_middle_click()
+                    return None
 
                 x, y = self._mouse_controller.position
                 pressed = msg == 0x0207
                 if msg != 0x0209:
                     self.on_click(x, y, mouse.Button.middle, pressed)
 
-                if self.mouse_listener and hasattr(
-                    self.mouse_listener, "suppress_event"
-                ):
+                if self.mouse_listener and hasattr(self.mouse_listener, "suppress_event"):
                     self.mouse_listener.suppress_event()
                 return None
         return True
 
+    def _replay_middle_click(self):
+        """重放被延迟激活逻辑接管的原生中键短按。"""
+        with self._activation_state_lock:
+            self._middle_replay_active = True
+        try:
+            self._mouse_controller.click(mouse.Button.middle)
+        finally:
+            with self._activation_state_lock:
+                self._middle_replay_active = False
+
     def on_click(self, x, y, button, pressed):
         """鼠标点击回调：惯性中任意点击打断；检查横向按钮和激活按钮。"""
+        if button == mouse.Button.middle:
+            with self._activation_state_lock:
+                if self._replayed_middle_callbacks_pending > 0:
+                    self._replayed_middle_callbacks_pending -= 1
+                    return
+
         # 惯性运行中，任意鼠标点击都会打断惯性。
         if pressed and self.scroll_engine and self.scroll_engine._is_inertia_active():
             self.scroll_engine.interrupt_inertia()

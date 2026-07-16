@@ -41,6 +41,12 @@ def _import_listeners_with_fake_pynput(monkeypatch):
     class FakeController:
         position = (0, 0)
 
+        def __init__(self):
+            self.clicked = []
+
+        def click(self, button):
+            self.clicked.append(button)
+
     class FakeMouseListener:
         def __init__(self, **_kwargs):
             pass
@@ -65,9 +71,7 @@ def _import_listeners_with_fake_pynput(monkeypatch):
     def _normalize_hotkey_string(value):
         if not value:
             return ""
-        return "+".join(
-            p for p in (_normalize_hotkey_part(x) for x in str(value).split("+")) if p
-        )
+        return "+".join(p for p in (_normalize_hotkey_part(x) for x in str(value).split("+")) if p)
 
     fake_hotkeys.normalize_hotkey_part = _normalize_hotkey_part
     fake_hotkeys.normalize_hotkey_string = _normalize_hotkey_string
@@ -189,7 +193,6 @@ def test_click_mode_debounce_uses_monotonic(monkeypatch):
     assert bridge.show_overlay.count == 1
 
 
-
 def test_delayed_activation_cancelled_before_timer_fire_does_not_activate(monkeypatch):
     listeners_module, FakeController = _import_listeners_with_fake_pynput(monkeypatch)
     from FlowScroll.core.config import STATE_LOCK, cfg, runtime
@@ -266,9 +269,21 @@ def test_left_or_right_click_cancels_active_scroll_without_suppressing(monkeypat
     assert bridge.hide_overlay.count == 2
 
 
-def test_win32_delayed_middle_click_passes_through_before_activation(monkeypatch):
+def test_win32_delayed_middle_short_click_is_suppressed_then_replayed(monkeypatch):
     listeners_module, _ = _import_listeners_with_fake_pynput(monkeypatch)
     from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    class FakeTimer:
+        def __init__(self, _delay, _callback):
+            self.daemon = False
+
+        def start(self):
+            return None
+
+        def cancel(self):
+            return None
+
+    monkeypatch.setattr(listeners_module, "Timer", FakeTimer)
 
     bridge = _DummyBridge()
     listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
@@ -282,15 +297,83 @@ def test_win32_delayed_middle_click_passes_through_before_activation(monkeypatch
         runtime.active = False
         runtime.origin_pos = (0, 0)
 
-    assert listener.win32_event_filter(0x0207, None) is True
-    assert listener.win32_event_filter(0x0208, None) is True
+    assert listener.win32_event_filter(0x0207, None) is None
+    assert listener.win32_event_filter(0x0208, None) is None
 
-    assert listener.mouse_listener.suppressed == 0
+    assert listener.mouse_listener.suppressed == 2
+    assert listener._mouse_controller.clicked == [listeners_module.mouse.Button.middle]
     assert bridge.show_overlay.count == 0
     assert bridge.hide_overlay.count == 0
     with STATE_LOCK:
         assert runtime.active is False
         assert runtime.origin_pos == (0, 0)
+
+
+def test_win32_delayed_middle_hold_does_not_replay_after_activation(monkeypatch):
+    listeners_module, FakeController = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    class FakeTimer:
+        last_instance = None
+
+        def __init__(self, _delay, callback):
+            self.callback = callback
+            self.daemon = False
+            FakeTimer.last_instance = self
+
+        def start(self):
+            return None
+
+        def cancel(self):
+            return None
+
+    monkeypatch.setattr(listeners_module, "Timer", FakeTimer)
+
+    bridge = _DummyBridge()
+    listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
+    listener.mouse_listener = _SuppressingMouseListener()
+
+    with STATE_LOCK:
+        cfg.activation_mode = 0
+        cfg.activation_compat_mode = True
+        cfg.activation_delay_ms = 120
+        cfg.activation_hotkey_click = ""
+        runtime.active = False
+
+    FakeController.position = (30, 40)
+    assert listener.win32_event_filter(0x0207, None) is None
+    FakeTimer.last_instance.callback()
+    assert listener.win32_event_filter(0x0208, None) is None
+
+    assert listener.mouse_listener.suppressed == 2
+    assert listener._mouse_controller.clicked == []
+    with STATE_LOCK:
+        assert runtime.active is True
+        assert runtime.origin_pos == (30, 40)
+
+
+def test_win32_replayed_middle_callbacks_do_not_reactivate(monkeypatch):
+    listeners_module, _ = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import STATE_LOCK, cfg, runtime
+
+    bridge = _DummyBridge()
+    listener = listeners_module.GlobalInputListener(bridge, lambda: True, None)
+
+    with STATE_LOCK:
+        cfg.activation_mode = 0
+        runtime.active = False
+
+    with listener._activation_state_lock:
+        listener._middle_replay_active = True
+    assert listener.win32_event_filter(0x0207, None) is True
+    with listener._activation_state_lock:
+        listener._middle_replay_active = False
+
+    listener.on_click(0, 0, listeners_module.mouse.Button.middle, True)
+
+    with STATE_LOCK:
+        assert runtime.active is False
+    assert bridge.show_overlay.count == 0
 
 
 def test_win32_active_delayed_middle_click_is_suppressed_to_close(monkeypatch):
