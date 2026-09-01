@@ -1,73 +1,82 @@
 import hashlib
 import os
+from typing import TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     from PySide6.QtCore import QObject, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
+else:
+    try:
+        from PySide6.QtCore import QObject, Signal
+        from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
+        QT_IPC_AVAILABLE = True
+    except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境
+        QT_IPC_AVAILABLE = False
+
+        class QObject:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+        class Signal:
+            def __init__(self, *_args, **_kwargs):
+                self._callbacks = []
+
+            def connect(self, callback) -> None:
+                self._callbacks.append(callback)
+
+            def emit(self, *args, **kwargs) -> None:
+                for callback in list(self._callbacks):
+                    callback(*args, **kwargs)
+
+        class QLocalServer:
+            def __init__(self, *_args, **_kwargs):
+                self.newConnection = Signal()
+
+            @staticmethod
+            def removeServer(_name) -> None:
+                return None
+
+            def listen(self, _name) -> bool:
+                return False
+
+            def errorString(self) -> str:
+                return "QtNetwork unavailable"
+
+            def hasPendingConnections(self) -> bool:
+                return False
+
+            def nextPendingConnection(self) -> None:
+                return None
+
+        class QLocalSocket:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+            def connectToServer(self, _name) -> None:
+                return None
+
+            def waitForConnected(self, _timeout) -> bool:
+                return False
+
+            def write(self, _payload) -> int:
+                return 0
+
+            def flush(self) -> None:
+                return None
+
+            def waitForBytesWritten(self, _timeout) -> bool:
+                return False
+
+            def disconnectFromServer(self) -> None:
+                return None
+
+            def waitForDisconnected(self, _timeout) -> bool:
+                return False
+
+
+if TYPE_CHECKING:
     QT_IPC_AVAILABLE = True
-except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境
-    QT_IPC_AVAILABLE = False
-
-    class QObject:
-        def __init__(self, *_args, **_kwargs):
-            pass
-
-    class Signal:
-        def __init__(self, *_args, **_kwargs):
-            self._callbacks = []
-
-        def connect(self, callback) -> None:
-            self._callbacks.append(callback)
-
-        def emit(self, *args, **kwargs) -> None:
-            for callback in list(self._callbacks):
-                callback(*args, **kwargs)
-
-    class QLocalServer:
-        def __init__(self, *_args, **_kwargs):
-            self.newConnection = Signal()
-
-        @staticmethod
-        def removeServer(_name) -> None:
-            return None
-
-        def listen(self, _name) -> bool:
-            return False
-
-        def errorString(self) -> str:
-            return "QtNetwork unavailable"
-
-        def hasPendingConnections(self) -> bool:
-            return False
-
-        def nextPendingConnection(self) -> None:
-            return None
-
-    class QLocalSocket:
-        def __init__(self, *_args, **_kwargs):
-            pass
-
-        def connectToServer(self, _name) -> None:
-            return None
-
-        def waitForConnected(self, _timeout) -> bool:
-            return False
-
-        def write(self, _payload) -> int:
-            return 0
-
-        def flush(self) -> None:
-            return None
-
-        def waitForBytesWritten(self, _timeout) -> bool:
-            return False
-
-        def disconnectFromServer(self) -> None:
-            return None
-
-        def waitForDisconnected(self, _timeout) -> bool:
-            return False
 
 
 from FlowScroll.services.logging_service import logger

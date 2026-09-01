@@ -1,21 +1,26 @@
 import json
 import urllib.request
+from typing import TYPE_CHECKING
 
 from packaging.version import InvalidVersion, Version
 
 from FlowScroll.constants import UPDATE_CHECK_TIMEOUT
 from FlowScroll.services.logging_service import logger
 
-try:
+if TYPE_CHECKING:
     from PySide6.QtCore import QThread, Signal
-except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境下的降级替身
-    class QThread:
-        def __init__(self, *_args, **_kwargs):
-            pass
+else:
+    try:
+        from PySide6.QtCore import QThread, Signal
+    except ModuleNotFoundError:  # pragma: no cover - 用于无 GUI 测试环境下的降级替身
 
-    class Signal:
-        def __init__(self, *_args, **_kwargs):
-            pass
+        class QThread:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+        class Signal:
+            def __init__(self, *_args, **_kwargs):
+                pass
 
 
 GITHUB_FALLBACK_URL = "https://github.com/CyrilPeng/FlowScroll/releases"
@@ -55,9 +60,7 @@ def is_newer_version(latest_version: str, current_version: str) -> bool:
 
 def _fetch_github():
     url = "https://api.github.com/repos/CyrilPeng/FlowScroll/releases/latest"
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "FlowScroll-Update-Checker"}
-    )
+    req = urllib.request.Request(url, headers={"User-Agent": "FlowScroll-Update-Checker"})
     with urllib.request.urlopen(req, timeout=UPDATE_CHECK_TIMEOUT) as response:
         data = json.loads(response.read().decode("utf-8"))
         version = data.get("tag_name", "").lstrip("v")
@@ -67,9 +70,7 @@ def _fetch_github():
 
 def _fetch_gitee():
     url = "https://gitee.com/api/v5/repos/CyrilPeng/FlowScroll/releases/latest"
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "FlowScroll-Update-Checker"}
-    )
+    req = urllib.request.Request(url, headers={"User-Agent": "FlowScroll-Update-Checker"})
     with urllib.request.urlopen(req, timeout=UPDATE_CHECK_TIMEOUT) as response:
         data = json.loads(response.read().decode("utf-8"))
         version = data.get("tag_name", "").lstrip("v")

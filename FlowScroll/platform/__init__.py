@@ -1,7 +1,9 @@
 import platform
 from FlowScroll.constants import DEFAULT_SCROLL_MULTIPLIER
+from FlowScroll.platform.base import PlatformInterface
 
 OS_NAME = platform.system()
+system_platform: PlatformInterface
 
 if OS_NAME == "Windows":
     from FlowScroll.platform.windows import WindowsPlatform
@@ -17,8 +19,6 @@ elif OS_NAME == "Linux":
     system_platform = LinuxPlatform()
 else:
     # 暂时回退到空实现或Windows实现
-    from FlowScroll.platform.base import PlatformInterface
-
     class NullPlatform(PlatformInterface):
         def get_frontmost_window_info(self):
             return ("", "", "", False)

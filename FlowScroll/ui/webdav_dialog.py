@@ -5,6 +5,7 @@ import time
 import urllib.error
 import urllib.request
 from functools import lru_cache
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from FlowScroll.constants import (
@@ -23,7 +24,7 @@ from FlowScroll.i18n import tr
 from FlowScroll.services.credential_service import credential_service
 from FlowScroll.services.logging_service import logger
 
-try:
+if TYPE_CHECKING:
     from PySide6.QtCore import Qt, QThread, Signal
     from PySide6.QtWidgets import (
         QDialog,
@@ -34,60 +35,72 @@ try:
         QPushButton,
         QVBoxLayout,
     )
-except ImportError:
-    Qt = None
+else:
+    try:
+        from PySide6.QtCore import Qt, QThread, Signal
+        from PySide6.QtWidgets import (
+            QDialog,
+            QHBoxLayout,
+            QLabel,
+            QLineEdit,
+            QMessageBox,
+            QPushButton,
+            QVBoxLayout,
+        )
+    except ImportError:
+        Qt = None
 
-    class _BoundSignal:
-        def __init__(self):
-            self._callbacks = []
+        class _BoundSignal:
+            def __init__(self):
+                self._callbacks = []
 
-        def connect(self, callback) -> None:
-            self._callbacks.append(callback)
+            def connect(self, callback) -> None:
+                self._callbacks.append(callback)
 
-        def emit(self, *args, **kwargs) -> None:
-            for callback in list(self._callbacks):
-                callback(*args, **kwargs)
+            def emit(self, *args, **kwargs) -> None:
+                for callback in list(self._callbacks):
+                    callback(*args, **kwargs)
 
-    class Signal:
-        def __init__(self, *_args, **_kwargs):
-            self._name = None
+        class Signal:
+            def __init__(self, *_args, **_kwargs):
+                self._name = None
 
-        def __set_name__(self, _owner, name):
-            self._name = name
+            def __set_name__(self, _owner, name):
+                self._name = name
 
-        def __get__(self, instance, _owner):
-            if instance is None:
-                return self
-            signal = instance.__dict__.get(self._name)
-            if signal is None:
-                signal = _BoundSignal()
-                instance.__dict__[self._name] = signal
-            return signal
+            def __get__(self, instance, _owner):
+                if instance is None:
+                    return self
+                signal = instance.__dict__.get(self._name)
+                if signal is None:
+                    signal = _BoundSignal()
+                    instance.__dict__[self._name] = signal
+                return signal
 
-    class QThread:
-        finished = Signal()
+        class QThread:
+            finished = Signal()
 
-        def __init__(self, *_args, **_kwargs):
-            pass
+            def __init__(self, *_args, **_kwargs):
+                pass
 
-        def start(self) -> None:
-            try:
-                self.run()
-            finally:
-                self.finished.emit()
+            def start(self) -> None:
+                try:
+                    self.run()
+                finally:
+                    self.finished.emit()
 
-        def deleteLater(self) -> None:
-            pass
+            def deleteLater(self) -> None:
+                pass
 
-    QDialog = None
-    QHBoxLayout = None
-    QLabel = None
-    QLineEdit = None
-    QMessageBox = None
-    QPushButton = None
-    QVBoxLayout = None
+        QDialog = None
+        QHBoxLayout = None
+        QLabel = None
+        QLineEdit = None
+        QMessageBox = None
+        QPushButton = None
+        QVBoxLayout = None
 
-if QDialog is not None:
+if TYPE_CHECKING or QDialog is not None:
     from FlowScroll.ui.styles import get_webdav_dialog_style
 
 
@@ -604,6 +617,6 @@ if QDialog is not None:
             self._set_busy(False)
 else:
 
-    class WebDAVSyncDialog:
+    class WebDAVSyncDialog:  # type: ignore[no-redef]
         def __init__(self, *_args, **_kwargs):
             raise RuntimeError("WebDAVSyncDialog requires PySide6 with GUI dependencies")
