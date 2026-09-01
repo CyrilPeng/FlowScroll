@@ -1,0 +1,107 @@
+name: Bug report
+description: Report a reproducible FlowScroll problem
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please remove passwords, WebDAV credentials, and other private data from logs or configuration snippets.
+
+  - type: input
+    id: version
+    attributes:
+      label: FlowScroll version
+      placeholder: "1.9.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux X11
+        - Linux Wayland
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version and desktop environment
+      placeholder: "Windows 11 24H2, macOS 15.x, Ubuntu 24.04 GNOME X11"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation type
+      options:
+        - Windows EXE
+        - macOS DMG
+        - Linux AppImage
+        - Python source checkout
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: activation-mode
+    attributes:
+      label: Activation mode
+      options:
+        - Click to toggle
+        - Hold to scroll
+        - Delayed activation
+        - Not related to scrolling
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the target application and the exact mouse or keyboard sequence.
+      placeholder: |
+        1. Open ...
+        2. Press ...
+        3. Move ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove credentials and personal data before attaching logs.
+      render: text
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I reproduced this with the latest available release or CI artifact.
+          required: true
+        - label: I removed passwords, WebDAV credentials, and private data.
+          required: true
