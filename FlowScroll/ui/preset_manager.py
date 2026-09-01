@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 from typing import Dict, List
 
 from FlowScroll.core.config import (
@@ -22,6 +23,7 @@ class PresetManager:
     def __init__(self):
         self.presets: Dict[str, dict] = {}
         self.current_preset_name: str = DEFAULT_PRESET_NAME
+        self.last_recovery_backup_path: str | None = None
 
     def _serialize_state(self) -> dict:
         return {
@@ -52,8 +54,29 @@ class PresetManager:
 
         cfg.from_webdav_dict({})
 
+    def _backup_invalid_config(self, config_path: str) -> str | None:
+        """将无效配置移到同目录备份，避免后续保存覆盖用户原始数据。"""
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        base_path = f"{config_path}.invalid-{timestamp}.bak"
+        backup_path = base_path
+        suffix = 1
+        while os.path.exists(backup_path):
+            backup_path = f"{base_path}.{suffix}"
+            suffix += 1
+
+        try:
+            os.replace(config_path, backup_path)
+        except OSError as error:
+            logger.error(f"Failed to back up invalid config '{config_path}': {error}")
+            return None
+
+        self.last_recovery_backup_path = backup_path
+        logger.warning(f"Invalid config backed up to: {backup_path}")
+        return backup_path
+
     def load_from_file(self) -> None:
         """从配置文件中加载预设和当前配置。"""
+        self.last_recovery_backup_path = None
         loaded_from = None
         for candidate in get_config_load_candidates():
             if os.path.exists(candidate):
@@ -106,8 +129,19 @@ class PresetManager:
                 if not _paths_equal(loaded_from, target_path):
                     self.save_to_file()
                 return
-            except Exception as e:
+            except (KeyError, TypeError, ValueError) as e:
                 logger.warning(f"Failed to load presets from file: {e}")
+                if self._backup_invalid_config(loaded_from):
+                    self.presets = {}
+                    self.current_preset_name = DEFAULT_PRESET_NAME
+                    cfg.from_dict(BUILTIN_PRESETS[DEFAULT_PRESET_NAME])
+                    cfg.from_webdav_dict({})
+                    self.save_to_file()
+                    return
+            except OSError as e:
+                logger.warning(f"Failed to read presets from file: {e}")
+            except Exception as e:
+                logger.warning(f"Unexpected preset loading error: {e}", exc_info=True)
 
         self.presets = {}
         self.current_preset_name = DEFAULT_PRESET_NAME

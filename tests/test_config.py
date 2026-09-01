@@ -3,6 +3,7 @@
 import os
 import json
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -355,8 +356,17 @@ class TestPresetManager:
 
             assert pm.presets == {}
             assert pm.current_preset_name == config_module.DEFAULT_PRESET_NAME
+            assert pm.last_recovery_backup_path is not None
+            assert os.path.exists(pm.last_recovery_backup_path)
+            with open(pm.last_recovery_backup_path, "r", encoding="utf-8") as f:
+                assert f.read() == "{ invalid json"
+            with open(path, "r", encoding="utf-8") as f:
+                assert isinstance(json.load(f), dict)
         finally:
-            os.unlink(path)
+            if os.path.exists(path):
+                os.unlink(path)
+            for backup in Path(path).parent.glob(f"{Path(path).name}.invalid-*.bak*"):
+                backup.unlink()
 
     def test_save_includes_current_config(self, monkeypatch):
         import FlowScroll.core.config as config_module
@@ -491,6 +501,35 @@ class TestPresetManager:
             pm.load_from_file()
 
             assert pm.presets == {}
+            assert pm.current_preset_name == config_module.DEFAULT_PRESET_NAME
+            assert pm.last_recovery_backup_path is not None
+            assert os.path.exists(pm.last_recovery_backup_path)
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+            for backup in Path(path).parent.glob(f"{Path(path).name}.invalid-*.bak*"):
+                backup.unlink()
+
+    def test_invalid_config_backup_failure_preserves_original(self, monkeypatch):
+        import FlowScroll.core.config as config_module
+        import FlowScroll.ui.preset_manager as preset_manager_module
+        from FlowScroll.ui.preset_manager import PresetManager
+
+        path = self._make_temp_config({"presets": []})
+        original = Path(path).read_text(encoding="utf-8")
+        monkeypatch.setattr(config_module, "CONFIG_FILE", path)
+        monkeypatch.setattr(
+            preset_manager_module.os,
+            "replace",
+            lambda *_args: (_ for _ in ()).throw(PermissionError("read only")),
+        )
+
+        try:
+            pm = PresetManager()
+            pm.load_from_file()
+
+            assert pm.last_recovery_backup_path is None
+            assert Path(path).read_text(encoding="utf-8") == original
             assert pm.current_preset_name == config_module.DEFAULT_PRESET_NAME
         finally:
             os.unlink(path)
