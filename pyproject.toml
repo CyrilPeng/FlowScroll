@@ -1,6 +1,6 @@
 [project]
 name = "FlowScroll"
-version = "1.9.0"
+version = "1.9.1"
 description = "全局无级滚动工具——把浏览器里的中键自动滚动，带到整个系统"
 authors = [
     { name = "某不科学的高数" }
@@ -32,6 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "pre-commit==4.6.0",
     "pytest>=7.0",
 ]
 

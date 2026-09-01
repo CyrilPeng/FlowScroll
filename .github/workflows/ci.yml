@@ -9,6 +9,30 @@ on:
   pull_request:
 
 jobs:
+  quality:
+    name: 代码质量与版本一致性
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: 设置 Python 环境
+        run: uv python install 3.12
+
+      - name: 安装项目依赖
+        run: uv sync --frozen --extra dev
+
+      - name: 检查版本一致性
+        run: uv run python .github/scripts/check_version_consistency.py
+
+      - name: 运行提交质量检查
+        run: uv run pre-commit run --all-files
+
   test:
     name: 在 ${{ matrix.os }} 上运行测试
     runs-on: ${{ matrix.os }}
@@ -42,7 +66,7 @@ jobs:
         run: uv run python -m pytest tests/ -v
 
   package-verify:
-    needs: test
+    needs: [quality, test]
     name: 在 ${{ matrix.os }} 上验证打包
     runs-on: ${{ matrix.os }}
     strategy:
