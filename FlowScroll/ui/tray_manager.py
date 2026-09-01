@@ -19,8 +19,8 @@ class TrayManager(QObject):
     """
 
     show_window = Signal()
-    preset_selected = Signal(str)    # 内部预设名
-    horizontal_toggled = Signal()    # 请求切换横向滚动
+    preset_selected = Signal(str)  # 内部预设名
+    horizontal_toggled = Signal()  # 请求切换横向滚动
 
     def __init__(self, parent, icon_name: str, controller=None):
         """初始化托盘管理器，绑定窗口、控制器及预设管理接口。
@@ -50,9 +50,7 @@ class TrayManager(QObject):
                 self.tray_icon.setIcon(tray_icon)
                 return
 
-        self.tray_icon.setIcon(
-            parent.style().standardIcon(QStyle.SP_MessageBoxInformation)
-        )
+        self.tray_icon.setIcon(parent.style().standardIcon(QStyle.SP_MessageBoxInformation))
 
     # ---- 菜单初始化 ----
 
@@ -66,18 +64,14 @@ class TrayManager(QObject):
             self.presets_menu = self.tray_menu.addMenu(tr("tray.presets"))
             self._preset_action_group = QActionGroup(parent)
             self._preset_action_group.setExclusive(True)
-            self._preset_action_group.triggered.connect(
-                self._on_preset_action_triggered
-            )
+            self._preset_action_group.triggered.connect(self._on_preset_action_triggered)
             self._rebuild_presets_menu()
             self.tray_menu.addSeparator()
 
         # 横向滚动切换（可勾选）
         self.action_toggle_horizontal = QAction(parent)
         self.action_toggle_horizontal.setCheckable(True)
-        self.action_toggle_horizontal.triggered.connect(
-            self.horizontal_toggled.emit
-        )
+        self.action_toggle_horizontal.triggered.connect(self.horizontal_toggled.emit)
         self.tray_menu.addAction(self.action_toggle_horizontal)
 
         self.tray_menu.addSeparator()

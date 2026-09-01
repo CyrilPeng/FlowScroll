@@ -53,9 +53,7 @@ def test_start_threads_returns_message_list_when_scroll_engine_fails(monkeypatch
 
     import FlowScroll.ui.app_controller as app_controller_module
 
-    controller = app_controller_module.ApplicationController.__new__(
-        app_controller_module.ApplicationController
-    )
+    controller = app_controller_module.ApplicationController.__new__(app_controller_module.ApplicationController)
     controller.bridge = MagicMock()
     controller.mouse_controller = MagicMock()
 
@@ -70,9 +68,7 @@ def test_start_threads_returns_message_list_when_scroll_engine_fails(monkeypatch
     monkeypatch.setattr(app_controller_module, "WindowMonitor", DummyWindowMonitor)
     monkeypatch.setattr(app_controller_module, "ScrollEngine", FailingScrollEngine)
 
-    messages = app_controller_module.ApplicationController.start_threads(
-        controller, None
-    )
+    messages = app_controller_module.ApplicationController.start_threads(controller, None)
 
     assert isinstance(messages, list)
     assert len(messages) == 1
@@ -135,16 +131,12 @@ def test_delete_preset_uses_preset_manager_storage(monkeypatch):
 
     import FlowScroll.ui.app_controller as app_controller_module
 
-    controller = app_controller_module.ApplicationController.__new__(
-        app_controller_module.ApplicationController
-    )
+    controller = app_controller_module.ApplicationController.__new__(app_controller_module.ApplicationController)
     controller.preset_manager = MagicMock()
     controller.preset_manager.presets = {"custom": {}}
     controller.preset_manager.delete_preset.return_value = True
     controller.save_presets_to_file = MagicMock()
 
-    assert app_controller_module.ApplicationController.delete_preset(
-        controller, "custom"
-    ) is True
+    assert app_controller_module.ApplicationController.delete_preset(controller, "custom") is True
     controller.preset_manager.delete_preset.assert_called_once_with("custom")
     controller.save_presets_to_file.assert_called_once_with()

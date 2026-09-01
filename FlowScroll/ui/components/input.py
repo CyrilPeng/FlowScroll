@@ -97,10 +97,7 @@ class HotkeyEdit(QKeySequenceEdit):
         参数:
             event (QKeyEvent): 按键事件。
         """
-        if (
-            event.key() in (Qt.Key_Backspace, Qt.Key_Delete)
-            and event.modifiers() == Qt.NoModifier
-        ):
+        if event.key() in (Qt.Key_Backspace, Qt.Key_Delete) and event.modifiers() == Qt.NoModifier:
             self.clear()
         else:
             hotkey = hotkey_from_key_event(event)
@@ -163,20 +160,12 @@ class UpwardComboBox(QComboBox):
 
     def eventFilter(self, watched, event):
         """拦截弹出窗口的 ``QEvent.Show`` 事件，触发向上定位逻辑。"""
-        if (
-            watched is self._popup_window
-            and self._popup_visible
-            and event.type() == QEvent.Show
-        ):
+        if watched is self._popup_window and self._popup_visible and event.type() == QEvent.Show:
             self._move_popup_up()
         return super().eventFilter(watched, event)
 
     def _move_popup_up(self):
         """将弹出窗口移动到下拉框控件正上方（向上展开）。"""
-        popup_height = (
-            self._popup_window.height() or self._popup_window.sizeHint().height()
-        )
+        popup_height = self._popup_window.height() or self._popup_window.sizeHint().height()
         combo_bottom = self.mapToGlobal(self.rect().bottomLeft())
-        self._popup_window.move(
-            combo_bottom.x(), combo_bottom.y() - popup_height - self.height()
-        )
+        self._popup_window.move(combo_bottom.x(), combo_bottom.y() - popup_height - self.height())

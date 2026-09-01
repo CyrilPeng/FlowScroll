@@ -10,9 +10,7 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     else:
         try:
-            base_path = os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            )
+            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         except NameError:
             base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 

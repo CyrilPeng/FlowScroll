@@ -138,5 +138,3 @@ class LanguageMixin:
         self.update_tab_height(self.tab_widget.currentIndex())
         self.sync_ui_from_config()
         self.refresh_input_hook_status_ui()
-
-

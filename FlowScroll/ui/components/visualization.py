@@ -1,5 +1,5 @@
 """可视化类组件：速度曲线可视化"""
-import math
+
 from types import SimpleNamespace
 
 from PySide6.QtCore import QPoint, QPointF, Qt
@@ -31,11 +31,11 @@ class SpeedCurveWidget(QWidget):
     死区段以虚线标注 (曲线在死区内为水平轴)。
     """
 
-    CANVAS_HEIGHT = 80          # 组件高度 (像素)
-    MAX_DISTANCE = 300.0         # 横轴最大值，模拟最大鼠标偏移
-    PLATFORM_MULTIPLIER = 1.0    # 平台倍率固定为 1.0 (仅用于相对可视化)
-    SAMPLE_STEP = 3.0            # 曲线采样步进 (像素，越小越平滑)
-    CURVE_WIDTH = 2.0            # 曲线描边宽度
+    CANVAS_HEIGHT = 80  # 组件高度 (像素)
+    MAX_DISTANCE = 300.0  # 横轴最大值，模拟最大鼠标偏移
+    PLATFORM_MULTIPLIER = 1.0  # 平台倍率固定为 1.0 (仅用于相对可视化)
+    SAMPLE_STEP = 3.0  # 曲线采样步进 (像素，越小越平滑)
+    CURVE_WIDTH = 2.0  # 曲线描边宽度
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -47,9 +47,7 @@ class SpeedCurveWidget(QWidget):
         self.setMinimumHeight(self.CANVAS_HEIGHT)
         self.setFixedHeight(self.CANVAS_HEIGHT)
 
-    def update_params(
-        self, sensitivity: float, dead_zone: float, speed_factor: float
-    ) -> None:
+    def update_params(self, sensitivity: float, dead_zone: float, speed_factor: float) -> None:
         """由 UI 滑块回调驱动；参数变化时触发重绘。"""
         self._sensitivity = float(sensitivity)
         self._dead_zone = float(dead_zone)
@@ -84,12 +82,16 @@ class SpeedCurveWidget(QWidget):
             sensitivity=self._sensitivity,
             speed_factor=self._speed_factor,
         )
-        samples: list[tuple[float, float]] = []   # (横轴位置比例, 速度)
+        samples: list[tuple[float, float]] = []  # (横轴位置比例, 速度)
         dist = 0.0
         max_speed = 1e-9
         while dist <= self.MAX_DISTANCE:
             _, sy = self._strategy.calculate_scroll_speed(
-                0.0, dist, dist, config, self.PLATFORM_MULTIPLIER,
+                0.0,
+                dist,
+                dist,
+                config,
+                self.PLATFORM_MULTIPLIER,
             )
             speed = abs(sy)
             samples.append((dist, speed))

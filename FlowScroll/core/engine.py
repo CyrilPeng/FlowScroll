@@ -339,10 +339,7 @@ class ScrollEngine(threading.Thread):
                             self.inertia_vx *= self.friction
                             self.inertia_vy *= self.friction
 
-                            speed_sq = (
-                                self.inertia_vx * self.inertia_vx
-                                + self.inertia_vy * self.inertia_vy
-                            )
+                            speed_sq = self.inertia_vx * self.inertia_vx + self.inertia_vy * self.inertia_vy
                             if speed_sq < INERTIA_STOP_THRESHOLD:
                                 do_stop = True
                                 sx, sy = 0.0, 0.0

@@ -52,17 +52,11 @@ class PowerCurveStrategy(ScrollStrategy):
             return 0.0, 0.0
 
         eff_dist = distance - config.dead_zone
-        speed_scalar = (
-            math.pow(eff_dist, config.sensitivity)
-            * platform_multiplier
-            * config.speed_factor
-        )
+        speed_scalar = math.pow(eff_dist, config.sensitivity) * platform_multiplier * config.speed_factor
 
         # 将标量速度按方向分配到 X 和 Y 轴
         scroll_x = (dx / distance) * speed_scalar
-        scroll_y = (
-            (dy / distance) * speed_scalar * -1
-        )  # 反转Y轴因为鼠标坐标向下为正，滚轮向上为正
+        scroll_y = (dy / distance) * speed_scalar * -1  # 反转Y轴因为鼠标坐标向下为正，滚轮向上为正
 
         if reverse_x:
             scroll_x = -scroll_x

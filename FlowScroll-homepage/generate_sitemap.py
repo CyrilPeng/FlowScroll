@@ -38,9 +38,7 @@ def build_sitemap(site_url: str, lastmod: str) -> str:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate sitemap.xml for the FlowScroll homepage."
-    )
+    parser = argparse.ArgumentParser(description="Generate sitemap.xml for the FlowScroll homepage.")
     parser.add_argument("site_url", help="Production site URL, for example https://flowscroll.example.com")
     parser.add_argument(
         "--lastmod",

@@ -48,12 +48,8 @@ class WindowsPlatform(PlatformInterface):
                     try:
                         image_buf = ctypes.create_unicode_buffer(1024)
                         image_len = wintypes.DWORD(len(image_buf))
-                        if kernel32.QueryFullProcessImageNameW(
-                            process_handle, 0, image_buf, ctypes.byref(image_len)
-                        ):
-                            process_name = os.path.splitext(
-                                os.path.basename(image_buf.value)
-                            )[0]
+                        if kernel32.QueryFullProcessImageNameW(process_handle, 0, image_buf, ctypes.byref(image_len)):
+                            process_name = os.path.splitext(os.path.basename(image_buf.value))[0]
                     finally:
                         kernel32.CloseHandle(process_handle)
 
@@ -105,9 +101,7 @@ class WindowsPlatform(PlatformInterface):
     def set_autostart(self, app_name, app_path, enable) -> bool:
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         try:
-            with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS
-            ) as key:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
                 if enable:
                     command = self._build_startup_command(app_path)
                     winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, command)
@@ -124,9 +118,7 @@ class WindowsPlatform(PlatformInterface):
     def is_autostart_enabled(self, app_name, app_path):
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         try:
-            with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ
-            ) as key:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ) as key:
                 value, _ = winreg.QueryValueEx(key, app_name)
             saved_executable = self._normalize_path(self._extract_executable(value))
             expected_executable = self._normalize_path(self._extract_executable(app_path))

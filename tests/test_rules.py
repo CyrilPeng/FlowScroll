@@ -45,6 +45,7 @@ def _reset_rules_state():
 
 # ---- 桌面窗口拦截 ----
 
+
 class TestDisableDesktop:
     """禁用 Windows 桌面滚动增强。"""
 
@@ -120,6 +121,7 @@ class TestDisableDesktop:
 
 # ---- 白名单空目标回退 ----
 
+
 class TestWhitelistEmptyTargetFallback:
     """白名单模式下若无法确定 match_target，应宽容放行（避免错误阻止应用）。"""
 
@@ -133,7 +135,7 @@ class TestWhitelistEmptyTargetFallback:
         cfg.filter_use_regex = False
         cfg.disable_fullscreen = False
         runtime.is_fullscreen = False
-        runtime.process_name_status = "stale"   # 无法得到任何进程信息
+        runtime.process_name_status = "stale"  # 无法得到任何进程信息
         runtime.current_process_name = ""
         runtime.current_window_name = ""
 
@@ -141,6 +143,7 @@ class TestWhitelistEmptyTargetFallback:
 
 
 # ---- filter_mode 回退 ----
+
 
 class TestFilterModeFallback:
     """filter_mode 不在 {0, 1, 2} 范围内时默认允许，不崩溃。"""
@@ -161,6 +164,7 @@ class TestFilterModeFallback:
 
 
 # ---- 前后空白规范化 ----
+
 
 class TestWhitespaceStripping:
     """进程名和窗口名前导/尾随空白在匹配前会被剥离。"""
@@ -198,6 +202,7 @@ class TestWhitespaceStripping:
 
 
 # ---- 黑名单短路与 ----
+
 
 class TestBlacklistShortCircuit:
     """黑名单模式应尽快返回，且不会因单条规则异常导致后续规则失效。"""
@@ -237,6 +242,7 @@ class TestBlacklistShortCircuit:
 
 
 # ---- 空列表边界 ----
+
 
 class TestEmptyFilterLists:
     """空名单在不同 filter_mode 下的表现。"""

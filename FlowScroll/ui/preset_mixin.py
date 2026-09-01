@@ -18,7 +18,6 @@ from PySide6.QtWidgets import QMessageBox, QInputDialog
 
 from FlowScroll.core.config import (
     BUILTIN_PRESETS,
-    DEFAULT_PRESET_NAME,
     get_preset_display_name,
     get_preset_internal_name,
 )

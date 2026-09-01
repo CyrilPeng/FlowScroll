@@ -40,20 +40,23 @@ _parser = argparse.ArgumentParser(
     add_help=False,  # 禁用默认 help，使用自定义消息框实现
 )
 _parser.add_argument(
-    "-h", "--help",
+    "-h",
+    "--help",
     action=_MessageBoxHelpAction,
     nargs=0,
     default=argparse.SUPPRESS,
     help="显示此帮助信息。",
 )
 _parser.add_argument(
-    "-v", "--version",
+    "-v",
+    "--version",
     action="store_true",
     default=False,
     help="显示版本号。",
 )
 _parser.add_argument(
-    "-s", "--silent",
+    "-s",
+    "--silent",
     action="store_true",
     default=False,
     help="静默启动：不显示主窗口，仅在系统托盘运行。",
@@ -68,16 +71,16 @@ if _known_args.version:
     _show_message_box("FlowScroll", f"FlowScroll v{__version__}")
     sys.exit(0)
 
-from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
+from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtGui import QFont, QIcon  # noqa: E402
 
-from FlowScroll.i18n import tr
-from FlowScroll.platform import system_platform, OS_NAME
-from FlowScroll.services.logging_service import logger, log_crash
-from FlowScroll.services.single_instance import SingleInstanceManager
-from FlowScroll.ui.utils import resource_path
-from FlowScroll.ui.settings_window import MainWindow
+from FlowScroll.i18n import tr  # noqa: E402
+from FlowScroll.platform import system_platform, OS_NAME  # noqa: E402
+from FlowScroll.services.logging_service import logger, log_crash  # noqa: E402
+from FlowScroll.services.single_instance import SingleInstanceManager  # noqa: E402
+from FlowScroll.ui.utils import resource_path  # noqa: E402
+from FlowScroll.ui.settings_window import MainWindow  # noqa: E402
 
 
 def _show_already_running_message():
@@ -93,9 +96,7 @@ def main() -> None:
     """应用入口：初始化 QApplication、单实例检查、主窗口与事件循环。"""
     try:
         # 必须在 QApplication 实例化之前设置高分屏缩放策略
-        QApplication.setHighDpiScaleFactorRoundingPolicy(
-            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
-        )
+        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         # 使用移除自定义参数后的 argv，避免 Qt 报未知参数 warning。
         app = QApplication([sys.argv[0]] + _qt_argv)
 
@@ -144,7 +145,10 @@ def main() -> None:
                     pass
                 if OS_NAME == "Windows":
                     ctypes.windll.user32.MessageBoxW(
-                        0, crash_body, crash_title, 16,
+                        0,
+                        crash_body,
+                        crash_title,
+                        16,
                     )
                 else:
                     import traceback

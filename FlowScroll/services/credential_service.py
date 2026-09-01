@@ -33,10 +33,7 @@ class CredentialService:
             # 仅接受真正可用的后端，屏蔽 null/fail 类后端。
             priority = getattr(backend, "priority", 0)
             if priority <= 0:
-                logger.info(
-                    f"keyring 后端 {backend.__class__.__name__} priority={priority}，"
-                    "降级为内存存储"
-                )
+                logger.info(f"keyring 后端 {backend.__class__.__name__} priority={priority}，" "降级为内存存储")
                 return
 
             # 执行一次写入、读取、删除探测，确认后端可正常工作。
@@ -47,10 +44,7 @@ class CredentialService:
                 if result != "ok":
                     raise RuntimeError("keyring 探测结果不一致")
             except Exception as probe_err:
-                logger.info(
-                    f"keyring 后端 {backend.__class__.__name__} 探测失败: "
-                    f"{probe_err}，降级为内存存储"
-                )
+                logger.info(f"keyring 后端 {backend.__class__.__name__} 探测失败: " f"{probe_err}，降级为内存存储")
                 return
 
             self._keyring = keyring

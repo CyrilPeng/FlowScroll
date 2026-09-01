@@ -11,8 +11,7 @@ def test_locale_keysets_match():
     zh_keys = set(zh.keys())
     en_keys = set(en.keys())
     assert zh_keys == en_keys, (
-        f"locale key mismatch: only_zh={sorted(zh_keys - en_keys)} "
-        f"only_en={sorted(en_keys - zh_keys)}"
+        f"locale key mismatch: only_zh={sorted(zh_keys - en_keys)} " f"only_en={sorted(en_keys - zh_keys)}"
     )
 
 

@@ -60,9 +60,7 @@ def setup_logging():
     console_handler.setLevel(get_console_log_level())
 
     # 统一日志格式。
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
 

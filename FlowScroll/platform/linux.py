@@ -24,11 +24,18 @@ class LinuxPlatform(PlatformInterface):
             return ("", "", "", False)
 
         wid = match.group(1)
-        props = self._run_command([
-            "xprop", "-id", wid,
-            "_NET_WM_NAME", "WM_NAME", "WM_CLASS",
-            "_NET_WM_PID", "_NET_WM_STATE",
-        ])
+        props = self._run_command(
+            [
+                "xprop",
+                "-id",
+                wid,
+                "_NET_WM_NAME",
+                "WM_NAME",
+                "WM_CLASS",
+                "_NET_WM_PID",
+                "_NET_WM_STATE",
+            ]
+        )
         if not props:
             return ("", "", "", False)
 

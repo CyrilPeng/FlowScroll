@@ -8,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MAIN_PY = PROJECT_ROOT / "main.py"
@@ -81,8 +80,7 @@ class TestSilentFlag:
             if result.returncode != 0:
                 stderr_lower = result.stderr.lower()
                 is_env_error = any(
-                    kw in stderr_lower
-                    for kw in ["qt", "pynput", "display", "x server", "x connection", "platform"]
+                    kw in stderr_lower for kw in ["qt", "pynput", "display", "x server", "x connection", "platform"]
                 )
                 assert is_env_error, f"Unexpected error: {result.stderr}"
         except subprocess.TimeoutExpired:
@@ -96,8 +94,7 @@ class TestSilentFlag:
             if result.returncode != 0:
                 stderr_lower = result.stderr.lower()
                 is_env_error = any(
-                    kw in stderr_lower
-                    for kw in ["qt", "pynput", "display", "x server", "x connection", "platform"]
+                    kw in stderr_lower for kw in ["qt", "pynput", "display", "x server", "x connection", "platform"]
                 )
                 assert is_env_error, f"Unexpected error: {result.stderr}"
         except subprocess.TimeoutExpired:
@@ -112,9 +109,7 @@ class TestAutoStartSilentParam:
         from FlowScroll.services.autostart import AutoStartManager
 
         manager = AutoStartManager()
-        assert "--silent" in manager.app_path, (
-            f"app_path 应包含 --silent，实际为: {manager.app_path}"
-        )
+        assert "--silent" in manager.app_path, f"app_path 应包含 --silent，实际为: {manager.app_path}"
 
     def test_build_source_launch_command_includes_silent(self):
         """源码模式下的启动命令应包含 --silent。"""
@@ -142,7 +137,6 @@ class TestArgvIsolation:
         """--silent 应从 Qt 的 argv 中移除。"""
         # 通过检查 main 模块的 _qt_argv 来验证
         # 注意：这需要 main.py 已经被导入
-        import importlib
 
         # 重新导入以获取模块级变量
         if "main" in sys.modules:

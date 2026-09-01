@@ -135,12 +135,9 @@ def build_parameter_tab(main_window):
     main_window.combo_presets = UpwardComboBox()
     main_window.combo_presets.addItems(main_window._all_preset_names())
     from FlowScroll.core.config import get_preset_display_name
-    main_window.combo_presets.setCurrentText(
-        get_preset_display_name(main_window.ctrl.current_preset_name)
-    )
-    main_window.combo_presets.currentTextChanged.connect(
-        main_window.load_selected_preset
-    )
+
+    main_window.combo_presets.setCurrentText(get_preset_display_name(main_window.ctrl.current_preset_name))
+    main_window.combo_presets.currentTextChanged.connect(main_window.load_selected_preset)
     main_window.combo_presets.setFocusPolicy(Qt.NoFocus)
     main_window.combo_presets.setCursor(Qt.PointingHandCursor)
     main_window.combo_presets.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -205,8 +202,7 @@ def build_parameter_tab(main_window):
 
     main_window.btn_github.clicked.connect(
         lambda: webbrowser.open(
-            getattr(main_window.ctrl, "github_url", "")
-            or "https://github.com/CyrilPeng/FlowScroll"
+            getattr(main_window.ctrl, "github_url", "") or "https://github.com/CyrilPeng/FlowScroll"
         )
     )
 
@@ -261,9 +257,7 @@ def build_advanced_tab(main_window):
 
     chk_horizontal = QCheckBox(tr("tab.advanced.enable_horizontal"))
     chk_horizontal.setChecked(cfg.enable_horizontal)
-    chk_horizontal.toggled.connect(
-        lambda v: _persist_config_change(main_window, "enable_horizontal", v)
-    )
+    chk_horizontal.toggled.connect(lambda v: _persist_config_change(main_window, "enable_horizontal", v))
     chk_horizontal.setFocusPolicy(Qt.NoFocus)
     chk_horizontal.setCursor(Qt.PointingHandCursor)
     main_window.ui_widgets["enable_horizontal"] = chk_horizontal
@@ -299,9 +293,7 @@ def build_advanced_tab(main_window):
 
     chk_inertia = QCheckBox(tr("tab.advanced.enable_inertia"))
     chk_inertia.setChecked(cfg.enable_inertia)
-    chk_inertia.toggled.connect(
-        lambda v: _persist_config_change(main_window, "enable_inertia", v)
-    )
+    chk_inertia.toggled.connect(lambda v: _persist_config_change(main_window, "enable_inertia", v))
     chk_inertia.setFocusPolicy(Qt.NoFocus)
     chk_inertia.setCursor(Qt.PointingHandCursor)
     main_window.ui_widgets["enable_inertia"] = chk_inertia
@@ -400,9 +392,7 @@ def build_advanced_tab(main_window):
     btn_app_filter = QPushButton(tr("tab.advanced.filter_mode_btn"))
     btn_app_filter.setObjectName("BtnAdv")
     btn_app_filter.setCursor(Qt.PointingHandCursor)
-    filter_path = resource_path(
-        os.path.join("FlowScroll", "resources", "ic_filter.svg")
-    )
+    filter_path = resource_path(os.path.join("FlowScroll", "resources", "ic_filter.svg"))
     if os.path.exists(filter_path):
         btn_app_filter.setIcon(QIcon(filter_path))
         btn_app_filter.setIconSize(QSize(18, 18))
@@ -430,9 +420,7 @@ def build_advanced_tab(main_window):
     btn_storage = QPushButton(tr("tab.advanced.config_path_btn"))
     btn_storage.setObjectName("BtnAdvSecondary")
     btn_storage.setCursor(Qt.PointingHandCursor)
-    storage_path = resource_path(
-        os.path.join("FlowScroll", "resources", "ic_folder.svg")
-    )
+    storage_path = resource_path(os.path.join("FlowScroll", "resources", "ic_folder.svg"))
     if os.path.exists(storage_path):
         btn_storage.setIcon(QIcon(storage_path))
         btn_storage.setIconSize(QSize(18, 18))

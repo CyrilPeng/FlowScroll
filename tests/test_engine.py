@@ -5,17 +5,14 @@ import time
 import threading
 from collections import deque
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from FlowScroll.core.scroller import PowerCurveStrategy, default_scroll_strategy
-from FlowScroll.core.config import STATE_LOCK, cfg, runtime, GlobalConfig
+from FlowScroll.core.config import STATE_LOCK, cfg
 from FlowScroll.constants import (
-    ENGINE_TICK_INTERVAL,
     ENGINE_IDLE_POLL_INTERVAL,
-    INERTIA_STOP_THRESHOLD,
-    SCROLL_HISTORY_WINDOW,
 )
 
 
@@ -73,9 +70,7 @@ class TestPowerCurveStrategy:
         config = self._make_config(dead_zone=0.0, sensitivity=1.0, speed_factor=1.0)
         multiplier = 1.0
         _, normal_sy = strategy.calculate_scroll_speed(0, 50, 50, config, multiplier)
-        _, reversed_sy = strategy.calculate_scroll_speed(
-            0, 50, 50, config, multiplier, reverse_y=True
-        )
+        _, reversed_sy = strategy.calculate_scroll_speed(0, 50, 50, config, multiplier, reverse_y=True)
         assert reversed_sy == -normal_sy
 
     def test_reverse_x(self):
@@ -83,9 +78,7 @@ class TestPowerCurveStrategy:
         config = self._make_config(dead_zone=0.0, sensitivity=1.0, speed_factor=1.0)
         multiplier = 1.0
         normal_sx, _ = strategy.calculate_scroll_speed(50, 0, 50, config, multiplier)
-        reversed_sx, _ = strategy.calculate_scroll_speed(
-            50, 0, 50, config, multiplier, reverse_x=True
-        )
+        reversed_sx, _ = strategy.calculate_scroll_speed(50, 0, 50, config, multiplier, reverse_x=True)
         assert reversed_sx == -normal_sx
 
     def test_speed_scales_with_effective_distance(self):
@@ -98,16 +91,10 @@ class TestPowerCurveStrategy:
 
     def test_sensitivity_exponent(self):
         strategy = PowerCurveStrategy()
-        config_linear = self._make_config(
-            dead_zone=0.0, sensitivity=1.0, speed_factor=1.0
-        )
-        config_quad = self._make_config(
-            dead_zone=0.0, sensitivity=2.0, speed_factor=1.0
-        )
+        config_linear = self._make_config(dead_zone=0.0, sensitivity=1.0, speed_factor=1.0)
+        config_quad = self._make_config(dead_zone=0.0, sensitivity=2.0, speed_factor=1.0)
         multiplier = 1.0
-        _, sy_lin = strategy.calculate_scroll_speed(
-            0, 50, 50, config_linear, multiplier
-        )
+        _, sy_lin = strategy.calculate_scroll_speed(0, 50, 50, config_linear, multiplier)
         _, sy_quad = strategy.calculate_scroll_speed(0, 50, 50, config_quad, multiplier)
         assert abs(sy_quad) > abs(sy_lin)
 
@@ -404,9 +391,7 @@ class TestScrollEngineIntegration:
 
         bridge = MagicMock()
         mouse_ctrl = MagicMock()
-        type(mouse_ctrl).position = property(
-            lambda _self: (_ for _ in ()).throw(RuntimeError("mouse failed"))
-        )
+        type(mouse_ctrl).position = property(lambda _self: (_ for _ in ()).throw(RuntimeError("mouse failed")))
         engine = ScrollEngine(bridge, mouse_ctrl)
         engine._snapshot_config = lambda: (
             True,

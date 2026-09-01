@@ -10,7 +10,6 @@ import pytest
 from FlowScroll.core.hotkeys import (
     DISPLAY_ALIASES,
     LEGACY_ALIASES,
-    MODIFIER_DISPLAY,
     MODIFIER_ORDER,
     hotkey_to_display,
     normalize_hotkey_part,
@@ -19,6 +18,7 @@ from FlowScroll.core.hotkeys import (
 
 
 # ---- normalize_hotkey_part ----
+
 
 class TestNormalizeHotkeyPart:
     """normalize_hotkey_part 行为验证。"""
@@ -102,6 +102,7 @@ class TestNormalizeHotkeyPart:
 
 # ---- normalize_hotkey_string ----
 
+
 class TestNormalizeHotkeyString:
     """normalize_hotkey_string 行为验证。"""
 
@@ -162,6 +163,7 @@ class TestNormalizeHotkeyString:
 
 # ---- hotkey_to_display ----
 
+
 class TestHotkeyToDisplay:
     """hotkey_to_display 输出验证。"""
 
@@ -177,9 +179,7 @@ class TestHotkeyToDisplay:
 
     def test_display_aliases_applied(self):
         for internal, display in DISPLAY_ALIASES.items():
-            assert display in hotkey_to_display("ctrl+" + internal), (
-                f"key {internal!r} should display as {display!r}"
-            )
+            assert display in hotkey_to_display("ctrl+" + internal), f"key {internal!r} should display as {display!r}"
 
     def test_single_char_is_uppercased(self):
         assert hotkey_to_display("ctrl+a") == "Ctrl+A"
