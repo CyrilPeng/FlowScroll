@@ -151,7 +151,8 @@ def run_case(appimage: Path, output: Path, case: tuple, timeout: float) -> dict:
     result = {"case": name, "locale": locale_env, "expected_language": expected_language, "passed": False}
     app = None
     xvfb = None
-    with tempfile.TemporaryDirectory(prefix=f"flowscroll-smoke-{name}-") as temporary:
+    # QLocalServer's Unix socket name must fit within the 108-byte path limit.
+    with tempfile.TemporaryDirectory(prefix="fs-", dir="/tmp") as temporary:
         root = Path(temporary)
         env = isolated_environment(root, locale_env)
         try:

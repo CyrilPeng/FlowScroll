@@ -113,9 +113,17 @@ class GlobalInputListener:
         self.last_activation_press_time = 0.0
         self.mouse_hotkey_map = {
             "mouse_middle": mouse.Button.middle,
-            "mouse_x1": mouse.Button.x1,
-            "mouse_x2": mouse.Button.x2,
         }
+        # Xorg uses button8/button9; some backends expose no side buttons at all.
+        for hotkey, native_name, xorg_name in (
+            ("mouse_x1", "x1", "button8"),
+            ("mouse_x2", "x2", "button9"),
+        ):
+            button = getattr(mouse.Button, native_name, None)
+            if button is None:
+                button = getattr(mouse.Button, xorg_name, None)
+            if button is not None:
+                self.mouse_hotkey_map[hotkey] = button
         self.horizontal_hotkey_active = False
         self.activation_hotkey_active = False
         self.activation_input_source = None
