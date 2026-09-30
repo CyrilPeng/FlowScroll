@@ -2,6 +2,27 @@ import importlib
 import sys
 import types
 
+import pytest
+
+
+@pytest.mark.parametrize("side_names", [("x1", "x2"), ("button8", "button9"), ()])
+def test_listener_initializes_with_platform_button_names(monkeypatch, side_names):
+    listeners_module, _ = _import_listeners_with_fake_pynput(monkeypatch)
+    from FlowScroll.core.config import cfg
+
+    buttons = types.SimpleNamespace(middle=object(), left=object(), right=object())
+    for name in side_names:
+        setattr(buttons, name, object())
+    monkeypatch.setattr(listeners_module.mouse, "Button", buttons)
+    listener = listeners_module.GlobalInputListener(_DummyBridge(), lambda: True)
+    monkeypatch.setattr(cfg, "activation_mode", 0)
+    monkeypatch.setattr(cfg, "activation_hotkey_click", "")
+    assert listener._get_activation_mouse_button() is buttons.middle
+    for index, hotkey in enumerate(("mouse_x1", "mouse_x2")):
+        monkeypatch.setattr(cfg, "activation_hotkey_click", hotkey)
+        expected = getattr(buttons, side_names[index]) if side_names else None
+        assert listener._get_activation_mouse_button() is expected
+
 
 def _import_listeners_with_fake_pynput(monkeypatch):
     fake_pynput = types.ModuleType("pynput")

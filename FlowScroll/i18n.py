@@ -89,7 +89,14 @@ def _get_qt_system_language() -> str:
 
 
 def get_system_language() -> str:
-    """按优先级检测系统语言：Win32 API → QLocale → locale 模块 → 环境变量，最终回退为 en-US。"""
+    """Linux 优先遵循消息语言环境变量，其余按平台检测，最终回退为 en-US。"""
+    if sys.platform.startswith("linux"):
+        for env_name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+            raw = os.environ.get(env_name, "").strip()
+            if raw:
+                # 首个非空项决定语言；不支持的语言也不能被低优先级中文覆盖。
+                return _normalize_tag(raw.split(".", 1)[0]) or DEFAULT_LANGUAGE
+
     for detector in (_get_windows_ui_language, _get_qt_system_language):
         detected = detector()
         if detected:

@@ -73,6 +73,12 @@ Platform status:
 - **macOS**: supported, requires Accessibility permission
 - **Linux**: preview; works on X11/Xorg, not available on Wayland due to global-input restrictions
 
+Starting with v1.9.2, the Linux x86_64 AppImage is built on Ubuntu 22.04 (glibc 2.35) and launch-tested in a separate Ubuntu 22.04 X11 container. Ubuntu 22.04 is the oldest tested baseline; other distributions still need compatible glibc and X11/Qt system libraries. If FUSE 2 is missing, install `libfuse2` on Ubuntu 22.04 or launch with `./FlowScroll_Linux_x86_v1.9.2.AppImage --appimage-extract-and-run`.
+
+### Interface Language
+
+FlowScroll supports English and Simplified Chinese and follows the system language by default. On Linux, the first non-empty value in `LC_ALL → LC_MESSAGES → LANG` determines the interface language: Chinese locales use Chinese; all other locales, including German, `C`, and `POSIX`, fall back to English. A language selected manually in settings takes precedence over the system locale.
+
 ---
 
 ## Quick Start

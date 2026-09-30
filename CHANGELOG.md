@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.9.2
+
+### Fixed
+- Linux AppImage 的 CI 与发布构建固定使用 Ubuntu 22.04（glibc 2.35），避免在较旧系统上因缺少 `GLIBC_2.38` 而无法启动
+- AppImage 补齐 Nuitka 默认排除的 `libxcb-icccm` 和 `libxcb-keysyms` 运行库，修复精简 X11 环境下 Qt 平台插件加载失败
+- 修复 Linux Xorg 鼠标按钮命名与 Windows 不同导致全局监听器初始化失败的问题，侧键兼容 `button8` / `button9`，缺少侧键的后端仍可使用中键
+- Linux 自动语言选择遵循 `LC_ALL → LC_MESSAGES → LANG` 的首个非空值；非中文环境（包括不支持的语言、`C` 和 `POSIX`）回退英文，手动语言选择保持优先
+- 控制台诊断改用标准错误流，避免 `C` locale 下中文日志触发 ASCII 编码异常；启动门禁同时检查日志处理错误
+
+### Improved
+- 在独立 Ubuntu 22.04 容器的 X11 虚拟显示器中启动最终 AppImage，检查主窗口、进程存活和异常弹窗，保存截图、日志及产物 SHA-256；发布受启动检查门禁约束
+- 中英文 README 补充 Linux 运行基线和自动语言规则，发布清单增加多语言截图复核要求
+
+### Tests
+- 补充 Linux locale 优先级、混合语言环境、无环境变量回退和手动语言选择的回归测试
+- AppImage 启动检查覆盖英文、中文、德语以及 `LC_ALL=C` 覆盖中文 `LANG` 的环境
+- 补充启动门禁回归测试，确保崩溃、异常弹窗、其他进程窗口和短暂可见窗口不会被误判为通过
+- 补充 Windows、Xorg 和无侧键后端的按钮映射回归测试；缩短启动验证的临时路径，避免超出 Unix 单实例套接字路径限制
+
 ## v1.9.1
 
 ### Fixed

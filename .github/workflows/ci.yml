@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-22.04, windows-latest, macos-latest]
 
     steps:
       - name: 检出代码
@@ -54,7 +54,7 @@ jobs:
         run: uv python install 3.12
 
       - name: 安装 Linux Qt 运行库
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
@@ -79,7 +79,7 @@ jobs:
           - os: macos-latest
             artifact_name: FlowScroll_CI_Mac.dmg
             artifact_path: FlowScroll_CI_Mac.dmg
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             artifact_name: FlowScroll_CI_Linux.AppImage
             artifact_path: FlowScroll_CI_Linux.AppImage
 
@@ -96,7 +96,7 @@ jobs:
         run: uv python install 3.12
 
       - name: 安装 Linux Qt 运行库
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
@@ -145,10 +145,10 @@ jobs:
             "build_out/FlowScroll.app/"
 
       - name: 构建 Linux 包
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2t64 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 imagemagick
+          sudo apt-get install -y libfuse2 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 imagemagick
 
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 
@@ -160,6 +160,8 @@ jobs:
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
           cp -r build_out/*.dist/* AppDir/usr/bin/
+          # Nuitka excludes these XCB helpers as system libraries, but minimal X11 hosts may lack them.
+          cp -L /usr/lib/x86_64-linux-gnu/libxcb-icccm.so.4 /usr/lib/x86_64-linux-gnu/libxcb-keysyms.so.1 AppDir/usr/bin/
 
           find AppDir/usr/bin -path "*/FlowScroll/resources/FlowScroll.svg" | grep -q .
           find AppDir/usr/bin -path "*/FlowScroll/locales/en-US.json" | grep -q .
@@ -205,3 +207,10 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
           if-no-files-found: error
+
+  appimage-smoke:
+    needs: package-verify
+    uses: ./.github/workflows/appimage-smoke.yml
+    with:
+      artifact-name: FlowScroll_CI_Linux.AppImage
+      report-name: appimage-smoke-ci

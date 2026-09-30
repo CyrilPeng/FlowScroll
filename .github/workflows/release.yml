@@ -62,7 +62,7 @@ jobs:
           - os: macos-latest
             artifact_name: FlowScroll_Mac_${{ github.ref_name }}.dmg
             artifact_path: FlowScroll_Mac_${{ github.ref_name }}.dmg
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             artifact_name: FlowScroll_Linux_x86_${{ github.ref_name }}.AppImage
             artifact_path: FlowScroll_Linux_x86_${{ github.ref_name }}.AppImage
 
@@ -79,7 +79,7 @@ jobs:
         run: uv python install 3.12
 
       - name: 安装 Linux Qt 运行库
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
@@ -128,10 +128,10 @@ jobs:
             "build_out/FlowScroll.app/"
 
       - name: 构建 Linux 版本 (AppImage)
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2t64 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 imagemagick
+          sudo apt-get install -y libfuse2 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 imagemagick
 
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --nofollow-import-to=PySide6.QtWebEngine* --nofollow-import-to=PySide6.Qt3D* --nofollow-import-to=PySide6.QtMultimedia* --nofollow-import-to=PySide6.QtQuick* --nofollow-import-to=PySide6.QtCharts* --nofollow-import-to=PySide6.QtDataVisualization* --nofollow-import-to=PySide6.QtBluetooth* --nofollow-import-to=PySide6.QtNfc* --nofollow-import-to=PySide6.QtRemoteObjects* --nofollow-import-to=PySide6.QtSensors* --nofollow-import-to=PySide6.QtSerialPort* --nofollow-import-to=PySide6.QtWebSockets* --nofollow-import-to=PySide6.QtPositioning* --nofollow-import-to=PySide6.QtLocation* --nofollow-import-to=PySide6.QtTest* --nofollow-import-to=PySide6.QtSql* --nofollow-import-to=PySide6.QtSvg* --nofollow-import-to=PySide6.QtXml* --nofollow-import-to=PySide6.QtPdf* --nofollow-import-to=PySide6.QtHttpServer* --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 
@@ -143,6 +143,8 @@ jobs:
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
           cp -r build_out/*.dist/* AppDir/usr/bin/
+          # Nuitka excludes these XCB helpers as system libraries, but minimal X11 hosts may lack them.
+          cp -L /usr/lib/x86_64-linux-gnu/libxcb-icccm.so.4 /usr/lib/x86_64-linux-gnu/libxcb-keysyms.so.1 AppDir/usr/bin/
 
           find AppDir/usr/bin -path "*/FlowScroll/resources/FlowScroll.svg" | grep -q .
           find AppDir/usr/bin -path "*/FlowScroll/locales/en-US.json" | grep -q .
@@ -189,9 +191,16 @@ jobs:
           path: ${{ matrix.artifact_path }}
           if-no-files-found: error
 
+  appimage-smoke:
+    needs: build
+    uses: ./.github/workflows/appimage-smoke.yml
+    with:
+      artifact-name: FlowScroll_Linux_x86_${{ github.ref_name }}.AppImage
+      report-name: appimage-smoke-release
+
   release:
     name: Create Release
-    needs: build
+    needs: [build, appimage-smoke]
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码 (Checkout Code)
@@ -201,6 +210,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: FlowScroll_*
           merge-multiple: true
 
       - name: 检查产物
