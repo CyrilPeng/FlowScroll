@@ -47,6 +47,7 @@ Test downloaded workflow artifacts or release assets, not a source checkout.
 
 - [ ] Build the x86_64 AppImage on Ubuntu 22.04 (glibc 2.35); do not raise this baseline implicitly through `ubuntu-latest`.
 - [ ] Pass `.github/scripts/smoke_appimage.py` against the final AppImage in a separate Ubuntu 22.04 container without the build environment or Python/Qt project dependencies.
+- [ ] Keep `libxkbcommon-x11`, `libxcb-cursor`, `libxcb-icccm`, and `libxcb-keysyms` absent from the smoke-test host; these helpers and their XKB/XCB dependencies must be supplied by the AppImage.
 - [ ] Review the uploaded `appimage-smoke-*` screenshots: English for English, German, and `LC_ALL=C` with Chinese `LANG`; Chinese for the Chinese locale. The automated gate verifies window visibility/liveness and absence of dialogs, while screenshot language/content requires visual review.
 - [ ] Retain the smoke-test logs and SHA-256 report alongside release validation evidence.
 - [ ] Launch the AppImage on at least one supported X11 distribution.

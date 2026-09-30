@@ -160,8 +160,7 @@ jobs:
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
           cp -r build_out/*.dist/* AppDir/usr/bin/
-          # Nuitka excludes these XCB helpers as system libraries, but minimal X11 hosts may lack them.
-          cp -L /usr/lib/x86_64-linux-gnu/libxcb-icccm.so.4 /usr/lib/x86_64-linux-gnu/libxcb-keysyms.so.1 AppDir/usr/bin/
+          bash .github/scripts/bundle_appimage_x11.sh AppDir
 
           find AppDir/usr/bin -path "*/FlowScroll/resources/FlowScroll.svg" | grep -q .
           find AppDir/usr/bin -path "*/FlowScroll/locales/en-US.json" | grep -q .
