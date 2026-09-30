@@ -148,7 +148,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 imagemagick
+          sudo apt-get install -y libfuse2 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 imagemagick
 
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 

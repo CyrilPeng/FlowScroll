@@ -4,6 +4,7 @@
 
 ### Fixed
 - AppImage 按 Qt X11 插件的完整依赖关系收集 XKB/XCB 辅助库，补齐 `libxkbcommon-x11`、`libxcb-cursor` 及其间接依赖，修复 AppImageHub 测试环境中无法显示主窗口的问题
+- 构建环境显式安装 `libxcb-shape0`，并在收集依赖时检查缺失项，避免生成不完整的包
 
 ### Tests
 - Ubuntu 22.04 启动验证不再预装 XKB/XCB 辅助库，并检查这些库确实未由宿主提供，避免掩盖 AppImage 的漏打包问题

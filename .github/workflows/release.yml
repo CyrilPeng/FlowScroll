@@ -131,7 +131,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 imagemagick
+          sudo apt-get install -y libfuse2 binutils libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 imagemagick
 
           uv run python -m nuitka --assume-yes-for-downloads --standalone --enable-plugin=pyside6 --nofollow-import-to=PySide6.QtWebEngine* --nofollow-import-to=PySide6.Qt3D* --nofollow-import-to=PySide6.QtMultimedia* --nofollow-import-to=PySide6.QtQuick* --nofollow-import-to=PySide6.QtCharts* --nofollow-import-to=PySide6.QtDataVisualization* --nofollow-import-to=PySide6.QtBluetooth* --nofollow-import-to=PySide6.QtNfc* --nofollow-import-to=PySide6.QtRemoteObjects* --nofollow-import-to=PySide6.QtSensors* --nofollow-import-to=PySide6.QtSerialPort* --nofollow-import-to=PySide6.QtWebSockets* --nofollow-import-to=PySide6.QtPositioning* --nofollow-import-to=PySide6.QtLocation* --nofollow-import-to=PySide6.QtTest* --nofollow-import-to=PySide6.QtSql* --nofollow-import-to=PySide6.QtSvg* --nofollow-import-to=PySide6.QtXml* --nofollow-import-to=PySide6.QtPdf* --nofollow-import-to=PySide6.QtHttpServer* --include-data-dir=FlowScroll/resources=FlowScroll/resources --include-data-dir=FlowScroll/locales=FlowScroll/locales --output-dir=build_out -o FlowScroll_Linux main.py
 
