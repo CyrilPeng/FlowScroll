@@ -74,6 +74,12 @@ FlowScroll 就是把这种熟悉、直觉的交互方式扩展到整个桌面系
 > - **macOS**：主要支持，需授予辅助功能权限；全屏检测精度有限
 > - **Linux**：实验性预览，仅在 X11/Xorg 下可用；Wayland 由于安全限制无法进行全局输入监听
 
+从 v1.9.2 起，Linux x86_64 AppImage 使用 Ubuntu 22.04（glibc 2.35）构建，并在独立 Ubuntu 22.04 X11 容器中验证启动。Ubuntu 22.04 是最低验证基线；其他发行版仍需提供兼容的 glibc 和 X11/Qt 系统运行库。若系统缺少 FUSE 2，可在 Ubuntu 22.04 安装 `libfuse2`，或用 `./FlowScroll_Linux_x86_v1.9.2.AppImage --appimage-extract-and-run` 启动。
+
+### 界面语言
+
+支持简体中文和英文，默认跟随系统。Linux 按 `LC_ALL → LC_MESSAGES → LANG` 的首个非空值选择语言：中文环境显示中文，其余环境（包括德语、`C` 和 `POSIX`）回退英文。设置中的手动语言选择优先于系统环境。
+
 ---
 
 ## 🚀 快速上手
