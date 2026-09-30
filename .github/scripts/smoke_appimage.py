@@ -201,6 +201,8 @@ def run_case(appimage: Path, output: Path, case: tuple, timeout: float) -> dict:
                 # Do not turn a crash during capture, or a startup modal, into a pass.
                 if app.poll() is not None or main_window(visible_windows(env), app.pid) is None:
                     raise RuntimeError("Application stopped displaying its main window during capture")
+                if b"--- Logging error ---" in (case_output / "application.log").read_bytes():
+                    raise RuntimeError("Application logging failed; inspect application.log")
                 result.update({"passed": True, "window": window})
         except (OSError, RuntimeError, subprocess.SubprocessError) as error:
             result["error"] = str(error)

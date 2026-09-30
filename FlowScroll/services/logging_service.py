@@ -55,8 +55,9 @@ def setup_logging():
     )
     file_handler.setLevel(logging.ERROR)
 
-    # 控制台处理器。
-    console_handler = logging.StreamHandler(sys.stdout)
+    # stderr uses backslashreplace even in the ASCII C locale, so diagnostics
+    # containing Chinese text cannot fail with UnicodeEncodeError.
+    console_handler = logging.StreamHandler()
     console_handler.setLevel(get_console_log_level())
 
     # 统一日志格式。
